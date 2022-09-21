@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ProjectCompletionMap">
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.ProjectCompletionFilterDTO">
+    SELECT id as sbuId, name as sbuName
+    FROM company_structures
+    WHERE parent_id = #employeeId#
+    </select>
+    <select id="getCompletionList" parameterClass="com.defiance.ideal.reports.dto.ProjectCompletionFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectCompletionDataDTO">
+        SELECT `Project`.`project_code` AS code,
+        `Project`.`project_name` AS name,
+        DATE_FORMAT(`Project`.`planned_start_date`, '%d-%m-%Y') AS plannedStartDate,
+        DATE_FORMAT(`Project`.`planned_end_date`, '%d-%m-%Y') AS plannedEndDate,
+        `company_structures`.`name` AS sbu,
+        cs2.name AS subSbu,
+        `Customer`.`customer_name` AS customerName,
+        CASE `Project`.`project_status` WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        (SELECT SUM(PO.po_value)
+            FROM project_purchase_orders AS PO
+          WHERE PO.project_id = Project.id)
+            AS poValue,c.currency_code as currency,
+        (SELECT SUM(BillingAdvice.accrual_no)
+            FROM accrual_consolidations AS BillingAdvice
+          WHERE     BillingAdvice.project_id = Project.id
+                AND BillingAdvice.emp_id IS NULL
+                AND BillingAdvice.status = "m")
+            AS accruedSoFar,Convert(
+            (((SELECT SUM(BillingAdvice.accrual_no)
+            FROM accrual_consolidations AS BillingAdvice
+          WHERE     BillingAdvice.project_id = Project.id
+                AND BillingAdvice.emp_id IS NULL
+                AND BillingAdvice.status = "m")/(SELECT SUM(PO.po_value)
+            FROM project_purchase_orders AS PO
+          WHERE PO.project_id = Project.id)) * 100),decimal(20,2)) AS completion
+    FROM `projects` AS `Project`
+        JOIN company_structures AS `company_structures`
+            ON (`company_structures`.`id` = `Project`.`project_sbu`)
+        JOIN company_structures AS cs2
+            ON (cs2.id = `Project`.`project_sbu_subgroup`)
+        LEFT JOIN `customers` AS `Customer`
+            ON (`Project`.`customer_id` = `Customer`.`id`)
+            JOIN currencies c on `Project`.`currency_id`=c.id
+  WHERE Project.status = 'a'
+    AND Project.billable IN ('e','i')
+    AND Project.project_model = 'wpo'
+        <dynamic prepend="AND">
+            <isEmpty property="statusFilter">
+      `Project`.`project_status` in ('e','d','c') 
+            </isEmpty>
+            <isNotEmpty property="statusFilter">
+          `Project`.`project_status`=#statusFilter# 
+            </isNotEmpty>
+        </dynamic>
+
+  AND Project.pricing = 'fb'
+        <dynamic>
+             <isNotEqual property="sbuFilter" compareValue="All">
+                <isNotEmpty prepend="AND" property="sbuFilter">
+                     `Project`.`project_sbu`=#sbuFilter#
+                </isNotEmpty>
+            </isNotEqual>
+        </dynamic>
+              <dynamic>
+             <isNotEqual property="subSbu" compareValue="All">
+                <isNotEmpty prepend="AND" property="subSbu">
+                     `Project`.`project_sbu_subgroup`=#subSbu#
+                </isNotEmpty>
+            </isNotEqual>
+        </dynamic>
+<!--        <dynamic prepend="AND">
+            <isNotEqual property="subSbu" compareValue="All">
+          `Project`.`project_sbu_subgroup`=#subSbu#
+            </isNotEqual>
+        </dynamic>-->
+  ORDER BY `Project`.`project_code` ASC
+    </select>
+</sqlMap>

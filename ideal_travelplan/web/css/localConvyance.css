@@ -1,0 +1,165 @@
+/*
+    Document   : localConvyance
+    Created on : 8 Oct, 2012, 2:27:01 PM
+    Author     : 14578
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/*
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+body,div,p,ul,li,span{
+    margin:5px;
+    padding:0;
+}
+body {
+    font-family: "Arial",  "Verdana", "sans-serif";
+    font-size: 12px;
+    background:url(images/bg_page.png) repeat-x scroll top center #EEF2F8;
+    width:1000px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: -10px;
+}
+a {
+    outline:none
+}
+img {
+    border:none;
+}
+#content {
+    background: url("../img/bg_page.png") repeat-x scroll center top #EEF2F8;
+    clear: both;
+    color: #666666;
+    min-height: 375px;
+}
+.container_inner {
+    margin: 30px 0 0 30px;
+}
+.page_heading {
+    color: #666666;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: -8px;
+}
+.breadcrumb {
+    color: #999999;
+    font-size: 10px;
+    font-weight: bold;
+    margin: 8px 0 18px;
+}
+.notice_page {
+    background-color: #ECE6D2;
+    background-repeat: no-repeat;
+    border: 1px solid #DDD6B7;
+    float: left;
+    height: 32px;
+    margin: -10px 0 7px -12px;
+    padding: 10px;
+    width: 929px;
+}
+.goToList {
+    color: #4C83B3;
+    float: right;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0 45px 0 0;
+}
+
+.notice_page_ul li {
+    color: #666666;
+    font-size: 12px;
+    font-weight: bold;
+    height: 10px;
+    list-style: disc outside url("../css/images/tick.png");
+    margin-top: -5px;
+    margin-left: 66px;
+    margin-top: 2px;
+}
+
+.formContent_new {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CADFF2;
+    float: left;
+    margin: 0 0 30px 18px;
+    outline: 1px none;
+    padding: 10px;
+    width: 950px;
+}
+
+.travelDetails_new {
+    clear: both;
+    color: #666666;
+    font-family: arial;
+    font-size: 12px;
+    margin: 8px 20px 12px 5px;
+    width: 100%;
+}
+
+.fieldsetHeading {
+    color: #666666;
+    font-family: Arial;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0 0 0 6px;
+}
+
+.savebutton {
+    background: url("images/icon_btn_save.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+.submitbutton {
+    background: url("images/icon_btn_submit.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+.cancelbutton {
+    background: url("images/icon_btn_cancel.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+.selectbox_new {
+    background: url("images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+    width: 159px;
+}
+.textbox_new {
+    background: url("images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+    width: 158px;
+}
+
+.required {
+    color: #333;
+    font-weight: bold;
+}
+
+#errormessage{
+    color: #FF0000;
+    font-weight: bold;
+}

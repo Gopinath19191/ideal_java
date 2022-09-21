@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="CollectionReport">
+    <select id="fetchCollectionReport" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+<!--        SELECT cr.id,
+        cr.customer_code,
+        cr.invoice_number,
+        DATE_FORMAT(cr.invoice_date, '%d-%m-%Y') AS invoice_date,
+        DATEDIFF(cr.credit_due_date, cr.invoice_date) AS credit_period,
+        DATE_FORMAT(cr.credit_due_date, '%d-%m-%Y') AS credit_due_date,
+        cr.invoicing_currency,
+        cr.amount_in_IC,
+        cr.local_currency AS local_currency_value,
+        cr.amount_in_LC,
+        cr.amount_collected,
+        cr.TDS,
+        cr.other_charges,
+        DATE_FORMAT(cr.date_of_report, '%d-%m-%Y') AS date_of_report,
+        cr.project_code,
+        DATE_FORMAT(cr.collection_date, '%d-%m-%Y') AS collection_date,
+        cr.past_days_due AS days_past_due,
+        cr.balance_in_LC,
+        cr.rbu AS rbu,
+        css.name AS subRBU,   
+        cr.balance_in_IC,
+        c.customer_name AS cust_name,
+        c.customer_contact_phone,
+        c.business_leader_id,
+        cr.invoice_date_submission_customer,
+        cr.expected_collection_date,
+        c.bdm_id,
+        ic.*,
+        le.id,
+        le.legal_entity_code AS legal_entity,
+        prj.*,        
+        concat(emp1.first_name,' ', emp1.last_name) AS business_leader,
+        concat(emp2.first_name,' ', emp2.last_name) AS bdm,
+        cur.currency_code AS local_currency
+        FROM
+        custagingreport as cr
+        INNER JOIN customers as c on cr.customer_code = c.customer_code
+        INNER JOIN company_structures as css on c.sub_rbu = css.id
+        LEFT JOIN invoice_configurations as ic on c.legal_entity_code = ic.id
+        LEFT JOIN legal_entities as le on le.id = ic.legal_entity_id
+        LEFT JOIN projects as prj ON (prj.project_code = cr.project_code AND cr.project_code != '')        
+        LEFT JOIN employees as emp1 on emp1.id = c.business_leader_id
+        LEFT JOIN employees as emp2 on emp2.id = c.bdm_id
+        LEFT JOIN currencies as cur on cur.id = prj.currency_id
+        WHERE cr.amount_collected <![CDATA[ > ]]> 0-->
+        SELECT cr.id as custagingId,
+        cr.customer_code,
+        cr.invoice_number,
+        DATE_FORMAT(cr.invoice_date, '%d-%m-%Y') AS invoice_date,
+        DATEDIFF(cr.credit_due_date, cr.invoice_date) AS credit_period,
+        DATE_FORMAT(cr.credit_due_date, '%d-%m-%Y') AS credit_due_date,
+        cr.invoicing_currency,
+        cr.amount_in_IC,
+        cr.local_currency AS local_currency_value,
+        cr.amount_in_LC,
+        cr.amount_collected,
+        cr.TDS,
+        cr.other_charges,
+        DATE_FORMAT(cr.date_of_report, '%d-%M-%Y') AS date_of_report,
+        cr.project_code,
+        DATE_FORMAT(cr.collection_date, '%d-%M-%Y') AS collection_date,
+        cr.past_days_due AS days_past_due,
+        cr.balance_in_LC,
+        cr.rbu AS rbu,
+        css.name AS subRBU,
+        cr.balance_in_IC,
+        cr.Balance_in_INR,
+        c.customer_name AS cust_name,
+        c.customer_contact_phone,
+        c.business_leader_id,
+        cr.invoice_date_submission_customer,
+        cr.expected_collection_date,
+        c.bdm_id,
+        ic.*,
+        le.id,
+        le.legal_entity_code AS legal_entity,
+        prj.*,
+        case 
+        when prj.project_sbu='5' then concat('Ramachandra Char',' ','Venkatesha Prasan')
+        when prj.project_sbu='2' then concat('Faiz Ahmad',' ','MD')
+        end AS business_leader,
+        concat(emp2.first_name,' ', emp2.last_name) AS bdm,
+        cur.currency_code AS local_currency
+        FROM
+        custagingreport as cr
+
+        INNER JOIN projects as prj ON (prj.project_code = cr.project_code AND cr.project_code != '' )
+        LEFT JOIN customers as c on cr.customer_code = c.customer_code
+       
+        LEFT JOIN company_structures as css on c.sub_rbu = css.id
+        LEFT JOIN invoice_configurations as ic on c.legal_entity_code = ic.id
+        LEFT JOIN legal_entities as le on le.id = ic.legal_entity_id
+       
+        
+        LEFT JOIN employees as emp2 on (emp2.id = prj.sales_person)
+        LEFT JOIN currencies as cur on cur.id = prj.currency_id
+        WHERE cr.amount_collected <![CDATA[ <= ]]> 0
+        <dynamic>
+            <isNotEmpty prepend="AND" property="legal_entity">
+              le.id = #legal_entity#
+            </isNotEmpty>
+<!--            <isNotEmpty prepend="AND" property="business_leader_id">
+              c.business_leader_id = #business_leader_id#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="bdm_id">
+              c.bdm_id = #bdm_id#
+            </isNotEmpty>-->
+            <isNotEmpty property="business_leader_id">
+                <isEqual prepend="AND" property="SBU" compareValue="2">
+                    prj.project_sbu = #SBU#
+                </isEqual>
+                <isEqual prepend="AND" property="SBU" compareValue="5">
+                    prj.project_sbu = #SBU#
+                </isEqual>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="bdm_id">
+              prj.sales_person = #bdm_id#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="customer_id">
+              c.id = #customer_id#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="fromDate">
+              cr.collection_date BETWEEN #fromDate# AND #toDate#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    
+    <select id="fetchBdmName" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+<!--         SELECT DISTINCT emp.id AS bdm_id,
+         CONCAT_WS(" ",emp.first_name, emp.last_name) AS bdm_name
+         FROM employees AS emp
+         INNER JOIN customers AS cust ON ( cust.bdm_id = emp.id AND cust.customer_code != '' )
+         WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o')
+            <dynamic>
+                <isNotEmpty prepend="AND" property="business_leader_id">
+                        cust.business_leader_id = #business_leader_id#
+                </isNotEmpty>
+            </dynamic>
+         ORDER BY emp.first_name,last_name ASC-->
+<!--         SELECT DISTINCT emp.id AS bdm_id,emp.structure_name AS SBU,
+         CONCAT_WS(" ",emp.first_name, emp.last_name) AS bdm_name
+         FROM employees AS emp
+         INNER JOIN projects AS project ON(project.sales_person= emp.id)
+         WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o')-->
+            
+        SELECT DISTINCT emp.id AS bdm_id,emp.structure_name AS SBU,
+        CONCAT_WS(" ",emp.first_name, emp.last_name) AS bdm_name
+        FROM employees AS emp
+<!--        INNER JOIN configuration_values AS child ON (child.configuration_value=emp.id and child.configuration_key='bdm_id')-->
+        LEFT JOIN projects AS prj ON(prj.sales_person= emp.id) 
+        WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o') AND prj.project_status NOT IN('c')
+       
+        <dynamic>
+            <isEqual prepend="AND" property="SBU" compareValue="2">
+                prj.project_sbu = #SBU#
+            </isEqual>
+            <isEqual prepend="AND" property="SBU" compareValue="5">
+                prj.project_sbu = #SBU#
+            </isEqual>
+        </dynamic>
+         ORDER BY emp.first_name,last_name ASC
+    </select>
+
+    <select id="fetchBusinessLeader" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+<!--       SELECT DISTINCT emp.id AS business_leader_id,
+       CONCAT_WS(" ",emp.first_name, emp.last_name) AS business_leader_name
+       FROM employees AS emp
+       INNER JOIN customers as cust ON (cust.business_leader_id = emp.id AND cust.customer_code != '' )
+       WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o')
+       ORDER BY emp.first_name,last_name ASC-->
+        SELECT DISTINCT emp.id AS business_leader_id,emp.structure_name AS SBU,
+        CONCAT_WS(" ",emp.first_name, emp.last_name) AS business_leader_name
+        FROM employees AS emp
+        INNER JOIN configuration_values AS child ON (child.configuration_value=emp.id and child.configuration_key='business_leader_id')
+        WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o') 
+        ORDER BY emp.first_name,last_name ASC 
+    </select>
+
+    <select id="fetchCustomerName" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+<!--        SELECT cust.id as "customer_id",
+        CONCAT(cust.customer_code,' - ',cust.customer_name) as "customer_name"
+        FROM customers as cust
+        WHERE cust.customer_code != '' 
+        <dynamic>
+          <isNotEmpty prepend="AND" property="business_leader_id">
+              cust.business_leader_id = #business_leader_id#
+          </isNotEmpty>
+          <isNotEmpty prepend="AND" property="bdm_id">
+              cust.bdm_id = #bdm_id#
+          </isNotEmpty>
+      </dynamic>-->
+      SELECT cust.id as "customer_id",
+        CONCAT(cust.customer_name,' - ',cust.customer_code) as "customer_name"
+        FROM customers as cust
+        INNER JOIN projects prj ON(cust.id=prj.customer_id)
+        WHERE cust.customer_code != '' AND prj.project_status NOT IN('c')
+        <dynamic>
+            <isNotEmpty property="business_leader_id">
+              <isEqual prepend="AND" property="SBU" compareValue="2">
+                    prj.project_sbu = #SBU#
+                </isEqual>
+                <isEqual prepend="AND" property="SBU" compareValue="5">
+                    prj.project_sbu = #SBU#
+                </isEqual>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="bdm_id">
+              prj.sales_person=#bdm_id#
+            </isNotEmpty>
+        </dynamic>
+        group by cust.id
+    </select>
+
+    <select id="fetchLegalEntity" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+        SELECT id as "legal_entity_id",
+        legal_entity_code as "legal_entity_code"
+        FROM legal_entities
+    </select>
+    <select id="fetchBdmId" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+    SELECT
+    pt.configuration_value as bdm_name
+    FROM configuration_values AS pt
+    WHERE
+        pt.configuration_key = 'bdm_id'
+    </select>
+    <select id="fetchBdmNameList" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportDataDTO">
+
+        SELECT DISTINCT emp.id AS bdm_id,emp.structure_name AS SBU,
+        CONCAT_WS(" ",emp.first_name, emp.last_name) AS bdm_name
+        FROM employees AS emp
+        LEFT JOIN projects AS project ON(project.sales_person= emp.id)
+        WHERE
+        emp.employment_status NOT IN ('r','t','b','q','o')
+        AND emp.id IN($bdm_Name_List$)    
+    </select>
+    
+    <select id="getInvoiceDetails" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO">
+        SELECT inv.invoice_code AS invoice_code,
+        inv.invoice_date AS invoice_date, 
+        prjt.project_code AS project_code,
+        prjt.project_name AS project_name,
+        cust.customer_code AS customer_code,
+        cust.customer_name AS customer_name,
+        inv.submitted_on AS submitted_on,
+        inv.approved_on AS approved_on,
+        inv.amount AS amount,
+        inv.tax_amount_1 AS tax_1,
+        inv.tax_amount_2 AS tax_2,
+        inv.tax_amount_3 AS tax_3,
+        inv.total_amount AS total_amount,
+        cur.currency_code AS currency,
+        so.credit_period AS credit_period,
+        CASE WHEN inv.approved_on IS NOT NULL 
+        THEN (DATEDIFF(inv.approved_on, inv.submitted_on))
+        ELSE (DATEDIFF(CURDATE(), inv.submitted_on))
+        END AS aging,
+        sta.configuration_value AS status
+        FROM invoices AS inv 
+        LEFT JOIN projects AS prjt ON inv.project_id = prjt.id
+        LEFT JOIN customers AS cust ON prjt.customer_id = cust.id
+        LEFT JOIN project_so_masters AS pso ON prjt.id = pso.project_id
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id
+        LEFT JOIN currencies AS cur ON so.currency_id = cur.id
+        LEFT JOIN configuration_values AS sta ON (inv.status = sta.configuration_key AND sta.parent_id = 705)
+        WHERE inv.source = 'i' AND inv.status IN('m','a') AND MONTH(inv.submitted_on)=#month# AND YEAR(inv.submitted_on)=#year#;
+    </select>
+    
+    <select id="getInvoiceAverage" parameterClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.CollectionReportFilterDTO">
+        SELECT AVG(
+        CASE WHEN inv.approved_on IS NOT NULL 
+        THEN (DATEDIFF(inv.approved_on, inv.submitted_on))
+        ELSE (DATEDIFF(CURDATE(), inv.submitted_on))
+        END ) AS aging
+        FROM invoices AS inv 
+        WHERE inv.source = 'i' AND inv.status IN('m','a') AND MONTH(inv.submitted_on)=#month# AND YEAR(inv.submitted_on)=#year#;
+    </select>
+    
+    <select id="getReimbursementList" resultClass="com.defiance.ideal.reports.dto.ReimbursementsData">
+        SELECT id AS reimbursement_id, reimbursement_name AS reimbursement_type FROM reimbursement_masters;
+    </select>
+    
+    <select id="getReimbursementReport" parameterClass="com.defiance.ideal.reports.dto.ReimbursementsData" resultClass="com.defiance.ideal.reports.dto.ReimbursementsData">
+        SELECT rem.reference_no AS reference_number,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        rmm.reimbursement_name AS reimbursement_type,
+        DATE(rem.applied_date) AS applied_date,
+        rem.amount AS amount,
+        cur.currency_code AS currency,
+        GROUP_CONCAT(rr.description) AS description,
+        DATE(rem.rm_approved_date) AS rm_approved_date,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE(rem.hr_approved_date) AS hr_approved_date,
+        CONCAT(hr.employee_number,'-',hr.first_name,' ',hr.last_name) AS hr_name,
+        DATE(rem.buh_approved_date) AS buh_approved_date,
+        CONCAT(buh.employee_number,'-',buh.first_name,' ',buh.last_name) AS buh_name,
+        DATE(rem.finance_approved_date) AS finance_approved_date,
+        CONCAT(fin.employee_number,'-',fin.first_name,' ',fin.last_name) AS finance_name,
+        CASE WHEN rem.customer_reimburse = 'y' THEN "Yes" ELSE "No" END AS client_reimbursement,
+        cv.configuration_value AS status
+        FROM reimbursements AS rem
+        LEFT JOIN employees AS emp ON rem.employee_id = emp.id
+        LEFT JOIN reimbursement_masters AS rmm ON rem.reimbursement_master_id = rmm.id
+        LEFT JOIN reimbursement_resources AS rr ON rem.id = rr.reimbursement_id
+        LEFT JOIN currencies AS cur ON rem.currency_id = cur.id
+        LEFT JOIN employees AS rm ON rem.rm_approver_id = rm.id
+        LEFT JOIN employees AS hr ON rem.hr_approver_id = hr.id
+        LEFT JOIN employees AS buh ON rem.buh_approver_id = buh.id
+        LEFT JOIN employees AS fin ON rem.finance_approver_id = fin.id
+        LEFT JOIN configuration_values AS cv ON rem.completed_status = cv.configuration_key AND cv.parent_id = 1012
+        WHERE 1=1
+        <dynamic>
+            <isNotEmpty prepend="AND" property="reimbursement_type">
+              rem.reimbursement_master_id = #reimbursement_type#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="status">
+              rem.finance_approver_id IS NOT NULL
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="from_date">
+              DATE(rem.applied_date) <![CDATA[ >= ]]> #from_date#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="to_date">
+              DATE(rem.applied_date) <![CDATA[ <= ]]> #to_date#
+            </isNotEmpty>
+        </dynamic>
+        GROUP BY rem.id 
+        ORDER BY rem.id DESC;
+    </select>
+</sqlMap>

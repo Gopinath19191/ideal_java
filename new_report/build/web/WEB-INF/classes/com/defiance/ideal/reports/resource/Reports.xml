@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ReportsMap">
+    
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.ReportsDTO">
+        SELECT id as sbuId, name as sbuName
+        FROM company_structures
+        WHERE parent_id = #employeeId#
+    </select>
+
+    <select id="getProjectList" parameterClass="map" resultClass="com.defiance.ideal.reports.dto.ReportsDTO">
+        SELECT id as projId,CONCAT(COALESCE(project_code,""),' - ',project_name) as projName
+        FROM projects where project_status IN ('e','y')
+             
+        <!--        <dynamic prepend="AND">
+            <isNotEqual property="sbuId" compareValue="">
+             project_sbu=#sbuId#
+            </isNotEqual>
+        </dynamic>-->
+        <!--           <dynamic prepend="AND">
+            <isNotEqual property="subSbuId" compareValue="All">
+             project_sbu_subgroup=#subSbuId#
+            </isNotEqual>
+        </dynamic>-->
+        <dynamic prepend="AND">
+            <isNotEqual property="projectType" compareValue="">
+                project_model=#projectType#
+            </isNotEqual>
+        </dynamic>
+        AND (project_manager = #empId#
+        <dynamic prepend="OR">
+            <isNotEqual property="projectDept" compareValue="">
+                project_sbu=#projectDept#
+            </isNotEqual>
+        </dynamic>)
+        order by id
+    </select>
+    
+    <select id = "getEmpList" parameterClass = "map" resultClass = "com.defiance.ideal.reports.dto.ReportsDTO">
+        select emp.id as empId, CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) as employeeName
+        from project_team_allocations as alloc
+        left join projects as proj on (proj.id = alloc.project_id)
+        left join employees as emp on (emp.id = alloc.employee_id)
+        where proj.id = #projId# group by emp.id
+    </select>
+    
+    <select id = "getProjectType" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select project_model as projectType from projects where id = #key#
+    </select>
+    
+    <select id = "getTimesheetHoursData" parameterClass = "com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass = "com.defiance.ideal.reports.dto.ReportsDataDTO">
+        select timesheethours.employeeNumber,timesheethours.employeeName,timesheethours.sbu,timesheethours.subSbu,alloc.startDate,alloc.endDate,
+        timesheethours.totalWorkedHours,timesheethours.totalApprovedHours,SUM(ba.billable_effort) as totalAccruedHours from billing_advices as ba,
+        (select emp.id as employeeId, emp.employee_number as employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) as employeeName,
+        Sbu.name as sbu,subsbu.name as subSbu,
+        SUM(tms_proj.worked_hours) as totalWorkedHours,SUM(tms_proj.approved_hours) as totalApprovedHours
+        from employees as emp
+        left join timesheet_entries as tms on (tms.employee_id = emp.id)
+        left join timesheet_entry_projects as tms_proj on (tms.id = tms_proj.timesheet_entry_id)
+        inner join projects as proj on (proj.id = tms_proj.project_id)
+        left join company_structures as Sbu on (emp.structure_name = Sbu.id)
+        left join company_structures as subsbu on (emp.structure_name_subgroup = subsbu.id)
+                
+        
+        where 1=1
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                tms_proj.project_id= #nameFilter#
+            </isNotEqual>
+        </dynamic>
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue=""> 
+                tms.employee_id = #employeeNameFilter#
+            </isNotEqual>
+        </dynamic>   
+        
+        <dynamic prepend="AND"> 
+            <isNotEqual property="yearAndMonth" compareValue="">           
+                tms.timesheet_date between #monthStartDate# and #monthEndDate#
+            </isNotEqual>
+        </dynamic>
+
+
+        AND tms.deleted = 0
+        group by tms.employee_id) as timesheethours,
+        (select proj_alloc.employee_id as empId, MIN(proj_alloc.start_date) as startDate,MAX(proj_alloc.end_date) as endDate from
+		 project_team_allocations as proj_alloc
+		 where 1=1 
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                proj_alloc.project_id= #nameFilter#
+            </isNotEqual>
+            </dynamic>
+            
+        
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue="">
+                proj_alloc.employee_id = #employeeNameFilter#
+                </isNotEqual>
+            </dynamic>
+AND proj_alloc.deleted = 0 group by proj_alloc.employee_id) as alloc
+        where 1=1
+        <dynamic prepend="AND"> 
+            <isNotEqual property="monthFilter" compareValue="">
+                ba.billing_month = #monthFilter#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="yearFilter" compareValue="">
+                ba.billing_year = #yearFilter#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                ba.project_id = #nameFilter# 
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="employeeNameFilter" compareValue="">
+                ba.employee_id = #employeeNameFilter# 
+            </isNotEqual>
+        </dynamic>
+        and
+        ba.deleted = 0
+        and 
+        ba.employee_id = timesheethours.employeeId and alloc.empId = ba.employee_id
+        group by timesheethours.employeeNumber
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id = "getTimesheetHoursData1" parameterClass = "com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass = "com.defiance.ideal.reports.dto.ReportsDataDTO">
+        select timesheethours.employeeNumber,timesheethours.employeeName,timesheethours.sbu,timesheethours.subSbu,alloc.startDate,alloc.endDate,
+        timesheethours.totalWorkedHours,timesheethours.totalApprovedHours from 
+        (select emp.id as employeeId, emp.employee_number as employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) as employeeName,
+        Sbu.name as sbu,subsbu.name as subSbu,proj.id as projectId,
+        SUM(tms_proj.worked_hours) as totalWorkedHours,SUM(tms_proj.approved_hours) as totalApprovedHours
+        from employees as emp
+        left join timesheet_entries as tms on (tms.employee_id = emp.id)
+        left join timesheet_entry_projects as tms_proj on (tms.id = tms_proj.timesheet_entry_id)
+        inner join projects as proj on (proj.id = tms_proj.project_id)
+        left join company_structures as Sbu on (emp.structure_name = Sbu.id)
+        left join company_structures as subsbu on (emp.structure_name_subgroup = subsbu.id)
+                
+        
+        where 1=1
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                tms_proj.project_id= #nameFilter#
+            </isNotEqual>
+        </dynamic>
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue=""> 
+                tms.employee_id = #employeeNameFilter#
+            </isNotEqual>
+        </dynamic>   
+        
+        <dynamic prepend="AND"> 
+            <isNotEqual property="yearAndMonth" compareValue="">           
+                tms.timesheet_date between #monthStartDate# and #monthEndDate#
+            </isNotEqual>
+        </dynamic>
+
+
+        AND tms.deleted = 0
+        group by tms.employee_id) as timesheethours,
+        (select proj_alloc.employee_id as empId, MIN(proj_alloc.start_date) as startDate,MAX(proj_alloc.end_date) as endDate from
+		 project_team_allocations as proj_alloc
+		 where 1=1 
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                proj_alloc.project_id= #nameFilter#
+            </isNotEqual>
+            </dynamic>
+            
+        
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue="">
+                proj_alloc.employee_id = #employeeNameFilter#
+                </isNotEqual>
+            </dynamic>
+AND proj_alloc.deleted = 0 group by proj_alloc.employee_id) as alloc
+
+        
+        group by timesheethours.employeeNumber
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id="getTimesheetHoursDataCount" parameterClass = "com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass = "com.defiance.ideal.reports.dto.ReportsDataDTO">
+        select timesheethours.employeeNumber,timesheethours.employeeName,timesheethours.sbu,timesheethours.subSbu,alloc.startDate,alloc.endDate,
+        timesheethours.totalWorkedHours,timesheethours.totalApprovedHours,SUM(ba.billable_effort) as totalAccruedHours from billing_advices as ba,
+        (select emp.id as employeeId, emp.employee_number as employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) as employeeName,
+        Sbu.name as sbu,subsbu.name as subSbu,
+        SUM(tms_proj.worked_hours) as totalWorkedHours,SUM(tms_proj.approved_hours) as totalApprovedHours
+        from employees as emp
+        left join timesheet_entries as tms on (tms.employee_id = emp.id)
+        left join timesheet_entry_projects as tms_proj on (tms.id = tms_proj.timesheet_entry_id)
+        inner join projects as proj on (proj.id = tms_proj.project_id and proj.project_manager = #projectManager#)
+        left join company_structures as Sbu on (emp.structure_name = Sbu.id)
+        left join company_structures as subsbu on (emp.structure_name_subgroup = subsbu.id)
+                
+        
+        where 1=1
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                tms_proj.project_id= #nameFilter#
+            </isNotEqual>
+        </dynamic>
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue=""> 
+                tms.employee_id = #employeeNameFilter#
+            </isNotEqual>
+        </dynamic>   
+        
+        <dynamic prepend="AND"> 
+            <isNotEqual property="yearAndMonth" compareValue="">           
+                tms.timesheet_date between #monthStartDate# and #monthEndDate#
+            </isNotEqual>
+        </dynamic>
+
+
+        AND tms.deleted = 0
+        group by tms.employee_id) as timesheethours,
+        (select proj_alloc.employee_id as empId, MIN(proj_alloc.start_date) as startDate,MAX(proj_alloc.end_date) as endDate from
+		 project_team_allocations as proj_alloc
+		 where 1=1 
+        
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                proj_alloc.project_id= #nameFilter#
+            </isNotEqual>
+            </dynamic>
+            
+        
+        
+        <dynamic prepend="AND">	  
+            <isNotEqual property="employeeNameFilter" compareValue="">
+                proj_alloc.employee_id = #employeeNameFilter#
+                </isNotEqual>
+            </dynamic>
+AND proj_alloc.deleted = 0 group by proj_alloc.employee_id) as alloc
+        where 1=1
+        <dynamic prepend="AND"> 
+            <isNotEqual property="monthFilter" compareValue="">
+                ba.billing_month = #monthFilter#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="yearFilter" compareValue="">
+                ba.billing_year = #yearFilter#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="nameFilter" compareValue="">
+                ba.project_id = #nameFilter# 
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="employeeNameFilter" compareValue="">
+                ba.employee_id = #employeeNameFilter# 
+            </isNotEqual>
+        </dynamic>
+        and
+        ba.deleted = 0
+        and 
+        ba.employee_id = timesheethours.employeeId and alloc.empId = ba.employee_id
+        group by timesheethours.employeeNumber
+    </select>
+    <select id = "getProjectTypeList" resultClass = "com.defiance.ideal.reports.dto.ReportsDTO">
+        select cfg.configuration_key as 'key',cfg.configuration_value as 'value'
+        from configuration_values as cfg where parent_id = 321 and cfg.configuration_key NOT IN ('bw','pw')
+    </select>
+
+    <select id="getUsersList" resultClass="com.defiance.ideal.reports.dto.ReportsDTO">
+        SELECT username AS userName, password AS userPasswd FROM users
+    </select>
+
+    <select id="getEmployeeId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT id FROM employees WHERE employee_number = #pmId#
+    </select>
+
+    <select id="getProjectsList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.ReportsDTO">
+        SELECT project_name as projectName,id as projectId FROM projects WHERE project_manager = #empId# AND  project_status='e' ORDER BY project_name ASC
+    </select>
+
+
+    <select id="getAssociateList" parameterClass="com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass="com.defiance.ideal.reports.dto.ReportsDataDTO">
+        SELECT
+        emp.id AS employeeId,
+        emp.employee_number as employeeNumber,
+        concat(emp.first_name,' ',emp.last_name) as employeeName,
+        pjct.id,
+        pta.start_date as assocStDate,
+        pta.end_date as assocEdDate
+        FROM project_team_allocations as pta
+        INNER JOIN employees as emp on pta.employee_id = emp.id
+        INNER JOIN projects as pjct on pta.project_id = pjct.id
+        WHERE
+        pta.project_id= #projectFilter#
+        AND CONCAT(#yearFilter#,#monthFilter#) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM pta.end_date)
+        AND pta.deleted = 0
+        AND emp.employment_status not in ('r','t','b','q','o')
+        ORDER BY emp.first_name
+    </select>
+
+
+
+    <select id="getWorkDetails" parameterClass="com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass="com.defiance.ideal.reports.dto.ReportsTimeDTO">
+        SELECT
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec,
+        CASE SUM(TIME_TO_SEC(tsep.worked_hours)) WHEN SUM(TIME_TO_SEC(tsep.approved_hours)) THEN "TRUE"
+        ELSE "FALSE"
+        END AS approvType
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != 'r'
+        AND tsep.project_id = #projectFilter#
+        AND tse.employee_id = #assocId#
+        AND tse.timesheet_date = CONCAT(#yearFilter#,'-',#monthFilter#,'-',#dayFilter#)
+        GROUP BY tsep.project_id;
+    </select>
+
+    <select id="getLeaveDetails" parameterClass="com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass="com.defiance.ideal.reports.dto.ReportsTimeDTO">
+        SELECT id AS leaveId
+        FROM employee_leave_requests
+        WHERE employee_id=#assocId#
+        AND CONCAT(#yearFilter#,'-',#monthFilter#,'-',#dayFilter#)
+        BETWEEN from_date
+        AND to_date AND leave_status != 'c'
+    </select>
+
+    <select id="getAllocationDetails" parameterClass="com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass="com.defiance.ideal.reports.dto.ReportsTimeDTO">
+        SELECT id as ptaId FROM project_team_allocations
+        WHERE project_id=#projectFilter#
+        AND employee_id=#assocId#
+        AND CONCAT(#yearFilter#,'-',#monthFilter#,'-',#dayFilter#)
+        BETWEEN start_date AND end_date
+        AND deleted=0
+    </select>
+    <select id="getList" resultClass="com.defiance.ideal.reports.dto.FilterDTO">
+<!--        SELECT prj.project_code as code, prj.project_name as name, date_format(prj.planned_start_date,"%d-%m-%Y") As start_date,
+        date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, SUM(po.planned_efforts) As estimated_hours,
+        cust.customer_name As customer_name, emp.employee_number As pm_number, 
+        concat_ws(" ",emp.first_name,emp.last_name) As manager,
+        concat_ws(" ",sp.first_name,sp.last_name) As salesPerson,
+        cstruct.name As SBU,
+        cstructs.name As subSbu,
+        comprbu.name As RBU,
+        CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable" WHEN "e" THEN "External Billable" WHEN "x" THEN "External NonBillable" WHEN "c" THEN "Competency"  END AS "Billable", CASE prj.project_type WHEN "d" THEN "Development" WHEN "m" THEN "Maintenance" WHEN "p" THEN "Production Support" WHEN "s" THEN "Maintenance &amp; Support" WHEN "i" THEN "Implementation" WHEN "e" THEN "Engineering" WHEN "u" THEN "Migration &amp; Upgrade" WHEN "g" THEN "Migration" WHEN "r" THEN "Upgrade" WHEN "t" THEN "Training" WHEN "c" THEN "Consulting" WHEN "n" THEN "Testing" ELSE "Type Not specified" END AS project_type,
+        CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership,
+        CASE prj.execution_model WHEN "off" THEN "OffShore" WHEN "on" THEN "Onsite" WHEN "any" THEN "Offshore/Onsite" ELSE "Model Not Specified" END AS model,
+        CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Model Not Specified" END AS pricing,
+        CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        date_format(MAX(prj.project_code_created_date),"%d-%m-%Y") As created,
+        date_format(MAX(prj.pm_closed_date),"%d-%m-%Y") As closed,
+        (select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase,
+        (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks,
+        (select count(pta.employee_id)  from project_team_allocations as pta where pta.project_id = prj.id and CURDATE() between pta.start_date and pta.end_date and pta.deleted=0) as team_count
+        FROM projects AS prj
+        LEFT JOIN employees As emp ON (emp.id = prj.project_manager AND emp.employment_status not in ('r','t','b','q','o'))
+        LEFT JOIN customers As cust ON (cust.id = prj.customer_id)
+        LEFT JOIN employees As sp ON (sp.id = cust.sales_person_reference AND sp.employment_status not in ('r','t','b','q','o'))
+        LEFT JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        LEFT JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu)
+        JOIN project_purchase_orders As po ON (po.project_id = prj.id)
+        WHERE prj.deleted=0 and prj.project_status="e" GROUP BY prj.id-->
+        SELECT prj.project_code as code, 
+        prj.project_name as name, 
+        date_format(prj.planned_start_date,"%d-%m-%Y") As start_date,
+        date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, 
+        cust.customer_name As customer_name, 
+        emp.employee_number As pm_number,
+        concat_ws(" ",emp.first_name,emp.last_name) As manager,
+        concat_ws(" ",sp.first_name,sp.last_name) As salesPerson,
+        cstruct.name As sbu,
+        cstructs.name As subSbu,
+        comprbu.name As rbu,
+        prjtype.configuration_value as project_type,
+        ownship.configuration_value as ownership,
+        execution.configuration_value as model,
+        prmo.configuration_value AS pricing,
+        prjtstatus.configuration_value AS status, 
+        date_format(MAX(prj.project_code_created_date),"%d-%m-%Y") As created,
+        date_format(MAX(prj.pm_closed_date),"%d-%m-%Y") As closed,
+        uom.configuration_value AS billing_uom,
+        prjtModel.configuration_value AS billable,
+        (select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase,
+        (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks,
+        (select sum(prjrol.billable_effort) from project_roles as prjrol where prjrol.project_id = prj.id and prjrol.deleted=0 group by prjrol.project_id) as billable_efforts,
+        (select count(pta.employee_id)  from project_team_allocations as pta where pta.project_id = prj.id and CURDATE() between pta.start_date and pta.end_date and pta.deleted=0) as team_count
+        FROM projects AS prj
+        LEFT join project_so_masters as pidSo on(pidSo.project_id = prj.id)
+        LEFT join sales_orders as so on(pidSo.sales_order_id = so.id)
+        LEFT JOIN employees As emp ON (emp.id = prj.project_manager)
+        LEFT JOIN customers As cust ON (cust.id = so.customer_id)
+        LEFT JOIN employees As sp ON (sp.id = so.sales_person_id)
+        LEFT JOIN company_structures As cstruct ON (cstruct.id = so.sbu)
+        LEFT JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu)
+        LEFT join po_so_masters as poso on(poso.sales_order_id=so.id)
+        LEFT JOIN project_purchase_orders AS ppo ON (ppo.id = poso.po_id) 
+        LEFT join configuration_values as prmo on(prmo.configuration_key = so.pricing_model and prmo.parent_id = 242)
+        LEFT join configuration_values as prjtstatus on(prjtstatus.configuration_key = prj.project_status and prjtstatus.parent_id = 82)
+        LEFT join configuration_values as uom on(uom.configuration_key = so.uom_id and uom.parent_id = 135)
+        LEFT join configuration_values as ownship on(ownship.configuration_key = prj.ownership and ownship.parent_id = 245)
+        LEFT join configuration_values as execution on(execution.configuration_key = prj.execution_model and execution.parent_id = 248)
+        LEFT join configuration_values as prjtype on(prjtype.configuration_key = prj.project_type and prjtype.parent_id = 212)
+        LEFT join configuration_values as prjtModel on(prjtModel.configuration_key = prj.project_model and prjtModel.parent_id = 321)
+        LEFT join project_roles as pr on(pr.project_id = prj.id)
+        WHERE prj.deleted=0 and prj.project_status="e" GROUP BY prj.id
+
+    </select>
+    <select id="finalList" parameterClass="com.defiance.ideal.reports.dto.FullReportDTO" resultClass="com.defiance.ideal.reports.dto.FilterDTO">
+<!--        SELECT prj.project_code as code, prj.project_name as name, date_format(prj.planned_start_date,"%d-%m-%Y") As start_date,
+        date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, SUM(po.planned_efforts) As estimated_hours,
+        cust.customer_name As customer_name, emp.employee_number As pm_number,
+        concat_ws(" ",emp.first_name,emp.last_name) As manager,
+        concat_ws(" ",sp.first_name,sp.last_name) As salesPerson,
+        cstruct.name As SBU,
+        cstructs.name As subSbu,
+        comprbu.name As RBU,
+        CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable" WHEN "e" THEN "External Billable" WHEN "x" THEN "External NonBillable" WHEN "c" THEN "Competency" END AS "Billable",
+        CASE prj.project_type WHEN "d" THEN "Development" WHEN "m" THEN "Maintenance" WHEN "p" THEN "Production Support" WHEN "s" THEN "Maintenance &amp; Support" WHEN "i" THEN "Implementation" WHEN "e" THEN "Engineering" WHEN "u" THEN "Migration &amp; Upgrade" WHEN "g" THEN "Migration" WHEN "r" THEN "Upgrade" WHEN "t" THEN "Training" WHEN "c" THEN "Consulting" WHEN "n" THEN "Testing" ELSE "Type Not specified" END AS project_type,
+        CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership,
+        CASE prj.execution_model WHEN "off" THEN "OffShore" WHEN "on" THEN "Onsite" WHEN "any" THEN "Offshore/Onsite" ELSE "Model Not Specified" END AS model,
+        CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Model Not Specified" END AS pricing,
+        CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        date_format(MAX(prj.project_code_created_date),"%d-%m-%Y") As created,
+        date_format(MAX(prj.pm_closed_date),"%d-%m-%Y") As closed,
+        (select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase,
+        (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks,
+        (select count(pta.employee_id)  from project_team_allocations as pta where pta.project_id = prj.id and CURDATE() between pta.start_date and pta.end_date and pta.deleted=0) as team_count
+        FROM projects AS prj
+        LEFT JOIN employees As emp ON (emp.id = prj.project_manager AND emp.employment_status not in ('r','t','b','q','o'))
+        LEFT JOIN customers As cust ON (cust.id = prj.customer_id)
+        LEFT JOIN employees As sp ON (sp.id = cust.sales_person_reference AND sp.employment_status not in ('r','t','b','q','o'))
+        LEFT JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        LEFT JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu)
+        JOIN project_purchase_orders As po ON (po.project_id = prj.id)
+        WHERE prj.deleted=0-->
+        
+        SELECT prj.project_code as code, 
+        prj.project_name as name, 
+        date_format(prj.planned_start_date,"%d-%b-%y") As start_date,
+        date_format(prj.planned_end_date,"%d-%b-%y") As end_date, 
+        cust.customer_name As customer_name, 
+        emp.employee_number As pm_number,
+        concat_ws(" ",emp.first_name,emp.last_name) As manager,
+        concat_ws(" ",sp.first_name,sp.last_name) As salesPerson,
+        case when so.is_memorandum_po ="1"
+        then "Memorandum PO"
+        else "Purchase Order" end as sales_order_type,
+        cstruct.name As sbu,
+        cstructs.name As subSbu,
+        comprbu.name As rbu,
+        prjtype.configuration_value as project_type,
+        ownship.configuration_value as ownership,
+        execution.configuration_value as model,
+        prmo.configuration_value AS pricing,
+        prjtstatus.configuration_value AS status, 
+        date_format(MAX(prj.project_code_created_date),"%d-%b-%y") As created,
+        date_format(MAX(prj.pm_closed_date),"%d-%b-%y") As closed,
+        uom.configuration_value AS billing_uom,
+        prjtModel.configuration_value AS billable,
+        busModel.configuration_value AS business_model,
+        (select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase,
+        (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks,
+        (select sum(prjrol.billable_effort) from project_roles as prjrol where prjrol.project_id = prj.id and prjrol.deleted=0 group by prjrol.project_id) as billable_efforts,
+        (select count(pta.employee_id)  from project_team_allocations as pta where pta.project_id = prj.id and CURDATE() between pta.start_date and pta.end_date and pta.deleted=0) as team_count,
+        date_format(max(his.changed_on), "%d-%b-%y") as last_modified_date
+        FROM projects AS prj
+        LEFT join project_so_masters as pidSo on(pidSo.project_id = prj.id)
+        LEFT JOIN project_histories AS his ON prj.id = his.project_id
+        LEFT join sales_orders as so on(pidSo.sales_order_id = so.id)
+        LEFT JOIN employees As emp ON (emp.id = prj.project_manager)
+        LEFT JOIN customers As cust ON (cust.id = so.customer_id)
+        LEFT JOIN employees As sp ON (sp.id = so.sales_person_id)
+        LEFT JOIN company_structures As cstruct ON (cstruct.id = so.sbu)
+        LEFT JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu)
+        LEFT join po_so_masters as poso on(poso.sales_order_id=so.id)
+        LEFT JOIN project_purchase_orders AS ppo ON (ppo.id = poso.po_id) 
+        LEFT join configuration_values as prmo on(prmo.configuration_key = so.pricing_model and prmo.parent_id = 242)
+        LEFT join configuration_values as prjtstatus on(prjtstatus.configuration_key = prj.project_status and prjtstatus.parent_id = 82)
+        LEFT join configuration_values as uom on(uom.configuration_key = so.uom_id and uom.parent_id = 135)
+        LEFT join configuration_values as ownship on(ownship.configuration_key = prj.ownership and ownship.parent_id = 245)
+        LEFT join configuration_values as execution on(execution.configuration_key = prj.execution_model and execution.parent_id = 248)
+        LEFT join configuration_values as prjtype on(prjtype.configuration_key = prj.project_type and prjtype.parent_id = 212)
+        LEFT join configuration_values as prjtModel on(prjtModel.configuration_key = prj.project_model and prjtModel.parent_id = 321)
+        LEFT join configuration_values as busModel on(busModel.configuration_key = prj.business_model and busModel.parent_id = 1078)
+        LEFT join project_roles as pr on(pr.project_id = prj.id)
+        WHERE prj.deleted=0
+
+        <dynamic prepend="AND">
+            <isNotEmpty property="projectcode">
+           prj.project_code = #projectcode#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND  prj.project_status IN">
+            <isNotNull property="status">
+                <iterate property="status" open="(" close=")" conjunction="," >
+           #status[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND  prj.ownership IN">
+            <isNotNull property="ownership">
+                <iterate property="ownership" open="(" close=")" conjunction="," >
+           #ownership[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="sbu" compareValue="All">
+           cstruct.name = #sbu#
+            </isNotEqual>
+        </dynamic>
+          <dynamic prepend="AND">
+            <isNotEqual property="subSbu" compareValue="All">
+           cstructs.id = #subSbu#
+            </isNotEqual>
+        </dynamic>
+        GROUP BY prj.id
+    </select>
+    <select id="finalList1" parameterClass="com.defiance.ideal.reports.dto.FullReportDTO" resultClass="com.defiance.ideal.reports.dto.FilterDTO">
+        SELECT prj.project_code as code, prj.project_name as name, date_format(prj.planned_start_date,"%d-%m-%Y") As start_date ,
+        date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, SUM(po.planned_efforts) As estimated_hours,
+        cust.customer_name As customer_name, emp.employee_number As pm_number, emp.first_name As manager,
+        emp.work_email_address As manager_email, cstruct.name As sbu, comprbu.name As rbu,
+        CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable" WHEN "e" THEN "External Billable" WHEN "x" THEN "External NonBillable" WHEN "c" THEN "Competency" END AS billable,
+        CASE prj.project_type WHEN "d" THEN "Development" WHEN "m" THEN "Maintenance" WHEN "p" THEN "Production Support" WHEN "s" THEN "Maintenance &amp; Support" WHEN "i" THEN "Implementation" WHEN "e" THEN "Engineering" WHEN "u" THEN "Migration &amp; Upgrade" WHEN "g" THEN "Migration" WHEN "r" THEN "Upgrade" WHEN "t" THEN "Training" WHEN "c" THEN "Consulting" WHEN "n" THEN "Testing" ELSE "Type Not specified" END AS project_type,
+        CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership,
+        CASE prj.execution_model WHEN "off" THEN "OffShore" WHEN "on" THEN "Onsite" WHEN "any" THEN "Offshore/Onsite" ELSE "Model Not Specified" END AS model ,
+        CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Model Not Specified" END AS pricing,
+        CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        date_format(MAX(prj.project_code_created_date),"%d-%b-%Y") As created,
+        date_format(MAX(prj.pm_closed_date),"%d-%b-%Y") As closed,
+        concat_ws("-",MONTHNAME("2011-12-01" + INTERVAL tse.timesheet_month MONTH),tse.timesheet_year) As last_entered,
+        CASE WHEN tsep.approved_hours IS NOT NULL
+        THEN concat_ws("-",MONTHNAME("2011-12-01" + INTERVAL tse.timesheet_month MONTH),tse.timesheet_year) END As lastapproved,
+        (select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase,
+        (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks,
+        (select count(pta.employee_id)  from project_team_allocations as pta where pta.project_id = prj.id and CURDATE() between pta.start_date and pta.end_date and pta.deleted=0) as team_count
+        FROM projects AS prj LEFT JOIN employees As emp ON (emp.id = prj.project_manager AND emp.employment_status not in ('r','t','b','q','o'))
+        LEFT JOIN (timesheet_entries AS tse, timesheet_entry_projects AS tsep) ON (tse.id = tsep.timesheet_entry_id AND tsep.project_id = prj.id AND tsep.deleted = 0 and tse.deleted=0)
+        LEFT JOIN customers As cust ON (cust.id = prj.customer_id) LEFT JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu)
+        JOIN project_purchase_orders As po ON (po.project_id = prj.id)
+        WHERE prj.deleted=0 and prj.pricing=#pricing#
+        <dynamic prepend="AND">
+            <isNotEmpty property="projectcode">
+           prj.project_code = #projectcode#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND  prj.project_status IN">
+            <isNotNull property="status">
+                <iterate property="status" open="(" close=")" conjunction="," >
+           #status[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND  prj.ownership IN">
+            <isNotNull property="ownership">
+                <iterate property="ownership" open="(" close=")" conjunction="," >
+           #ownership[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="sbu" compareValue="All">
+           cstruct.name = #sbu#
+            </isNotEqual>
+        </dynamic>
+        GROUP BY prj.id
+    </select>
+    <select id="getPhaseTaskList" resultClass="com.defiance.ideal.reports.dto.PhaseTaskDTO">
+        SELECT prj.project_code as code, prj.id, prj.project_name as name, phase.phase_name as phase,task.task_name as task,cstruct.name as sbu,cstructs.name AS subSbu,
+        CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership,
+        CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable"  WHEN "e" THEN "External Billable"   WHEN "x" THEN "External NonBillable"  WHEN "c" THEN "Competency"  END As projectBillable
+        FROM Projects prj 
+        LEFT JOIN project_phases AS phase ON phase.project_id = prj.id
+        LEFT JOIN project_phase_tasks AS task ON task.phase_name = phase.phase_name AND task.project_id = phase.project_id
+        JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        WHERE deleted =0 and prj.project_status="e" ORDER BY prj.id ASC , phase.phase_name ASC
+    </select>
+    <select id="finalPhaseTaskList" parameterClass="com.defiance.ideal.reports.dto.FullReportDTO" resultClass="com.defiance.ideal.reports.dto.PhaseTaskDTO">
+        SELECT prj.project_code as code, prj.id,prj.project_name as name, phase.phase_name as phase,task.task_name as task,cstruct.name as sbu,cstructs.name as subSbu,
+        CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" WHEN "d" THEN "Delivered" ELSE "Status Not Present" END AS status,
+        CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership,
+        CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable"  WHEN "e" THEN "External Billable"   WHEN "x" THEN "External NonBillable"  WHEN "c" THEN "Competency"  END As projectBillable
+        FROM Projects prj
+        LEFT JOIN project_phases AS phase ON phase.project_id = prj.id
+        LEFT JOIN project_phase_tasks AS task ON task.phase_name = phase.phase_name
+        JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        AND task.project_id = phase.project_id WHERE deleted =0
+        <dynamic prepend="AND  prj.project_status IN">
+            <isNotNull property="status">
+                <iterate property="status" open="(" close=")" conjunction="," >
+           #status[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND  prj.ownership IN">
+            <isNotNull property="ownership">
+                <iterate property="ownership" open="(" close=")" conjunction="," >
+           #ownership[]#
+                </iterate>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property="sbu" compareValue="All">
+           cstruct.name = #sbu#
+            </isNotEqual>
+        </dynamic>
+           <dynamic prepend="AND">
+            <isNotEqual property="subSbu" compareValue="All">
+           cstructs.id = #subSbu#
+            </isNotEqual>
+        </dynamic>
+        ORDER BY prj.id ASC, phase.phase_name ASC
+    </select>
+
+    <select id="getAccrualDetails" parameterClass="com.defiance.ideal.reports.dto.ReportsFilterDTO" resultClass="com.defiance.ideal.reports.dto.ReportsDataDTO">
+        SELECT billable_effort AS accrEffort,status AS accrStatus
+        FROM billing_advices
+        WHERE employee_id = #assocId#
+        AND billing_month = #monthFilter#
+        AND billing_year = #yearFilter#
+        AND project_id = #projectFilter#
+        AND deleted = 0 AND accrual_sno IS NOT NULL
+    </select>
+    
+    <select id="getEmployeeExperienceReport" parameterClass="com.defiance.ideal.reports.dto.ReportEmployeeExperienceDTO" resultClass="com.defiance.ideal.reports.dto.ReportEmployeeExperienceDTO">
+        SELECT  emp.employee_number AS "Employee_Id", 
+        CONCAT( emp.first_name," ", emp.last_name ) AS "Employee_Name",
+        emp.joined_date AS "Joined_Date",
+        org.name AS "Org_Unit",
+        cmp.name AS "Business_Unit",
+        subs.name AS "Practice",
+        subpra.name AS "Sub_Practice",
+        band.name AS "Band",
+        des.designation AS "Designation",
+        COALESCE(ewe.carrer_start_date,emp.joined_date) AS "Career_Start_Date", 
+        ewe.company_year AS "Company_Experience_Years", 
+        ewe.company_month AS "Company_Experience_Month",
+        ewe.overall_year AS "Total_Experience_Years", 
+        ewe.overall_month AS "Total_Experience_Month",
+        B.employee_number AS RM_Id,
+        CONCAT(B.first_name,' ',B.last_name) AS RM_Name,
+        bill.configuration_value AS Category,
+        stat.configuration_value AS "Employment_Status", 
+        emp.work_email_address AS "Employee_MailID",
+        emp.resigned_date AS 'Resigned_Date',
+        emp.released_date AS "Last_Working_Date"
+        FROM employees AS emp
+        INNER JOIN employees B ON emp.manager=B.id
+        LEFT JOIN company_structures cmp ON (emp.structure_name = cmp.id)
+        LEFT JOIN company_structures org ON (cmp.parent_id = org.id)
+        LEFT JOIN company_structures subs ON (emp.structure_name_subgroup = subs.id)
+        LEFT JOIN company_structures AS subpra ON emp.structure_name_subpractice = subpra.id
+        LEFT JOIN bands AS band ON emp.band_id = band.id
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        LEFT JOIN company_locations AS com ON emp.company_location_id=com.id
+        LEFT JOIN cities AS city ON (city.id = com.city_id)
+        LEFT JOIN configuration_values AS stat ON(stat.configuration_key = emp.employment_status AND stat.parent_id = 286)
+        LEFT JOIN configuration_values AS bill ON(bill.configuration_key = emp.billable AND bill.parent_id = 52)
+        LEFT JOIN dtl_exit_employee AS dee ON (dee.employee_id = emp.id and dee.deleted='N')
+        LEFT JOIN employee_workexperience AS ewe ON emp.id=ewe.employee_id
+        WHERE emp.employment_status NOT IN  ('r','t','b','q','o','y')
+        order by emp.employee_number;
+    </select>
+    
+</sqlMap>

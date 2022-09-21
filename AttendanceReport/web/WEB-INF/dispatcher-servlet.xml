@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="index.htm">indexController</prop>
+                <prop key="authenticate.htm">authenticationController</prop>
+                <prop key="getAttendanceDetails.htm">attendanceController</prop>
+                <prop key="exportAttendanceDetails.htm">attendanceController</prop>
+                <prop key="ajaxsearch.htm">attendanceController</prop>
+                <prop key="success.htm">attendanceController</prop>
+                <prop key="getEmployeeAttendanceDetails.htm">attendanceController</prop>
+                <prop key="getSubordinateAttendanceDetails.htm">attendanceController</prop>
+                <prop key="employeeList.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="employeeSearch.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="getCusAddress.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="insertLocation.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="exportExcel.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="getCalendarNameList.htm">PmoRmgWorkLocAllocationController</prop>
+                <prop key="updateTimeDetails.htm">attendanceController</prop>
+                <prop key="updateRmRemarks.htm">attendanceController</prop>
+                <prop key="getPmTeamAttendance.htm">attendanceController</prop>
+                <prop key="getEmployeeList.htm">attendanceController</prop>
+                <prop key="filterData.htm">attendanceController</prop>
+                <prop key="exportPMAttendanceDetails.htm">attendanceController</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="index" />
+    
+    <bean name="authenticationController" 
+          class="com.attendance.employee.login.controllers.AuthenticationController" /> 
+    <bean name="attendanceController" 
+          class="com.attendance.employee.attendance.controllers.AttendanceController" /> 
+    <bean name="PmoRmgWorkLocAllocationController" 
+          class="com.attendance.employee.attendance.controllers.PmoRmgWorkLocAllocationController" />
+</beans>

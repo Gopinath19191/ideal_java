@@ -1,0 +1,4 @@
+mailSubject = Head count end of data[0].
+mailMessage = Hi all, <br><br> please find the list of active associate at the end of data[0].find the list of active associate in the attached sheet with the head count number is data[1]. <br><br><br> Thanks and Regrads <br> Ideal Admin.
+mailTo = gopinath.elangovan@hindujatech.com
+mailCc = gopinath.elangovan@hindujatech.com

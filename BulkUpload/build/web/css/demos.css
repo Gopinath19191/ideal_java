@@ -1,0 +1,207 @@
+
+body,div,p,ul,li,span{
+    margin:0;
+    padding:0;
+}
+
+body {
+	font-family: "Arial",  "Verdana", "sans-serif";
+        font-size: 12px;
+        background-image:url(../images/bg_page.png);
+        background-repeat:repeat-x;
+        width:1000px;
+        margin-left: auto; margin-right: auto;
+        margin-top:-30px;
+}
+
+.container_inner {
+    margin: 30px 30px 0 30px;
+}
+
+.page_heading {
+    font-weight: bold;
+    color:#666666;
+    font-size: 18px;
+}
+
+.breadcrumb {
+    margin: 8px 0 18px 0;
+    font-weight: bold;
+    color:#999999;
+    font-size: 10px;
+}
+
+.notice_page {
+    padding: 10px;
+    border:1px solid #ddd6b7;
+    background-color: #ece6d2;   
+    background-repeat:no-repeat;
+    margin-bottom: 18px;
+}
+
+.notice_page_ul li{
+    margin-left : 40px;
+    list-style: url(../images/tick.png);
+    font-size: 12px;
+    color : #666666;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+
+div.style_tab{
+    float:left;
+    border-bottom:1px solid #bccfea;
+    width: 98%;
+    margin-left: 20px;
+}
+span.ticket_tab{
+    padding: 5px;
+    font-size: 12px;
+    font-family: arial;
+    font-weight: bold;
+    color: #4786c2;
+    height: 20px;
+    cursor:pointer;
+    float: left;
+    border: 1px solid #bccfea;
+    text-align: center;
+    margin: 0 2px -1px 0;
+    position: relative;
+}
+span.active_tab{
+    background: url(../images/bg_tab.jpg) repeat-x top;
+    border-bottom-color: #FFF;
+}
+
+.submitbutton {
+    padding-left: 20px;
+    background: url(../images/icon_btn_submit.png) no-repeat 8px 8px #316CA8;
+    width:90px;
+    height:32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+}
+
+.exportbutton {
+    padding-left: 20px;
+    background: url(../images/export-to-excel-button-icon.png) no-repeat 8px 8px #316CA8;
+    width:80px;
+    height:32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+}
+
+.buttonClass {
+    margin:0 0 20px 20px;
+}
+
+.searchBox {
+    background: url(../images/box-strip.jpg) repeat-x scroll top center #E2E8EC;
+    border:1px solid #BDC9D1;
+    margin: 0 30px 18px;
+    padding: 5px;
+}
+
+.paging {
+    margin:0 0 10px 18px;
+    font-size : 11px;
+}
+
+.paging a {
+    border: 1px solid #BBCFEA;
+    padding: 3px 5px;
+    color : #4884B8;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a.active {
+    border: 1px solid #B2B2B2;
+    color: #5A5B5B;
+    font-weight: bold;
+}
+
+a.inactive {
+    border: 1px solid #DEE7F4;
+    color : #B2CAE0;
+    font-weight: bold;
+}
+
+.tableStructure {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CADFF2;
+    clear: both;
+    color: #666666;
+    border-collapse: collapse;
+    margin: 20px 20px 20px 20px;
+}
+
+.tableStructure tr th {
+    -moz-border-bottom-colors: none;
+    -moz-border-image: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: url(../images/table-header-strip.jpg) repeat-x scroll top center #EFF4FB;
+    border-color: #D1E0F1 #D1E0F1 -moz-use-text-color #EFF4FB;
+    border-style: solid solid none;
+    border-width: 1px 1px 0;
+    font-weight: bolder;
+    font-size: 11px;
+    padding: 5px 10px;
+}
+
+.tableStructure tr td {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CEDFF1;
+    padding: 5px;
+    font-size: 11px;
+}
+
+.tableStructure tr.altrow td {
+    background: none repeat scroll 0 0 #EFF4FA;
+}
+
+.tableStructure tr.evenrow td {
+    display: none;
+}
+
+.tableStructure tr.selectedEditRow td {
+    background: none repeat scroll 0 0 #FFFFCC;
+}
+
+.contentwrap{
+    position:relative;
+    background-position:center;
+    margin: 0 30px 30px;
+    height: auto;
+    border:#99bbe8 1px solid;
+    background-color:#FFF;
+    padding-top: 20px;
+}
+
+input[type=text] {
+    border:1px solid #C4D1E0;
+}
+
+select {
+    border:1px solid #C4D1E0;
+}
+
+textarea {
+    border:1px solid #C4D1E0;
+}
+
+
+
+
+

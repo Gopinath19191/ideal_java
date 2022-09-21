@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="billingInvoiceReportMap">
+
+    <select id = "getBillingInvoiceList" parameterClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportFilterDTO" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        select ba.id,proj.project_code as projectCode,proj.project_name as projectName,cv.configuration_value as pricing,
+        cust.customer_name as customerName,rbu.name as rbu,sbu.name as projectSbu,subSbu.name as projectSubSbu,
+        CASE when ba.sbu is null and emp.structure_name_subgroup = '29' THEN (select name from company_structures as cmp where cmp.id in(select parent_id from company_structures where id = empinfo.changed_from)) 
+        when ba.sbu is null and emp.structure_name_subgroup != '29' THEN empSbu.name
+        else
+        (select name from company_structures where id = ba.sbu)
+        END as employeeSbu,
+        CASE when ba.subsbu is null and emp.structure_name_subgroup  = '29' THEN (select name from company_structures as cmp where cmp.id  =     empinfo.changed_from)
+        when ba.sbu is null and emp.structure_name_subgroup  != '29' THEN empSubSbu.name 
+        else
+        (select name from company_structures where id = ba.subsbu)
+        END as employeeSubSbu,
+        emp.employee_number as employeeNumber,
+        concat(emp.first_name, ' ', emp.last_name)AS employeeName, 
+        role.role_description as role, 
+        CASE
+        WHEN ba.working_place = 'o' THEN 'Onsite' 
+        WHEN ba.working_place = 's' THEN 'Offshore'
+        END as workingPlace,
+        concat(emp2.first_name, ' ', emp2.last_name) AS projectManager,
+        concat(emp3.first_name, ' ', emp3.last_name) AS salesPerson,
+        CASE
+        WHEN ba.billing_month = '01' THEN 'Jan'
+        WHEN ba.billing_month = '02' THEN 'Feb'
+        WHEN ba.billing_month = '03' THEN 'Mar'
+        WHEN ba.billing_month = '04' THEN 'Apr'
+        WHEN ba.billing_month = '05' THEN 'May'
+        WHEN ba.billing_month = '06' THEN 'Jun'
+        WHEN ba.billing_month = '07' THEN 'Jul'
+        WHEN ba.billing_month = '08' THEN 'Aug'
+        WHEN ba.billing_month = '09' THEN 'Sep'
+        WHEN ba.billing_month = '10' THEN 'Oct'
+        WHEN ba.billing_month = '11' THEN 'Nov'
+        WHEN ba.billing_month = '12' THEN 'Dec'
+        END as billingMonth,
+        ba.billing_year as billingYear,
+        Replace(ba.billable_effort,':','.') as billableEffort,
+        DATE_FORMAT(ba.submitted_on,'%d-%m-%Y') as submittedOn,
+        ba.accrual_sno as accrualSno,
+        ba.invoice_sno as invoiceSno,
+        ba.invoice_refno as invoiceRefNo,
+        DATE_FORMAT(ba.approved_on,'%d-%m-%Y') as approvedOn,
+        CASE
+        WHEN proj.efforts_uom = 'h' THEN 'Hours'
+        WHEN proj.efforts_uom = 'd' THEN 'Days'
+        WHEN proj.efforts_uom = 'w' THEN 'Weeks'
+        WHEN proj.efforts_uom = 'm' THEN 'Months'
+        END as effortsUom,
+        pta.billing_rate as billingRate,
+        currency.currency_code as currency,
+        ba.billable_amount as billableAmount,
+        ba.invoice_description as invoiceDescription
+        from billing_advices as ba
+        left join projects as proj on (ba.project_id = proj.id)
+        left join employees as emp on (ba.employee_id = emp.id)
+        left join employees as emp2 on (emp2.id = proj.project_manager)
+        left join employee_info_histories as empinfo on (empinfo.employee_id = emp.id AND empinfo.status = '1')
+        left join employees as emp3 on (emp3.id = proj.sales_person)
+        left join project_team_allocations as pta on (pta.project_id = ba.project_id AND pta.employee_id = ba.employee_id AND pta.working_place = ba.working_place AND pta.role_id = ba.role_id)
+        left join roles as role on (role.id = ba.role_id)
+        left join currencies as currency on (currency.id = proj.currency_id)
+        left join customers as cust on (cust.id = proj.customer_id)
+        left join company_structures as rbu on (rbu.id = proj.project_rbu)
+        left join company_structures as sbu on (sbu.id = proj.project_sbu)
+        left join company_structures as subSbu on (subSbu.id = proj.project_sbu_subgroup)
+        left join company_structures as empSbu on (empSbu.id = emp.structure_name)
+        left join company_structures as empSubSbu on (empSubSbu.id = emp.structure_name_subgroup)
+        left join configuration_values as cv on (cv.configuration_key = proj.pricing AND cv.parent_id = '242')
+        WHERE ba.deleted = 0 AND pta.deleted = 0 AND proj.project_status IN ('d','e','c','h')
+        AND ba.status IN ('a','m') AND CONCAT(ba.billing_year, ba.billing_month) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM pta.end_date) $selectedValue$
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id = "getBillingInvoiceListCount" parameterClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportFilterDTO" resultClass = "java.lang.Integer">
+        select count(*) recordCount
+        from billing_advices as ba
+        left join projects as proj on (ba.project_id = proj.id)
+        left join employees as emp on (ba.employee_id = emp.id)
+        left join employees as emp2 on (emp2.id = proj.project_manager)
+        left join employee_info_histories as empinfo on (empinfo.employee_id = emp.id AND empinfo.status = '1')
+        left join employees as emp3 on (emp3.id = proj.sales_person)
+        left join project_team_allocations as pta on (pta.project_id = ba.project_id AND pta.employee_id = ba.employee_id AND pta.working_place = ba.working_place AND pta.role_id = ba.role_id)
+        left join roles as role on (role.id = ba.role_id)
+        left join currencies as currency on (currency.id = proj.currency_id)
+        left join customers as cust on (cust.id = proj.customer_id)
+        left join company_structures as rbu on (rbu.id = proj.project_rbu)
+        left join company_structures as sbu on (sbu.id = proj.project_sbu)
+        left join company_structures as subSbu on (subSbu.id = proj.project_sbu_subgroup)
+        left join company_structures as empSbu on (empSbu.id = emp.structure_name)
+        left join company_structures as empSubSbu on (empSubSbu.id = emp.structure_name_subgroup)
+        left join configuration_values as cv on (cv.configuration_key = proj.pricing AND cv.parent_id = '242')
+        WHERE ba.deleted = 0 AND pta.deleted = 0 AND proj.project_status IN ('d','e','c','h')
+        AND ba.status IN ('a','m') AND CONCAT(ba.billing_year, ba.billing_month) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM pta.end_date) $selectedValue$
+    </select>
+
+    <select id = "getSearchList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportFilterDTO">
+        SELECT 
+        Employee.id AS employee_id,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employeeName
+        FROM employees AS Employee
+        WHERE Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+</select>
+
+    <select id = "getProjectSearchList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportFilterDTO">
+        select prj.id as projectId, CONCAT(prj.project_code,' - ',prj.project_name) as projectName
+        from projects as prj
+        where prj.project_code like #key# OR prj.project_name like #key#
+</select>
+
+    <select id = "getCustomerSearchList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportFilterDTO">
+        select cust.id as customerId, CONCAT(cust.customer_code,' - ',cust.customer_name) as customerName
+        from customers as cust
+        where cust.customer_code like #key# OR cust.customer_name like #key#
+</select>
+
+    <select id="getPrjSbuList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        SELECT id as projectSbuId, name as projectSbuName 
+        FROM company_structures
+        WHERE parent_id = #parentId#
+</select>
+
+    <select id="getEmpSbuList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        SELECT id as employeeSbuId, name as employeeSbuName 
+        FROM company_structures
+        WHERE parent_id = #parentId#
+</select>
+
+    <select id = "getBillingYearList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        SELECT ba.id as yearId, ba.billing_year as yearName 
+        FROM billing_advices as ba
+        WHERE ba.deleted = 0 AND ba.billing_year IS NOT NULL AND ba.billing_year NOT IN ('1970') group by ba.billing_year order by ba.billing_year
+</select>
+
+    <select id = "getBillingMonthList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        select config.configuration_key as monthId, config.configuration_value as monthName
+        from configuration_values as config
+        inner join configuration_values as config1 on (config.parent_id = config1.id)
+        where config1.configuration_key = 'months_list' order by config.configuration_key
+</select>
+
+    <select id = "getBilingAdviceFilterList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        select config.configuration_key as operatorId, config.configuration_value as operatorName
+        from configuration_values as config
+        inner join configuration_values as config1 on (config.parent_id = config1.id)
+        where config1.configuration_key = 'billinig_advice_filter' order by config.configuration_key
+</select>
+
+    <select id = "getAccrualSnoList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.BillingInvoiceReportDataDTO">
+        SELECT ba.accrual_sno as accrualId, ba.accrual_sno as accrualNo 
+        FROM billing_advices as ba
+        WHERE ba.deleted = 0 AND ba.accrual_sno IS NOT NULL group by ba.accrual_sno order by ba.accrual_sno
+</select>
+
+    <select id = "getEmployeeName" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select CONCAT(employee_number,' - ',first_name,' ',last_name) from employees where id = #employee_id#
+</select>
+
+    <select id = "getProjectName" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select CONCAT(project_code,' - ',project_name) from projects where id = #projectId#
+</select>
+
+    <select id = "getCustomerName" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select CONCAT(customer_code,' - ',customer_name) from customers where id = #customerId#
+</select>
+</sqlMap>

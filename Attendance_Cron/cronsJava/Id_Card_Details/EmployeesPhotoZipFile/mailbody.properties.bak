@@ -1,0 +1,5 @@
+mailSubject = ID Card Details
+table = Dear Facility Team, <br><br>PFB the details of the New Joiners to process the ID cards <br><br> <table width='100%' align='center' border='1' cellspacing ='0' cellpadding ='0' width ='0' style ='width:528.0pt;border-collapse: collapse;'> <tr align='center' bgcolor= '#305496'> <td><b><span style ='color:white'> S No </span> <b></td> <td><b><span style ='color:white'> Employee ID </span><b></td> <td><b><span style ='color:white'> Employee Name </span><b></td> <td><b><span style ='color:white'> Date Of Joining </span><b></td> <td><b><span style ='color:white'> Gender </span><b></td> <td><b><span style ='color:white'> Base Location </span><b></td> <td><b><span style ='color:white'> Blood Group </span><b></td> <td><b><span style ='color:white'> Emergency Number </span><b></td> </tr>
+tableRow = <tr align='center'> <td> data[0] </td> <td> data[1] </td> <td>data[2]</td> <td>data[3]</td><td>data[4]</td> <td>data[5]</td> <td>data[6]</td> <td>data[7]</td></tr>
+mailTo = kalaiarasi.padaikathu@hindujatech.com
+mailCc = kalaiarasi.padaikathu@hindujatech.com

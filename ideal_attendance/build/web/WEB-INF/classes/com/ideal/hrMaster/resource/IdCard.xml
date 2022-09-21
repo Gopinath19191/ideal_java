@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="IdCard">
+
+    <select id="getEmployeeList" resultClass="com.ideal.hrMaster.dto.EmployeeDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name, 
+        emp.joined_date AS date_of_joining,
+        band.name AS band,
+        des.designation AS designation
+        FROM employees AS emp 
+        LEFT JOIN bands AS band ON emp.band_id = band.id 
+        LEFT JOIN designations AS des ON emp.designation_id = des.id 
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id 
+        WHERE emp.employment_status NOT IN('r','t','b','q','o','y') AND cl.country_id = 113 
+        ORDER BY emp.id DESC;
+    </select>
+
+    <select id="getEmployeeDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        InitCapital(CONCAT(emp.first_name, ' ',emp.last_name)) AS employee_name, 
+        emp.work_email_address AS employee_official_mail_id,
+        DATE_FORMAT(emp.birth_date, "%d-%b-%Y") AS birth_date,
+        DATE_FORMAT(emp.joined_date, "%d-%b-%Y") AS date_of_joining,
+        SUBSTRING_INDEX((DATE_FORMAT(FROM_DAYS(DATEDIFF(NOW(),emp.birth_date)), '%Y')+ 0),'.', 1) AS age,
+        InitCapital(ojfemp.father_name) AS father_name,
+        band.name AS band,
+        des.designation AS designation,
+        CONCAT(cl.address_line1,', ',cty.city,', ',cuntr.country) AS base_location,
+        emp.blood_group AS blood_group,
+        eec.id AS configKey,
+        cl.id AS type,
+        InitCapital(CONCAT(eadd.address_line1,', ',adcty.city,', ',adreg.region,', ',adcnty.country,', ',eadd.zip_code)) AS address,
+        InitCapital(COALESCE(eec.name,"")) AS emergency_name,
+        InitCapital(COALESCE(eec.relationship,"")) AS emergency_relationship,
+        COALESCE(eec.mobile_number,"") AS emergency_number,
+        eicp.filename AS configValue
+        FROM employees AS emp
+        LEFT JOIN bands AS band ON emp.band_id = band.id
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id
+        LEFT JOIN countries AS cuntr ON cl.country_id = cuntr.id
+        LEFT JOIN cities AS cty ON cl.city_id = cty.id
+        LEFT JOIN employee_addresses AS eadd ON (emp.id = eadd.employee_id AND eadd.deleted = 0)
+        LEFT JOIN cities AS adcty ON eadd.city_id = adcty.id
+        LEFT JOIN regions AS adreg ON eadd.region_id = adreg.id
+        LEFT JOIN countries AS adcnty ON eadd.country_id = adcnty.id
+        LEFT JOIN employee_emergency_contacts AS eec ON emp.id = eec.employee_id
+        LEFT JOIN employee_id_card_photos AS eicp ON emp.id = eicp.employee_id
+        LEFT JOIN dtl_online_joining_formalities AS ojf ON emp.id = ojf.employee_id
+        LEFT JOIN dtl_ojf_employees AS ojfemp ON ojf.id = ojfemp.ojf_id
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.ideal.hrMaster.dto.IdCardDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    
+    <select id="getBloodGroup" resultClass="java.lang.String" >
+        SELECT configuration_key AS configKey FROM configuration_values WHERE parent_id = 1041;
+    </select>
+    
+    <delete id="deleteFileDetails" parameterClass="Map" >
+        DELETE FROM employee_id_card_photos WHERE employee_id = #employee_id#
+    </delete>
+    
+    <insert id="insertFileDetails" parameterClass="Map" >
+        INSERT INTO employee_id_card_photos SET
+        employee_id = #employee_id#,
+        filename = #file_name#,
+        created_by = #created_by#,
+        created_on = NOW();
+    </insert>
+    
+    <select id="getFacilityMailDetails" parameterClass="String" resultClass="String" >
+        SELECT dl_mail AS employee_official_mail_id FROM dl_master WHERE id = #id#;
+    </select>
+    
+    <insert id="insertCertificateIssuedDetails" parameterClass="com.ideal.hrMaster.dto.IdCardDto" >
+        INSERT INTO employee_certificate_issued SET
+        employee_id = #employee_id#,
+        certificate_type = #type#,
+        issued_by = #issued_by#,
+        issued_on = NOW();
+    </insert>
+    
+    <select id="getEmployeeBonafiedDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        InitCapital(CONCAT(emp.first_name, ' ',emp.last_name)) AS employee_name, 
+        DATE_FORMAT(emp.joined_date, "%d-%m-%Y") AS date_of_joining,
+        band.name AS band,
+        des.designation AS designation,
+        InitCapital(CONCAT(eadd.address_line1,', ',adcty.city,', ',adreg.region,', ',adcnty.country,', ',eadd.zip_code)) AS address,
+        emp.gender as gender
+        FROM employees AS emp
+        LEFT JOIN bands AS band ON emp.band_id = band.id
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id
+        LEFT JOIN countries AS cuntr ON cl.country_id = cuntr.id
+        LEFT JOIN cities AS cty ON cl.city_id = cty.id
+        LEFT JOIN employee_addresses AS eadd ON (emp.id = eadd.employee_id AND eadd.deleted = 0)
+        LEFT JOIN cities AS adcty ON eadd.city_id = adcty.id
+        LEFT JOIN regions AS adreg ON eadd.region_id = adreg.id
+        LEFT JOIN countries AS adcnty ON eadd.country_id = adcnty.id
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <update id="updateEmployeeDetails" parameterClass="com.ideal.hrMaster.dto.IdCardDto">
+        UPDATE employees SET 
+        blood_group = #blood_group# 
+        where id = #employee_id#;
+    </update>
+    
+    <update id="updateEmergencyDetails" parameterClass="com.ideal.hrMaster.dto.IdCardDto">
+        UPDATE employee_emergency_contacts SET 
+        name = #emergency_name#,
+        relationship = #emergency_relationship#,
+        mobile_number = #emergency_number#,
+        employee_id = #employee_id#
+        WHERE id = #configKey#;
+    </update>
+    
+    <insert id="insertEmergencyDetails" parameterClass="com.ideal.hrMaster.dto.IdCardDto">
+        INSERT INTO employee_emergency_contacts SET
+        name = #emergency_name#,
+        relationship = #emergency_relationship#,
+        mobile_number = #emergency_number#,
+        employee_id = #employee_id#;
+    </insert>
+    
+    <select id="getEmployeeDetailsForDeputation" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        InitCapital(CONCAT(emp.first_name, ' ',emp.last_name)) AS employee_name, 
+        DATE_FORMAT(emp.joined_date, "%d-%m-%Y") AS date_of_joining,
+        des.designation AS designation,
+        emp.gender as gender
+        FROM employees AS emp
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getEmployeeMailId" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name, 
+        emp.work_email_address AS employee_official_mail_id
+        FROM employees AS emp
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getEmployeePersonalDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name, 
+        emp.personal_email_address AS employee_official_mail_id
+        FROM employees AS emp
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getEmployeePersonalMailId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT emp.personal_email_address AS employee_personal_mail_id
+        FROM employees AS emp
+        WHERE emp.id = #employee_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getReportList" parameterClass="com.ideal.hrMaster.dto.IdCardDto" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.employee_number AS employee_number,
+        CONCAT(emp.first_name, ' ', emp.last_name) AS employee_name,
+        eci.certificate_type AS type,
+        CONCAT(isb.employee_number,'-',isb.first_name,' ',isb.last_name) AS issued_by,
+        DATE_FORMAT(issued_on, "%d-%m-%Y") AS issued_on
+        FROM employee_certificate_issued eci
+        LEFT JOIN employees AS emp ON eci.employee_id = emp.id
+        LEFT JOIN employees AS isb ON eci.issued_by = isb.id
+        WHERE 1=1
+        <dynamic>
+            <isNotNull property="type">
+                <isNotEmpty prepend="AND" property="type">
+                    eci.certificate_type = #type#
+                </isNotEmpty>
+            </isNotNull>
+            <isNotNull property="fromDate">
+                <isNotEmpty prepend="AND" property="type">
+                    eci.issued_on BETWEEN #fromDate# AND #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        
+    </select>
+    
+    <select id="getReportType" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT DISTINCT(certificate_type) AS type FROM employee_certificate_issued;
+    </select>
+    
+    <select id="getCustomerDetails" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT configuration_value AS customer_name
+        FROM configuration_values 
+        WHERE parent_id = 967
+    </select>
+    
+    <select id="getCustomerHrName" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT configuration_value AS customer_hr
+        FROM configuration_values 
+        WHERE parent_id = 964;
+    </select>
+    
+    <select id="getCustomerDepartments" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT configuration_value AS department
+        FROM configuration_values 
+        WHERE parent_id = 972;
+    </select>
+    
+    <select id="getcustomerLocations" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT configuration_value AS customer_location
+        FROM configuration_values 
+        WHERE parent_id = 969;
+    </select>
+    
+    <select id="getHtRepresentative" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT CONCAT(emp.first_name,' ',emp.last_name,' [ ',emp.mobile_number,'; ',emp.work_email_address,' ]') AS ht_representative
+        FROM configuration_values AS cv
+        LEFT JOIN employees AS emp ON cv.configuration_value = emp.id
+        WHERE cv.parent_id = 975;
+    </select>
+    
+    <select id="getDCEmployeeList" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeeDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name, 
+        emp.joined_date AS date_of_joining,
+        band.name AS band,
+        des.designation AS designation
+        FROM employees AS emp 
+        LEFT JOIN bands AS band ON emp.band_id = band.id 
+        LEFT JOIN designations AS des ON emp.designation_id = des.id 
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id 
+        WHERE band.id = 33 AND cl.country_id = 113 
+        AND emp.employment_status IN($value$)
+        ORDER BY emp.id DESC;
+    </select>
+    
+    <select id="getDcEmployeeDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.IdCardDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        InitCapital(CONCAT(emp.first_name, ' ',emp.last_name)) AS employee_name, 
+        emp.work_email_address AS employee_official_mail_id,
+        DATE_FORMAT(emp.birth_date, "%d-%m-%Y") AS birth_date,
+        DATE_FORMAT(emp.joined_date, "%d-%m-%Y") AS date_of_joining,
+        DATE_FORMAT(emp.released_date, "%d-%m-%Y") AS configKey,
+        band.name AS band,
+        des.designation AS designation,
+        CONCAT(cl.address_line1,', ',cty.city,', ',cuntr.country) AS base_location,
+        DATE_FORMAT(emp.contract_startdate, "%d-%m-%Y") AS fromDate,
+        DATE_FORMAT(emp.contract_enddate, "%d-%m-%Y") AS toDate,
+        emp.title as gender
+        FROM employees AS emp
+        LEFT JOIN bands AS band ON emp.band_id = band.id
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id
+        LEFT JOIN countries AS cuntr ON cl.country_id = cuntr.id
+        LEFT JOIN cities AS cty ON cl.city_id = cty.id
+        WHERE emp.id = #employee_id#
+    </select>
+    
+    <update id="updateContractDate" parameterClass="com.ideal.hrMaster.dto.IdCardDto">
+        UPDATE employees SET 
+        contract_enddate = #toDate# 
+        where id = #employee_id#;
+    </update>
+    
+    <select id="getActiveEmployeeList" resultClass="com.ideal.hrMaster.dto.EmployeeDto">
+        SELECT emp.id AS employee_id, 
+        emp.employee_number AS employee_number, 
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name, 
+        emp.joined_date AS date_of_joining,
+        band.name AS band,
+        des.designation AS designation
+        FROM employees AS emp 
+        LEFT JOIN bands AS band ON emp.band_id = band.id 
+        LEFT JOIN designations AS des ON emp.designation_id = des.id 
+        LEFT JOIN company_locations AS cl ON emp.company_location_id = cl.id 
+        WHERE emp.employment_status NOT IN('r','t','b','q','o','y','n','d','v') AND cl.country_id = 113 
+        ORDER BY emp.id DESC;
+    </select>
+    
+</sqlMap>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig
+  PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+  "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+
+    <settings
+        cacheModelsEnabled="true"
+        enhancementEnabled="true"
+        lazyLoadingEnabled="true"
+        maxRequests="32"
+        maxSessions="10"
+        maxTransactions="5"
+        useStatementNamespaces="true" />
+
+    <!-- Identify all SQL Map XML files to be loaded by this SQL map.
+         Notice the paths are relative to the classpath. For now, we only have one  -->
+    <sqlMap resource="com/defiance/ideal/application/resource/Authenticator.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/Agency.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/CustomerMapping.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/Customer.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/CustomerGroup.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/OJFSurvey.xml" />
+    <sqlMap resource="com/defiance/ideal/application/resource/Requestor.xml" />
+</sqlMapConfig>
+

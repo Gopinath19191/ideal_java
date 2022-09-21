@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap namespace="Address">
+
+  <select id="getSearchList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.AddressFilterDTO">
+        SELECT 
+            emp.id AS empId,
+            CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName
+        FROM employees AS emp
+        WHERE emp.employee_number like #key# OR emp.first_name like #key# OR emp.last_name like #key#
+    </select>
+    
+   <select id="getAddressRecords" parameterClass="com.defiance.ideal.reports.dto.AddressFilterDTO" resultClass="com.defiance.ideal.reports.dto.AddressDataDTO">
+       SELECT X.* FROM
+        ((SELECT
+        CONCAT(  emp.first_name, ' ', emp.last_name ) AS empName,
+        emp.employee_number AS empId,
+        mng.employee_number AS rmId,
+        concat( mng.first_name," ", mng.last_name ) AS rmName,
+        <!--address.address_type AS address_typeX,-->
+        cv.configuration_value as address_typeX,
+        address.address_line1 AS address_line1X,
+        address.address_line2 AS address_line2X,
+        address.home_phone_number AS home_phone_numberX,
+        country.country AS country_idXY,
+        region.region region_idXY,
+        city.city AS city_idXY,
+        address.zip_code AS zip_codeX
+        FROM employee_addresses AS address
+        LEFT JOIN countries AS country ON (country.id = address.country_id)
+        LEFT JOIN regions AS region ON (region.id = address.region_id)
+        LEFT JOIN cities AS city ON (city.id = address.city_id)
+        INNER JOIN employees emp ON (emp.id = address.employee_id) 
+        LEFT JOIN employees AS mng ON (mng.id = emp.manager)  
+        LEFT JOIN configuration_values as cv on(cv.configuration_key = address.address_type and cv.parent_id = 258)
+        LEFT JOIN company_locations AS comloc ON (comloc.id=emp.company_location_id)
+        WHERE 
+        address.deleted = 0 AND emp.employment_status NOT IN ('r','b','q','t','o')
+        <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   emp.id = #employee_id#
+                </isNotEmpty>
+            </dynamic>
+		)UNION
+		(SELECT
+		CONCAT( emp.first_name, ' ', emp.last_name ) AS empName,
+                emp.employee_number AS empId,
+                mng.employee_number AS rmId,
+                concat( mng.first_name," ", mng.last_name ) AS rmName,
+                'Office Address' AS address_typeX,
+                comloc.address_line1 AS address_line1X,
+                comloc.address_line2 AS address_line2X,
+                emp.work_phone_number AS home_phone_numberX,
+                country.country AS country_idXY,
+                region.region region_idXY,
+                city.city AS city_idXY,
+                comloc.zip_code AS zip_codeX
+                FROM company_locations AS comloc
+                LEFT JOIN countries AS country ON (country.id = comloc.country_id)
+                LEFT JOIN regions AS region ON (region.id = comloc.region_id)
+                LEFT JOIN cities AS city ON (city.id = comloc.city_id)
+                INNER JOIN employees emp ON (comloc.id=emp.company_location_id) 
+                LEFT JOIN employees AS mng ON (mng.id = emp.manager)  
+                WHERE  emp.employment_status NOT IN ('r','b','q','t','o')
+
+            <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   emp.id = #employee_id#
+                </isNotEmpty>
+            </dynamic>
+         ) )AS X order by X.empId ,X.address_typeX ASC
+    </select>
+
+    
+
+</sqlMap>

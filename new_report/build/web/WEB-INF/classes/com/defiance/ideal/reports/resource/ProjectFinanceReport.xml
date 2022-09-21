@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ProjectFinanceReportMap">
+
+    <!--   <select id="projectDetailsList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select project_code,project_name from projects
+        where project_code is not null 
+        order by project_code
+    </select> -->
+    
+    <!--    <select id="projectDetailsList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">-->
+    <select id="projectDetailsList" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select project_code,project_name from projects
+        where 
+        project_code is not null AND project_status NOT IN('r','b','t','q') AND
+        (project_code LIKE #searchkey# OR project_name LIKE #searchkey#)
+        order by project_code
+    </select>
+
+    <!--    <select id="customerDetailsList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select  c.customer_code, c.customer_name from customers c 
+                where c.customer_code is not null
+                order by c.customer_code
+    </select> -->
+    
+    <select id="customerDetailsList" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select  c.customer_code, c.customer_name from customers c 
+        where 
+        c.customer_code is not null AND c.status NOT IN('r','b','t','q')  AND
+        (c.customer_code LIKE #searchkey# OR c.customer_name LIKE #searchkey#)
+        order by c.customer_code
+    </select>
+  
+    <select id="SbuList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select name, id as sbu_id from company_structures cs
+        where
+        cs.parent_id =1
+    </select>
+    <select id="RbuList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select name, id as rbu_id from company_structures cs
+        where
+        cs.parent_id =2
+    </select>
+    
+    <select id="getProjectModelList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        SELECT configuration_key AS projectModelKey,configuration_value AS projectModelValue
+        FROM `configuration_values`
+        WHERE `parent_id` =321;
+    </select>
+    
+    <select id="getSubRbu" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        SELECT id as id,name AS name FROM company_structures c WHERE parent_id IN ($parentId$);        
+    </select>
+    
+  
+    <select id="projectManagerList" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        select emp.employee_number, emp.first_name,emp.last_name from employees emp
+        where
+        emp.employee_number is not null AND emp.employment_status NOT IN('r','b','t','q','o') AND 
+        (emp.employee_number LIKE #searchKey# OR emp.first_name LIKE #searchKey# OR emp.last_name LIKE #searchKey#)
+        ORDER BY emp.employee_number
+    </select>
+    <!--  <select id="projectManagerList" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+       select emp.employee_number, emp.first_name,emp.last_name from employees emp
+                where
+                emp.employee_number is not null
+                order by emp.employee_number
+    </select> -->
+    
+    <select id="reportDetails" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDetails">
+        SELECT prj.project_code AS project_code,  
+        ppo.attachment_reference_no AS poNumber ,
+        prjtmodel.configuration_value AS prjModel,
+        DATE_FORMAT(ppo.po_date, '%d-%m-%Y') AS poDate,
+        cust_group.group_name AS customerGroup,
+        cust.customer_code AS customer_code, 
+        cust.customer_name AS customer_name, 
+        rbu.name AS rbu, 
+        sub_rbu.name AS subRbu, 
+        reg.region AS region, 
+        cou.country AS country, 
+        cba.address_line AS registeredAddress, 
+        cc.contact_person_name AS customerContact,
+        cc.contact_person_mobile AS customerPhoneNo,
+        bdm.employee_number AS bdmId,
+        CONCAT(bdm.first_name, ' ', bdm.last_name) AS defianceContact, 
+        bdm.mobile_number AS defianceContactNo, 
+        sbu.name AS sbu, 
+        sub_sbu.name AS subSbu, 
+        prj.project_name AS project_name,
+        prmo.configuration_value AS pricingModel, 
+        cur.currency_code AS currency, 
+        ppo.po_value AS poAmount,
+        so.sales_order_value AS creditPeriod,
+        DATE_FORMAT(prj.planned_start_date, '%d-%m-%Y') AS projectStartDate,
+        DATE_FORMAT(prj.planned_end_date, '%d-%m-%Y') AS projectEndDate,
+        prj.project_remarks AS remarks, 
+        prjtstatus.configuration_value AS projectStatus, 
+        CONCAT(pm.first_name, ' ', pm.last_name) AS projectManager, 
+        uom.configuration_value AS billingUOM,
+        le.legal_entity AS legal_entity,
+        busmodel.configuration_value AS business_model
+        FROM projects AS prj 
+        LEFT JOIN project_so_masters AS psom ON(prj.id=psom.project_id)
+        LEFT JOIN sales_orders AS so ON(psom.sales_order_id = so.id)
+        LEFT JOIN po_so_masters AS poso ON(poso.sales_order_id=so.id)
+        LEFT JOIN project_purchase_orders AS ppo ON (ppo.id = poso.po_id) 
+        LEFT JOIN customers AS cust ON (cust.id = prj.customer_id)
+        LEFT JOIN customer_contacts AS cc ON(so.business_contact_id = cc.id AND cc.customer_contact_type='bu')
+        LEFT JOIN customer_billing_addresses AS cba ON(so.billing_address_id = cba.id)
+        LEFT JOIN customer_groups AS cust_group ON (cust_group.id = cust.customer_group)
+        LEFT JOIN company_structures AS rbu ON (rbu.id = prj.project_rbu) 
+        LEFT JOIN company_structures AS sub_rbu ON (sub_rbu.id = prj.project_sub_rbu)
+        LEFT JOIN company_structures AS sbu ON (sbu.id = so.sbu)
+        LEFT JOIN company_structures AS sub_sbu ON (sub_sbu.id = prj.project_sbu_subgroup)
+        LEFT JOIN regions AS reg ON (reg.id = cba.region_id)
+        LEFT JOIN countries AS cou ON (cou.id = cba.country_id)
+        LEFT JOIN employees AS bdm ON (bdm.id = so.sales_person_id)
+        LEFT JOIN currencies AS cur ON (cur.id = so.currency_id)
+        LEFT JOIN employees AS pm ON (pm.id = prj.project_manager)
+        LEFT JOIN configuration_values AS uom ON(uom.configuration_key = so.uom_id AND uom.parent_id = 135)
+        LEFT JOIN configuration_values AS prmo ON(prmo.configuration_key = so.pricing_model AND prmo.parent_id = 242)
+        LEFT JOIN configuration_values AS prjtstatus ON(prjtstatus.configuration_key = prj.project_status AND prjtstatus.parent_id = 82)
+        LEFT JOIN configuration_values AS prjtmodel ON(prjtmodel.configuration_key = prj.project_model AND prjtmodel.parent_id = 321)
+        LEFT JOIN configuration_values AS busmodel ON(busmodel.configuration_key = prj.business_model AND busmodel.parent_id = 1078)
+        LEFT JOIN legal_entities AS le ON so.hinduja_entity_id = le.id
+        WHERE prj.project_code != '' 
+        <dynamic>
+            <isNotEmpty prepend="AND" property="projectCode">
+                prj.project_code like #projectCode#
+            </isNotEmpty>
+                                    
+            <isNotEmpty prepend="AND" property="customerCode">
+                cust.customer_code like #customerCode#
+            </isNotEmpty>
+                                    
+                                    
+            <isNotEmpty prepend="AND" property="projectModel">
+                prj.project_model = #projectModel#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="customerId">
+                cust.id = #customerId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="rbu">
+                prj.project_rbu = #rbu#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="subRbu">
+                prj.project_sub_rbu = #subRbu#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="sbuId">
+                prj.project_sbu = #sbuId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="subSbuId">
+                prj.project_sbu_subgroup = #subSbuId#
+            </isNotEmpty>				    				    
+            <!--				    <isNotEmpty prepend="AND" property="fromDate">
+                prj.planned_start_date &gt;= #fromDate#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="toDate">
+                prj.planned_end_date &gt;= #toDate#
+            </isNotEmpty>-->
+            <isNotEmpty property="fromDate">	    
+                <isNotEmpty prepend="AND" property="toDate">
+                    prj.project_code_created_date between #fromDate# AND #toDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty property="poFromDate">	    
+                <isNotEmpty prepend="AND" property="poToDate">
+                    ppo.po_created_date between #poFromDate# AND #poToDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="pmEmpNumber">
+                pm.employee_number = #pmEmpNumber#
+            </isNotEmpty>
+                                    
+        </dynamic>
+				   
+        ORDER BY prj.project_code ASC
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+				  
+    </select>
+      
+    <select id="reportDetailsCount" parameterClass="com.defiance.ideal.reports.dto.ProjectFinanceReportDTO" resultClass="java.lang.Integer">
+        SELECT count(*) AS recordCount FROM (SELECT prj.project_code AS project_code,  
+		ppo.attachment_reference_no AS poNumber ,
+		prjtmodel.configuration_value AS prjModel,
+		DATE_FORMAT(ppo.po_date, '%d-%m-%Y') AS poDate,
+		cust_group.group_name AS customerGroup,
+		cust.customer_code AS customer_code, 
+		cust.customer_name AS customer_name, 
+		rbu.name AS rbu, 
+		sub_rbu.name AS subRbu, 
+		reg.region AS region, 
+		cou.country AS country, 
+		cba.address_line AS registeredAddress, 
+		cc.contact_person_name AS customerContact,
+		cc.contact_person_mobile AS customerPhoneNo,
+		bdm.employee_number AS bdmId,
+		CONCAT(bdm.first_name, ' ', bdm.last_name) AS defianceContact, 
+		bdm.mobile_number AS defianceContactNo, 
+		sbu.name AS sbu, 
+		sub_sbu.name AS subSbu, 
+		prj.project_name AS project_name,
+		prmo.configuration_value AS pricingModel, 
+		cur.currency_code AS currency, 
+		ppo.po_value AS poAmount,
+		so.sales_order_value as creditPeriod,
+		DATE_FORMAT(prj.planned_start_date, '%d-%m-%Y') AS projectStartDate,
+		DATE_FORMAT(prj.planned_end_date, '%d-%m-%Y') AS projectEndDate,
+		prj.project_remarks AS remarks, 
+		prjtstatus.configuration_value AS projectStatus, 
+		CONCAT(pm.first_name, ' ', pm.last_name) AS projectManager, 
+		uom.configuration_value AS billingUOM
+		FROM projects AS prj 
+		left join project_so_masters as psom on(prj.id=psom.project_id)
+		left join sales_orders as so on(psom.sales_order_id = so.id)
+		left join po_so_masters as poso on(poso.sales_order_id=so.id)
+		LEFT JOIN project_purchase_orders AS ppo ON (ppo.id = poso.po_id) 
+		LEFT JOIN customers AS cust ON (cust.id = prj.customer_id)
+		left join customer_contacts as cc on(so.business_contact_id = cc.id and cc.customer_contact_type='bu')
+		left join customer_billing_addresses as cba on(so.billing_address_id = cba.id)
+		LEFT JOIN customer_groups AS cust_group ON (cust_group.id = cust.customer_group)
+		LEFT JOIN company_structures AS rbu ON (rbu.id = prj.project_rbu) 
+		LEFT JOIN company_structures AS sub_rbu ON (sub_rbu.id = prj.project_sub_rbu)
+		LEFT JOIN company_structures AS sbu ON (sbu.id = so.sbu)
+		LEFT JOIN company_structures AS sub_sbu ON (sub_sbu.id = prj.project_sbu_subgroup)
+		LEFT JOIN regions AS reg ON (reg.id = cba.region_id)
+		LEFT JOIN countries AS cou ON (cou.id = cba.country_id)
+		LEFT JOIN employees AS bdm ON (bdm.id = so.sales_person_id)
+		LEFT JOIN currencies AS cur ON (cur.id = so.currency_id)
+		LEFT JOIN employees AS pm ON (pm.id = prj.project_manager)
+		left join configuration_values as uom on(uom.configuration_key = so.uom_id and uom.parent_id = 135)
+		left join configuration_values as prmo on(prmo.configuration_key = so.pricing_model and prmo.parent_id = 242)
+		left join configuration_values as prjtstatus on(prjtstatus.configuration_key = prj.project_status and prjtstatus.parent_id = 82)
+		left join configuration_values as prjtmodel on(prjtmodel.configuration_key = prj.project_model and prjtmodel.parent_id = 321)
+		WHERE prj.project_code != ''
+        <dynamic>
+            <isNotEmpty prepend="AND" property="projectCode">
+                prj.project_code like #projectCode#
+            </isNotEmpty>
+                                    
+            <isNotEmpty prepend="AND" property="customerCode">
+                cust.customer_code like #customerCode#
+            </isNotEmpty>
+                                    
+                                    
+            <isNotEmpty prepend="AND" property="projectModel">
+                prj.project_model = #projectModel#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="customerId">
+                cust.id = #customerId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="rbu">
+                prj.project_rbu = #rbu#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="subRbu">
+                prj.project_sub_rbu = #subRbu#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="sbuId">
+                prj.project_sbu = #sbuId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="subSbuId">
+                prj.project_sbu_subgroup = #subSbuId#
+            </isNotEmpty>				    				    
+            <!--				    <isNotEmpty prepend="AND" property="fromDate">
+                prj.planned_start_date &gt;= #fromDate#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="toDate">
+                prj.planned_end_date &gt;= #toDate#
+            </isNotEmpty>-->
+            <isNotEmpty property="fromDate">	    
+                <isNotEmpty prepend="AND" property="toDate">
+                    prj.project_code_created_date between #fromDate# AND #toDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty property="poFromDate">	    
+                <isNotEmpty prepend="AND" property="poToDate">
+                    ppo.po_created_date between #poFromDate# AND #poToDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="pmEmpNumber">
+                pm.employee_number = #pmEmpNumber#
+            </isNotEmpty>
+                                    
+        </dynamic>
+				   
+        ORDER BY prj.project_code ASC) as temp
+				  
+    </select>
+    
+</sqlMap>

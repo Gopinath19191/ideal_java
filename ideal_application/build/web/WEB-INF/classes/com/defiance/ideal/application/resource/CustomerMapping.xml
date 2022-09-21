@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="CustMap">
+
+    <select id="fetchCustMapList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        SELECT
+        cm.id AS customerMapId,
+        cust.customer_code AS customerCode,
+        cust.customer_name AS customerName,
+        bdm.employee_number AS bdmEmpNumber,
+        CONCAT(bdm.first_name,' ',bdm.last_name) AS bdmEmpName,
+        leader.employee_number AS leaderEmpNumber,
+        CONCAT(leader.first_name,' ',leader.last_name) AS leaderEmpName,
+        cs.name AS region,
+        subRegion.name AS subRbu,
+        cm.mapper_id AS mapperId,
+        cm.mapped_date AS mappedDate
+        FROM debtors_customer_mapping AS cm 
+        LEFT JOIN customers AS cust ON(cust.id=cm.customer_id)
+        LEFT JOIN employees AS bdm ON(bdm.id=cm.bdm_id)
+        LEFT JOIN employees AS leader ON(leader.id=cm.leader_id)
+        LEFT JOIN company_structures AS cs ON(cs.id=cm.region)
+        LEFT JOIN company_structures AS subRegion ON(subRegion.id=cm.sub_rbu)
+        WHERE cm.deleted=0 AND cust.customer_code IS NOT NULL ORDER BY cm.id DESC;
+    </select>
+    
+    <select id="getCustMapDetails" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        SELECT cm.id AS customerMapId, 
+        cm.customer_id AS customerId, 
+        cm.bdm_id AS bdmId, 
+        cm.leader_id AS leaderId,
+        cm.region AS region,
+        cm.sub_rbu AS subRbu,
+        cm.mapper_id AS mapperId,
+        cm.mapped_date AS mappedDate
+        FROM debtors_customer_mapping AS cm 
+        WHERE cm.id =#customerMapId#;
+    </select>
+    
+    <select id="getSubRbuList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        SELECT id as "rbuId", name as "rbuName" from company_structures where parent_id in (#region#)
+    </select>
+    
+<!--    <update id="updateCustMap" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        UPDATE debtors_customer_mapping SET 
+        customer_id=#customerId#,
+        bdm_id=#bdmId#,
+        leader_id=#leaderId#,
+        region=#region#,
+        mapper_id=#mapperId#,
+        mapped_date=#mappedDate#
+        WHERE id =#customerMapId#;
+    </update>-->
+    
+    <update id="updateCustMap" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        UPDATE debtors_customer_mapping SET deleted=#deleted#
+        WHERE customer_id =#customerId# AND deleted=0;
+    </update>
+    
+    <update id="updateCustomerTableData" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        UPDATE customers SET 
+        sales_person_reference=#bdmId#,
+        bdm_id=#bdmId#,
+        business_leader_id=#leaderId#,
+        customer_rbu=#region#,
+        sub_rbu=#subRbu#
+        WHERE id =#customerId#;
+    </update>
+    
+    
+    
+    <insert id="insertCustMap" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        INSERT INTO debtors_customer_mapping(customer_id,bdm_id,leader_id,region,sub_rbu,deleted,mapper_id,mapped_date)
+        VALUES(#customerId#,#bdmId#,#leaderId#,#region#,#subRbu#,#deleted#,#mapperId#,#mappedDate#);
+    </insert>
+    
+    <select id="getCustomerList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        SELECT
+        cust.id AS customerId,
+        cust.customer_code AS customerCode,
+        cust.customer_name AS customerName,
+        CONCAT(cust.customer_code,' - ',cust.customer_name) AS customerCodeName
+        FROM customers AS cust
+        WHERE cust.customer_code IS NOT NULL 
+        <dynamic>
+            <isEqual property="customerListCheck" compareValue="add">
+                AND cust.id NOT IN (
+                SELECT cm.customer_id FROM debtors_customer_mapping AS cm)
+            </isEqual>
+        </dynamic>
+        ORDER BY cust.customer_name ASC;
+    </select>
+    
+    <select id="getBdmList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+         SELECT emp.id AS bdmId,
+         emp.employee_number AS bdmEmpNumber,
+         CONCAT_WS(" ",emp.first_name, emp.last_name) AS bdmEmpName
+         FROM employees AS emp
+         WHERE emp.employment_status NOT IN ('r','t','b','q') ORDER BY emp.first_name,last_name ASC
+    </select>
+    
+    <select id="getLeaderList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+       SELECT emp.id AS leaderId,
+       emp.employee_number AS leaderEmpNumber,
+       CONCAT_WS(" ",emp.first_name, emp.last_name) AS leaderEmpName
+       FROM employees AS emp WHERE emp.employment_status NOT IN ('r','t','b','q')
+       and emp.band_id IN (15,35,36,2,3) ORDER BY emp.first_name,last_name ASC
+    </select>
+    
+    <select id="getRBUList" parameterClass="com.defiance.ideal.application.dto.CustomerMappingDTO" resultClass="com.defiance.ideal.application.dto.CustomerMappingDTO">
+        SELECT id AS regionId,name AS regionName FROM company_structures WHERE id = 23;
+    </select>
+
+</sqlMap>

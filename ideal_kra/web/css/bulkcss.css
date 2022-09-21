@@ -1,0 +1,118 @@
+/* SVN FILE: $Id$ */
+/**
+ *
+ * PHP versions 4 and 5
+ *
+ * CakePHP(tm) :  Rapid Development Framework (http://www.cakephp.org)
+ * Copyright 2005-2010, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
+ *
+ * Licensed under The MIT License
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @filesource
+ * @copyright     Copyright 2005-2010, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
+ * @link          http://www.cakefoundation.org/projects/info/cakephp CakePHP(tm) Project
+ * @package       cake
+ * @subpackage    cake.app.webroot.css
+ * @since         CakePHP(tm)
+ * @version       $Revision$
+ * @modifiedby    $LastChangedBy$
+ * @lastmodified  $Date$
+ * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+*/
+/* General Style Info */
+html{
+    /*overflow: scroll;*/
+}
+
+body {
+   
+    clear: both;
+    color: #000000;
+    margin: 0 auto;
+    width: 940px;
+    font-family: Arial;
+    font-size: 16px;    
+     
+}
+.center_content{
+     font-weight: bold;
+     color: Black;
+}
+.tabletools {
+    background: url(../images/box-strip.jpg) repeat-x scroll top center #ffffcc;
+    border:0px solid #BDC9D1;
+    margin: 10px 0;
+    padding: 10px;
+}
+
+/* Layout */
+#main_container {
+    text-align: left;
+    width:100%;
+    padding: 0px;
+    margin: auto;
+}
+.page_heading {
+    font-weight: bold;
+    color:#666666;
+    font-size: 18px;
+    
+
+}
+.filetrInnerWrap{   
+    font-family: "Times New Roman", Times, serif;
+    
+    line-height: 1.8;
+    
+}
+
+td{
+    border: 1px solid #CEDFF1;
+    text-align: center;
+    width: 200px;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background-color: white;
+    
+}
+a {
+    text-decoration: none;
+     color: #005ce6;
+}
+a:hover{
+    text-decoration: underline;
+}
+#errordiv{
+    position: relative;
+    left: 400px;
+    bottom: 14px;
+}
+thead{
+    background-color: #ebf1fa;
+}
+.lable{
+    width:250px;
+    float:left;
+    margin:10px 5px;
+}
+.template{
+    width:250px;
+    float:left;
+    margin:10px 5px;
+}
+.fileBrowsed{
+    width:250px;
+    float:left;
+    margin:10px 5px;
+}
+.buttons{
+    width:250px;
+    float:left;
+    margin:10px 5px 10px 10px;
+}
+div{
+    
+}

@@ -1,0 +1,666 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : International.xml
+    Created on : 3 October, 2012, 12:11 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="DomesticTravel">
+    <select id="getDashBoardList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" >
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        CASE WHEN tp.customer_id = '-1'
+        THEN tp.customer_others
+        ELSE cust.customer_name END AS customer_name,
+        CASE WHEN tp.project_id = '-1'
+        THEN tp.project_others
+        ELSE proj.project_name END AS project_name,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN customers AS cust ON(cust.id=tp.customer_id)
+        LEFT JOIN projects AS proj ON(proj.id=tp.project_id)
+        LEFT JOIN tp_workflows AS wf ON(wf.id=tp.workflow_id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        WHERE tp.employee_id = #employee_id# AND tp.travel_type='D'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" >      
+        SELECT emp.id AS employee_id,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name,
+        emp.manager AS rm_id,
+        emp.band_id AS band_id, band.name AS band_name,
+        emp.structure_name AS unit_id, cs.name AS unit_name,
+        emp.structure_name_subgroup AS sub_unit_id, su.name AS sub_unit_name,
+        City.city AS location_name, emp.mobile_number AS contact_number,
+        emp.designation_id AS designation_id,
+        des.designation AS designation_name,
+        tp.employee_id AS buh_id, 
+        emp.current_location_id as location_id,
+        loc.country_id AS country_id,
+        cur.id AS currency_id,
+        cur.currency_code AS currency_name, 
+        DATE_FORMAT(CURDATE(),"%d-%b-%Y") AS requested_date
+        FROM employees AS emp
+        LEFT JOIN bands AS band ON emp.band_id = band.id
+        LEFT JOIN company_structures AS cs ON emp.structure_name = cs.id
+        LEFT JOIN company_structures AS su ON emp.structure_name_subgroup = su.id
+        LEFT JOIN company_locations AS loc ON (emp.current_location_id = loc.id)
+        LEFT JOIN tp_country_currency_mapping AS tcc ON (loc.country_id = tcc.country_id)
+        LEFT JOIN currencies AS cur ON (tcc.currency_id = cur.id)
+        LEFT JOIN cities AS City ON (loc.city_id = City.id)
+        LEFT JOIN designations AS des ON emp.designation_id = des.id
+        LEFT JOIN tp_approvers AS tp ON(tp.company_structure_id=emp.structure_name AND tp.category ='b')
+        WHERE emp.id = #employee_id#
+    </select>
+    
+    <select id="getBuhList" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT DISTINCT (tp.employee_id) AS buh_id, CONCAT( emp.first_name, ' ', emp.last_name) AS buh_name
+        FROM tp_approvers AS tp
+        INNER JOIN employees AS emp ON ( emp.id = tp.employee_id )
+        WHERE tp.category = 'b' AND emp.employment_status NOT IN ( 'r', 'b', 't', 'q','o','y')
+    </select>
+    
+    <select id="getSettlementType" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT configuration_key AS config_key, configuration_value AS config_value FROM configuration_values WHERE parent_id = 880;
+    </select>
+    
+    <select id="getBookingType" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT configuration_key AS config_key, configuration_value AS config_value FROM configuration_values WHERE parent_id = 876;
+
+    </select>
+    
+    <select id="getCustomerList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT DISTINCT(cust.id) AS customer_id,
+        CONCAT(cust.customer_code,'-',cust.customer_name) AS customer_name
+        FROM project_team_allocations AS pta
+        LEFT JOIN projects AS pjt ON (pta.project_id = pjt.id )
+        LEFT JOIN project_so_masters AS psom ON pjt.id = psom.project_id
+        LEFT JOIN sales_orders AS so ON psom.sales_order_id = so.id
+        LEFT JOIN customers AS cust ON so.customer_id = cust.id
+        WHERE pta.employee_id = #employee_id# AND CURDATE() BETWEEN pta.start_date AND pta.end_date 
+        AND pta.deleted = 0 AND pjt.project_status ='e' AND pta.work_location_id IS NOT NULL
+    </select>
+    
+    <select id="getProjectList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" >
+        SELECT DISTINCT(pjt.id) AS project_id,
+        CONCAT(pjt.project_code,'-',pjt.project_name) AS project_name,pjt.project_manager as pm_id
+        FROM project_team_allocations AS pta
+        LEFT JOIN projects AS pjt ON (pta.project_id = pjt.id )
+        WHERE pta.employee_id = #employee_id# AND CURDATE() BETWEEN pta.start_date AND pta.end_date 
+        AND pta.deleted = 0 AND pjt.project_status ='e' AND pta.work_location_id IS NOT NULL
+    </select>
+    
+    <select id="getLastRequestId" resultClass="String" >
+        SELECT SUBSTR( tp_reference_id, 5 ) FROM tp_master ORDER BY SUBSTR( tp_reference_id, 5 ) DESC LIMIT 1
+    </select>
+    
+    <select id="getAutoCity" parameterClass="java.util.HashMap" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT id AS keyRes,city AS valueRes
+        FROM cities
+        WHERE city LIKE #m# and country_id = #c#
+    </select>
+    
+    <insert id="insertTravel" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        INSERT INTO tp_master 
+        (tp_reference_id, travel_type, employee_id, band_id, designation_id, unit_id, sub_unit_id, travel_purpose, travel_start_date, 
+        travel_end_date, travel_requested_date, travel_billable, client_reimbursable, travel_term, customer_id, customer_others, 
+        project_id, project_others, mobileNo, STATUS, guest_booking, guest_name, rm_id, buh_id, admin_action_required, settlement_type, 
+        deviation, treasury_action_required, currency_type, location_id) VALUES
+        (#tp_reference_id# ,"D",#employee_id#, #band_id#, #designation_id#, #unit_id#, #sub_unit_id#, #travel_purpose#, #travel_start_date#,
+        #travel_end_date#, #requested_date#, #travel_billable#, #client_reimbursable#, #travel_term#, #customer_id#, #customer_others#,
+        #project_id#, #project_others#, #contact_number#, #status#, #guest_booking#, #guest_booking_name#, #rm_id#, #buh_id#, #admin_action#, #settlemet_policy#,
+        #deviation#, #treasury_action#, #currency_id#, #location_id#);
+        <selectKey resultClass="String" keyProperty="master_id">
+            select last_insert_id() as master_id
+        </selectKey>
+    </insert>
+    
+    <insert id="insertAdvanceDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        INSERT INTO tp_advance_details(master_id, tp_advance_id, required_date, requested_amount, remarks, currency_id, created_date)
+        VALUES (#master_id#, #advance_id#, #advance_date#, #advance_amount#, #advance_remarks#, #currency_id#, now());
+    </insert>
+    
+    <insert id="insertTicketDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        INSERT INTO tp_travel_ticket(master_id, from_city, from_city_others, to_city, to_city_others, travel_date, travel_preference, travel_mode, remarks, booking_type)VALUES
+        (#master_id#, #travel_from_city_id#, #travel_from_city_others#, #travel_to_city_id#, #travel_to_city_others#, #travel_ticket_date#,#travel_travel_preference#, #travel_travel_mode#, #travel_ticket_remarks#, #ticket_book_type#);
+    </insert>
+    
+    <insert id="insertHotelDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        INSERT INTO tp_hotel_bookings(master_id, city, city_others, location, from_date, to_date, remarks, booking_type) VALUES
+        (#master_id#, #hotel_city_id#, #hotel_city_others#, #hotel_location#, #hotel_from_date#, #hotel_to_date#, #hotel_hotel_remarks#, #hotel_book_type#)
+    </insert>
+    
+    <insert id="insertConveyanceDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        INSERT INTO tp_conveyance (master_id, city, city_others, pickup, dropto, start_date, time, remarks) VALUES
+        (#master_id#, #cab_city_id#, #cab_city_others#, #cab_pickup#, #cab_drop#, #cab_date#, #cab_time_hrs#, #cab_remarks#);
+    </insert>
+    
+    <select id="getTravelDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.employee_id AS employee_id,
+        tp.tp_reference_id AS tp_reference_id,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name, ' ',emp.last_name) AS employee_name,
+        tp.band_id AS band_id,
+        tp.designation_id AS designation_id,
+        band.name AS band_name,
+        tp.designation_id AS designation_id,
+        des.designation AS designation_name,
+        tp.unit_id AS unit_id, 
+        cs.name AS unit_name,
+        tp.sub_unit_id AS sub_unit_id, 
+        su.name AS sub_unit_name,
+        City.city AS location_name, 
+        tp.mobileNo AS contact_number,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        DATE_FORMAT(tp.travel_end_date,"%d-%b-%Y") AS travel_end_date,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        tp.travel_term AS travel_term,
+        CASE WHEN tp.travel_billable ='Y' THEN "Yes" ELSE "No" END AS travel_billable,
+        CASE WHEN tp.client_reimbursable ='Y' THEN "Yes" ELSE "No" END AS client_reimbursable,
+        tp.project_id AS project_id,
+        tp.project_others AS project_others,
+        COALESCE(CONCAT(prj.project_code,'-',prj.project_name),"--") AS project_name,
+        tp.customer_id AS customer_id,
+        tp.customer_others AS customer_others,
+        COALESCE(CONCAT(cust.customer_code,'-',cust.customer_name),"--") AS customer_name,
+        CASE WHEN tp.guest_booking ="Y" THEN "Yes" ELSE "No" END AS guest_booking,
+        tp.guest_name AS guest_booking_name,
+        tp.settlement_type AS config_key,
+        setl.configuration_value AS settlemet_policy,
+        tp.travel_purpose AS travel_purpose,
+        tp.buh_id AS buh_id,
+        CONCAT(buh.employee_number,'-',buh.first_name, ' ',buh.last_name) AS buh_name,
+        tp.admin_action_required AS admin_action,
+        tp.deviation AS deviation,
+        tp.treasury_action_required AS treasury_action,
+        tp.status AS STATUS,
+        tp.rm_id AS rm_id,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE_FORMAT(tp.rm_action_date,"%d-%b-%Y") AS rm_approved_date,
+        tp.rm_remarks AS rm_remarks,
+        tp.buh_remarks AS buh_remarks,
+        DATE_FORMAT(tp.buh_action_date,"%d-%b-%Y") AS buh_approved_date,
+        tp.finance_approved_by AS finance_id,
+        CONCAT(fin.employee_number,'-',fin.first_name,' ',fin.last_name) AS finance_name,
+        DATE_FORMAT(tp.finance_action_date,"%d-%b-%Y") AS finance_approved_date,
+        tp.finance_remarks AS finance_remarks,
+        tp.admin_approved_by AS admin_id,
+        CONCAT(adm.employee_number,'-',adm.first_name,' ',adm.last_name) AS admin_name,
+        DATE_FORMAT(tp.admin_action_date,"%d-%b-%Y") AS admin_approved_date,
+        tp.admin_remarks AS admin_remarks,
+        tp.treasury_approved_by AS treasury_id,
+        CONCAT(trs.employee_number,'-',trs.first_name,' ',trs.last_name) AS treasury_name,
+        DATE_FORMAT(tp.treasury_action_date,"%d-%b-%Y") AS treasury_approved_date,
+        tp.treasury_remarks AS treasury_comments,
+        sta.status_desc AS status_name,
+        tp.deviation AS deviation,
+        tpa.file_name AS file_name
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON tp.employee_id = emp.id
+        LEFT JOIN bands AS band ON tp.band_id = band.id
+        LEFT JOIN designations AS des ON tp.designation_id = des.id
+        LEFT JOIN company_structures AS cs ON tp.unit_id = cs.id
+        LEFT JOIN company_structures AS su ON tp.sub_unit_id = su.id
+        LEFT JOIN company_locations AS loc ON (emp.current_location_id = loc.id)
+        LEFT JOIN cities AS City ON (loc.city_id = City.id)
+        LEFT JOIN projects AS prj ON (tp.project_id = prj.id)
+        LEFT JOIN customers AS cust ON (tp.customer_id = cust.id)
+        LEFT JOIN configuration_values AS setl ON (tp.settlement_type = setl.configuration_key AND setl.parent_id = 880)
+        LEFT JOIN employees AS buh ON (tp.buh_id = buh.id)
+        LEFT JOIN employees AS rm ON (tp.rm_approved_by = rm.id)
+        LEFT JOIN employees AS fin ON (tp.finance_approved_by = fin.id)
+        LEFT JOIN employees AS adm ON (tp.admin_approved_by = adm.id)
+        LEFT JOIN employees AS trs ON (tp.treasury_approved_by = trs.id)
+        LEFT JOIN tp_status_config AS sta ON(tp.status = sta.status_name)
+        LEFT JOIN tp_attachments AS tpa ON(tp.id = tpa.master_id AND tpa.type='a')
+        WHERE tp.id = #master_id#
+        LIMIT 1;
+    </select>
+    
+    <select id="getAttachments" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tpa.file_name AS file_name
+        FROM tp_attachments AS tpa 
+        WHERE tpa.master_id = #master_id# AND tpa.type='a';
+    </select>
+    
+    <select id="getAdvanceDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tpa.id AS advance_id,
+        DATE_FORMAT(tpa.required_date,"%d-%b-%Y") AS advance_date,
+        tpa.requested_amount AS advance_amount,
+        tpa.remarks AS advance_remarks,
+        tpa.currency_id AS currency_id,
+        cur.currency_code AS currency_name,
+        DATE_FORMAT(tpa.deposited_date,"%d-%b-%Y") AS deposited_date,
+        tpa.deposited_amount AS deposited_amount,
+        tpa.depositor_remarks AS depositor_remarks,
+        depc.currency_code AS deposited_currency
+        FROM tp_advance_details AS tpa
+        LEFT JOIN currencies AS cur ON (tpa.currency_id = cur.id)
+        LEFT JOIN currencies AS depc ON (tpa.deposited_currency_id = depc.id)
+        WHERE tpa.master_id = #master_id#  and tpa.deleted = 0;
+    </select>
+    
+    <select id="getTicketDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT ttt.id AS travel_ticket_id,
+        ttt.booking_type AS ticket_book_config,
+        bt.configuration_value AS ticket_book_type,
+        ttt.from_city AS travel_from_city_id,
+        ttt.from_city_others AS travel_from_city_others,
+        ttt.to_city AS travel_to_city_id,
+        fc.city AS travel_from_city,
+        ttt.to_city_others AS travel_to_city_others,
+        tc.city AS travel_to_city,
+        DATE_FORMAT(ttt.travel_date,"%d-%b-%Y") AS travel_ticket_date,
+        ttt.travel_preference AS travel_travel_preference,
+        ttt.travel_mode AS travel_travel_mode,
+        ttt.remarks AS travel_ticket_remarks,
+        ttt.booking_status AS booking_status,
+        CASE WHEN ttt.booking_status = 'Y' THEN "Booked"
+        WHEN ttt.booking_status = 'N' THEN "Not Booked"
+        ELSE " " END AS booking_status_name,
+        tpa.file_name AS file_name
+        FROM tp_travel_ticket AS ttt
+        LEFT JOIN cities AS fc ON ttt.from_city = fc.id
+        LEFT JOIN cities AS tc ON ttt.to_city = tc.id
+        LEFT JOIN configuration_values AS bt ON (ttt.booking_type = bt.configuration_key AND bt.parent_id = 876)
+        LEFT JOIN tp_attachments AS tpa ON(ttt.file_id = tpa.id AND tpa.type='t')
+        WHERE ttt.master_id = #master_id# AND ttt.deleted = 0;
+    </select>
+    
+    <select id="getHotelDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT thb.id AS hotelid,
+        thb.booking_type AS ticket_book_config,
+        bt.configuration_value AS hotel_book_type,
+        thb.city AS hotel_city_id,
+        thb.city_others AS hotel_city_others,
+        fc.city AS hotel_city,
+        thb.location AS hotel_location,
+        DATE_FORMAT(thb.from_date,"%d-%b-%Y") AS hotel_from_date,
+        DATE_FORMAT(thb.to_date,"%d-%b-%Y") AS hotel_to_date,
+        thb.remarks AS hotel_hotel_remarks,
+        thb.booking_status AS booking_status,
+        CASE WHEN thb.booking_status = 'Y' THEN "Booked"
+        WHEN thb.booking_status = 'N' THEN "Not Booked"
+        ELSE " " END AS booking_status_name,
+        tpa.file_name AS file_name
+        FROM tp_hotel_bookings AS thb
+        LEFT JOIN cities AS fc ON thb.city = fc.id
+        LEFT JOIN configuration_values AS bt ON (thb.booking_type = bt.configuration_key AND bt.parent_id = 876)
+        LEFT JOIN tp_attachments AS tpa ON(thb.file_id = tpa.id AND tpa.type='t')
+        WHERE thb.master_id = #master_id# AND thb.deleted = 0;
+    </select>
+    
+    <select id="getCabDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tc.id as cab_id,
+        tc.city AS cab_city_id,
+        tc.city_others AS cab_city_others,
+        cc.city AS cab_city,
+        tc.pickup AS cab_pickup,
+        tc.dropto AS cab_drop,
+        DATE_FORMAT(tc.start_date,"%d-%b-%Y")AS cab_date,
+        tc.time AS cab_time_hrs,
+        tc.remarks AS cab_remarks
+        FROM tp_conveyance AS tc
+        LEFT JOIN cities AS cc ON(tc.city = cc.id)
+        WHERE tc.master_id = #master_id# AND tc.deleted = 0;
+    </select>
+    
+    <select id="getRMPendingList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN employees as emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        WHERE tp.rm_id = #employee_id# AND tp.travel_type='D' and tp.status = '1'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <select id="getRMProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN employees as emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        WHERE tp.rm_approved_by = #employee_id# AND tp.travel_type='D' and tp.status <![CDATA[ > ]]> 1
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <update id="updateRmApproval" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET buh_id = #buh_id#, settlement_type = #settlemet_policy#, client_reimbursable = #client_reimbursable#, status = #status#, rm_approved_by = #rm_id#, rm_remarks = #rm_remarks#, rm_action_date = now()
+        WHERE id = #master_id#
+    </update>
+    
+    <select id="getApproverDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">  
+        SELECT tp.employee_id AS employee_id,
+        tp.buh_id AS buh_id,
+        tp.deviation AS deviation
+        FROM tp_master AS tp WHERE id = #master_id#
+    </select>
+    
+    <select id="getBUHPendingList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">  
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tp.unit_id = app.company_structure_id AND app.category = 'b' AND app.employee_id = tp.buh_id)
+        WHERE tp.buh_id =  #employee_id# AND tp.travel_type='D' AND tp.status = '2' AND tp.deviation='Y'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <select id="getBUHProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN employees as emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tp.unit_id = app.company_structure_id AND app.category = 'b' AND app.employee_id = tp.buh_id)
+        WHERE tp.buh_approved_by = #employee_id# AND tp.travel_type='D' and tp.status <![CDATA[ > ]]> 3 AND tp.deviation='Y'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <update id="updateBuhApproval" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET status = #status#, buh_approved_by = #buh_id#, buh_remarks = #buh_remarks#, buh_action_date = now()
+        WHERE id = #master_id#
+    </update>
+    
+    <select id="getFinancePendingList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">  
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tp.unit_id = app.company_structure_id AND app.category = 'f')
+        WHERE tp.travel_type='D' AND ((tp.status = 2 AND tp.deviation='N') OR (tp.status = 4 AND tp.deviation='Y')) AND app.employee_id = #employee_id#
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <select id="getFinanceProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN employees as emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tp.unit_id = app.company_structure_id AND app.category = 'f' AND tp.finance_approved_by = app.employee_id)
+        WHERE tp.finance_approved_by IS NOT NULL AND tp.travel_type='D'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <update id="updateFinanceApproval" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET settlement_type = #settlemet_policy#, client_reimbursable = #client_reimbursable#, status = #status#, finance_approved_by = #finance_id#, finance_remarks = #finance_remarks#, finance_action_date = now()
+        WHERE id = #master_id#
+    </update>
+    
+    <select id="getTreasuryPendingList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">  
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        DATE_FORMAT(tp.travel_end_date,"%d-%b-%Y") AS travel_end_date,
+        adv.requested_amount AS advance_amount,
+        cur.currency_code AS currency_name,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't')
+        LEFT JOIN tp_advance_details AS adv ON tp.id = adv.master_id
+        LEFT JOIN currencies AS cur ON adv.currency_id = cur.id
+        WHERE tp.travel_type='D' AND tp.status IN(6,8,11) AND app.employee_id = #employee_id# AND tp.treasury_action_required = 'Y' AND adv.deposited_date IS NULL
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <select id="getTreasuryProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        DATE_FORMAT(tp.travel_end_date,"%d-%b-%Y") AS travel_end_date,
+        adv.requested_amount AS advance_amount,
+        cur.currency_code AS currency_name,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't' AND tp.treasury_approved_by = app.employee_id)
+        LEFT JOIN tp_advance_details AS adv ON tp.id = adv.master_id
+        LEFT JOIN currencies AS cur ON adv.currency_id = cur.id
+        WHERE tp.treasury_approved_by = #employee_id# AND tp.travel_type='D'
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <update id="updateTreasuryApproval" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET status = #status#, treasury_approved_by = #treasury_id#, treasury_remarks = #treasury_comments#, treasury_action_date = now()
+        WHERE id = #master_id#
+    </update>
+    
+    <select id="getAdminPendingList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">  
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        tic.booking_type,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 'a')
+        LEFT JOIN tp_travel_ticket AS tic ON(tp.id = tic.master_id AND tic.booking_type = "co")
+        LEFT JOIN tp_hotel_bookings AS hotl ON(tp.id = hotl.master_id AND hotl.booking_type = "co")
+        WHERE tp.travel_type='D' AND tp.status IN(6,9,8,11) AND app.employee_id = #employee_id# 
+        AND tp.admin_action_required = 'Y' AND (tic.booking_type IS NOT NULL OR
+        hotl.booking_type IS NOT NULL)
+        GROUP BY tp.id
+        ORDER BY tp.id DESC;
+        
+<!--        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS STATUS
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 'a')
+        LEFT JOIN tp_travel_ticket AS tic ON(tp.id = tic.master_id AND tic.booking_type ='co')
+        WHERE tp.travel_type='D' AND tp.status IN(6,9,8,11) AND app.employee_id = #employee_id# AND tp.admin_action_required = 'Y' AND tic.booking_status IS NULL
+        GROUP BY tp.id
+        ORDER BY tp.id DESC;-->
+    </select>
+    
+    <select id="getAdminProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT tp.id AS master_id,
+        tp.tp_reference_id AS tp_reference_id,
+        tp.employee_id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(tp.travel_requested_date,"%d-%b-%Y") AS requested_date,
+        DATE_FORMAT(tp.travel_start_date,"%d-%b-%Y") AS travel_start_date,
+        st.status_desc AS status
+        FROM tp_master AS tp
+        LEFT JOIN employees AS emp ON(tp.employee_id = emp.id)
+        LEFT JOIN tp_status_config AS st ON(tp.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 'a' AND tp.admin_approved_by = app.employee_id)
+        WHERE tp.admin_action_required='Y' AND tp.travel_type='D' AND tp.admin_approved_by IS NOT NULL
+        ORDER BY tp.id DESC;
+    </select>
+    
+    <update id="updateAdminApproval" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET status = #status#, admin_approved_by = #admin_id#, admin_remarks = #admin_remarks#, admin_action_date = now()
+        WHERE id = #master_id#
+    </update>
+    
+    <select id="getCurrency" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT id AS currency_id, currency_code AS currency_name FROM currencies;
+    </select>
+    
+    <update id="updateAdvanceDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_advance_details SET deposited_date = #deposited_date#, deposited_amount = #deposited_amount#, deposited_currency_id = #deposited_currency#, deposited_by = #treasury_id#,
+        depositor_remarks = #treasury_comments#, treasury_action_date = now() where id = #advance_id#;
+    </update>
+    
+    <insert id="saveAttachment" parameterClass="Map">
+        INSERT INTO tp_attachments (master_id,file_name,type,created_date)
+        values(#master_id#,#file_name#,#type#,#created_date#)
+        <selectKey resultClass="String" keyProperty="last_insert_id">
+            select last_insert_id() as last_insert_id
+        </selectKey>
+    </insert>
+    
+    <update id="updateTicketDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_travel_ticket SET booking_type = #ticket_book_type#, booking_status = #booking_status#, file_id = #file_id# where id = #travel_ticket_id#;
+    </update>
+    
+    <update id="updateHotelDetails" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_hotel_bookings SET booking_type = #hotel_book_type#, booking_status = #booking_status#, file_id = #file_id# where id = #hotelid#;
+    </update>
+    
+    <update id="updateTravel" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET tp_reference_id = #tp_reference_id#, travel_type = "D", employee_id = #employee_id#, band_id = #band_id#, 
+        designation_id = #designation_id#, unit_id = #unit_id#, sub_unit_id = #sub_unit_id#, travel_purpose = #travel_purpose#, 
+        travel_start_date = #travel_start_date#, travel_end_date = #travel_end_date#, travel_requested_date =#requested_date# , 
+        travel_billable =#travel_billable#, client_reimbursable = #client_reimbursable#, travel_term =#travel_term#, customer_id = #customer_id#, 
+        customer_others = #customer_others#, project_id = #project_id#, project_others = #project_others#, mobileNo = #contact_number#, status = #status#, 
+        guest_booking = #guest_booking#, guest_name = #guest_booking_name#, rm_id = #rm_id#, buh_id = #buh_id#, admin_action_required = #admin_action#, 
+        settlement_type = #settlemet_policy#, deviation = #deviation#, treasury_action_required = #treasury_action#, currency_type = #currency_id#,
+        location_id = #location_id# 
+        WHERE id = #master_id#;
+    </update>
+    
+    <update id="updateTicket" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_travel_ticket SET master_id = #master_id#, from_city = #travel_from_city_id#, from_city_others = #travel_from_city_others#, 
+        to_city = #travel_to_city_id#, to_city_others = #travel_to_city_others#, travel_date = #travel_ticket_date#, travel_preference = #travel_travel_preference#, 
+        travel_mode = #travel_travel_mode#, remarks = #travel_ticket_remarks#, booking_type = #ticket_book_type#, deleted = #travel_ticketdeleted# 
+        WHERE id = #travel_ticket_id#;
+    </update>
+    
+    <update id="updateHotel" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_hotel_bookings SET master_id = #master_id#, city = #hotel_city_id#, city_others = #hotel_city_others#, 
+        location = #hotel_location#, from_date = #hotel_from_date#, to_date = #hotel_to_date#, remarks = #hotel_hotel_remarks#, 
+        booking_type = #hotel_book_type#, deleted = #hoteldeleted#
+        WHERE id = #hotelid#;
+    </update>
+    
+    <update id="updateConveyance" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_conveyance SET master_id = #master_id#, city = #cab_city_id#, city_others = #cab_city_others#, pickup = #cab_pickup#, 
+        dropto = #cab_drop#, start_date = #cab_date#, time = #cab_time_hrs#, remarks = #cab_remarks#, deleted = #cab_deleted#
+        WHERE id = #cab_id#;
+    </update>
+    
+    <update id="updateAdvance" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_advance_details SET master_id = #master_id#, tp_advance_id = #advance_id#, required_date = #advance_date#, 
+        requested_amount =#advance_amount#, remarks = #advance_remarks#, currency_id = #currency_id#, created_date = NOW() 
+        WHERE id = #advance_id#;
+    </update>
+    
+    <update id="cancelTravel" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET cancel_remarks = #cancel_remarks#, cancel_date = now(), status = #status# where id = #master_id#;
+    </update>
+    
+    <update id="updateTravelEndDate" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET travel_end_date = #travel_end_date#, status = #status#, treasury_action_required = #treasury_action# where id = #master_id#;
+    </update>
+    
+    <select id="getConfigValueData" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id = 10;
+    </select>
+    
+    <select id="getEmployeeMailId" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        SELECT CONCAT(first_name,' ', last_name) AS employee_name, work_email_address AS mail_id FROM employees WHERE id = #emp_id#;    
+    </select>
+    
+    <select id="getFinanceMailId" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 'f' AND tp.company_structure_id = #unit_id#
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    
+    <select id="getAdminMailId" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 'a'
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    
+    <select id="getTreasuryMailId" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 't'
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    
+    <select id="getCustomerName" parameterClass="String" resultClass="String">
+        SELECT CONCAT(customer_code,' - ',customer_name) AS customer_name FROM customers WHERE id = #customer_id# 
+    </select>
+    
+    <select id="getProjectName" parameterClass="String" resultClass="String">
+        SELECT CONCAT(project_code,' - ',project_name) AS project_name FROM projects WHERE id =#project_id#
+    </select>
+    <select id="bandList" resultClass="String">
+        SELECT id AS band_id FROM bands WHERE parent_id IN(11,7,31)
+    </select>
+    <select id="getRmId" parameterClass="String" resultClass="String">
+        SELECT manager FROM employees WHERE id = #employee_id#;
+    </select>
+    
+    <select id="getTicketBookingCount" parameterClass="String" resultClass="String">
+        SELECT COUNT(booking_type) FROM tp_travel_ticket WHERE booking_type='co' AND master_id = #master_id#
+    </select>
+    <select id="getHotelBookingCount" parameterClass="String" resultClass="String">
+        SELECT COUNT(booking_type) FROM tp_hotel_bookings WHERE booking_type='co' AND master_id = #master_id#
+    </select>
+    <update id="updateAdminActionStatus" parameterClass="com.defiance.ideal.travelplan.dto.DomesticTravelDto">
+        UPDATE tp_master SET admin_action_required = #admin_action#
+        WHERE id = #master_id#;
+    </update>
+</sqlMap>

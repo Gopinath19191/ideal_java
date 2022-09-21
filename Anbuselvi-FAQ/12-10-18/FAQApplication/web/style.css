@@ -1,0 +1,643 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 27 Aug, 2018, 4:01:45 PM
+    Author     : 8000462
+*/
+.con
+{
+    margin-left: 200px !important;
+}
+body
+{
+    background: url(images/bg_page.png) repeat-x scroll top center #EEF2F8;    
+}
+.plus
+{
+    width:20px;
+    height:20px; 
+}
+
+#function
+{
+    margin-left: 400px;
+    margin-top: 20px;
+    font-family: arial;
+    font-size: 13px;
+}
+#question, #plus, #answer
+{
+    margin-left: 400px;
+    font-family: arial;
+    font-size: 13px;
+}
+.categories
+{
+    margin-left: 64px;
+    padding-right: 93px;
+    padding-top: 6px;
+    border: 1px solid #99BBE8;
+}
+
+.query
+{
+    margin-left: 60px;
+    border: 1px solid #99BBE8;
+}
+.ans
+{
+    margin-left: 60px;
+    border: 1px solid #99BBE8;
+}
+.text
+{
+    margin-left: 65px;
+    padding-right: 93px;
+    padding-top: 6px;
+    border: 1px solid #99BBE8;
+}
+#dot1
+{
+    padding-left: 60px;
+}
+#dot2
+{
+    padding-left: 18px;
+}
+#dot3
+{
+    padding-left: 85px;
+}
+
+#dot4
+{
+    padding-left: 95px;
+}
+.submit
+{
+    margin-top: 50px;
+    margin-left: 20px;
+}
+.save
+{
+    margin-top:50px;
+}
+#change
+{
+    margin-left: 520px;
+}
+.text-s
+{
+    font-weight: bold;
+    color: #666666;
+    font-size: 18px;    
+}
+#info-text
+{
+    border: 1px solid #DDD6B7;
+    width:959px;
+    height:73px;
+    background-color: #ECE6D2;
+}
+
+#InfoIcon
+{
+    padding-top: 7px;
+    width:20px;
+}
+#tickIcon
+{
+    padding-top: 7px;
+}
+.Info
+{
+    margin: 5px;
+    font-family:Arial;
+    font-size:12px;
+    color: #666666;
+}
+.unorder
+{
+
+    font-family:Arial;
+    font-size:12px;
+    color: #666666;
+}
+
+.container-1
+{
+    width:960px;
+    /* height:351px; */
+    border: 1px solid #99BBE8;
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 10px;
+}
+#label
+{
+    text-align: left;
+    color: #666;
+    margin-top: 20px;
+    margin-left: 59px;
+}
+.select
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+
+#select
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+
+#faq_unit_id
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+/*textarea
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}*/
+
+#label1
+{
+    text-align: left;
+    color: #666;
+    margin-top: 20px;
+    margin-left: 55px;
+}
+#select1
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+#question_category_id
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+#satisfied
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 115px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:21px;
+    margin-top: 20px;
+}
+#button
+{
+    margin-left: 20px;
+    margin-top: 20px;    
+}
+.submitbutton_TS
+{
+    background-color:#316CA8;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 24px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+}
+.cancelbutton_TS
+{
+    background-color:#316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+}
+
+#sub
+{
+    margin-left: 320px;
+    padding-top: 52px;
+    margin-bottom:20px;
+}
+
+.button
+{
+    margin-left: 20px;
+    margin-top: 20px;    
+}
+#select2
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:135px;
+    margin-top: 20px;
+}
+
+.rem
+{
+    margin-left:20px;
+    background-color: #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+}
+
+#file
+{
+    margin-left: 69px;
+    margin-top: 20px;
+}
+.cat
+{
+    background-color: #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 100px;
+    border-radius: 5px;
+}
+.add1
+{
+    background-color: #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+}
+#label2
+{
+    text-align: left;
+    color: #666;
+    margin-top: 20px;
+    margin-left: 27px;
+}
+
+#file
+{
+    margin-left: -77px;
+    margin-top: 20px;
+}	
+#file1
+{
+    margin-left: 1px;
+    margin-top: 20px;
+}	
+
+
+.buttoncss
+{
+    background-color: #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+    padding-left: 5px;
+    text-align: center;
+    width: 80px;
+    border-radius: 5px;
+}
+
+#modal
+{
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+}
+#newQuesCategory
+{
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+}
+/* #addForm tr td { */
+/* padding: 3px; */
+/* } */
+
+.select4,.select5
+{
+
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;    
+    margin-left: 70px;
+    margin-top: 20px;
+}
+.select44,.select55
+{
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;    
+    margin-left: -32px;
+    margin-top: 20px;
+    
+}
+#error
+{
+    margin-left: 285px;
+    margin-top: 25px;
+    color:red;
+    display:none;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+}
+.has-error{
+    border:1px solid red !important;
+}
+
+#unit
+{
+    color:red;
+}
+
+.dropdown
+{
+    background: url(images/text-bg.gif) repeat-x scroll center top #FFFFFF;
+    border: 1px solid #99BBE8;
+    font-family: arial;
+    font-size: 13px;
+    height: 20px;
+    width: 225px;
+    box-sizing: content-box;
+    display: inline-block;
+    padding: 2px 2px 1px 3px;
+    color: #000000;
+    margin-left:70px;
+    margin-top: 20px;
+}
+.rating {
+    float:left;
+}
+
+/* :not(:checked) is a filter, so that browsers that don’t support :checked don’t 
+   follow these rules. Every browser that supports :checked also supports :not(), so
+   it doesn’t make the test unnecessarily selective */
+.rating:not(:checked) > input {
+    position:absolute;
+    /*                top:-9999px;*/
+    clip:rect(0,0,0,0);
+}
+
+.rating:not(:checked) > label {
+    float:right;
+    width:1em;
+    padding:0 .1em;
+    overflow:hidden;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:200%;
+    line-height:1.2;
+    color:#ddd;
+    text-shadow:1px 1px #bbb, 2px 2px #666, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating:not(:checked) > label:before {
+    content: '★ ';
+}
+
+.rating > input:checked ~ label {
+    color: #f70;
+    text-shadow:1px 1px #c60, 2px 2px #940, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+    color: gold;
+    text-shadow:1px 1px goldenrod, 2px 2px #B57340, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating > input:checked + label:hover,
+.rating > input:checked + label:hover ~ label,
+.rating > input:checked ~ label:hover,
+.rating > input:checked ~ label:hover ~ label,
+.rating > label:hover ~ input:checked ~ label {
+    color: #ea0;
+    text-shadow:1px 1px goldenrod, 2px 2px #B57340, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating > label:active {
+    position:relative;
+    top:2px;
+    left:2px;
+}
+/*            to disable rating*/
+.rating1 {
+    float:left;
+}
+
+/* :not(:checked) is a filter, so that browsers that don’t support :checked don’t 
+   follow these rules. Every browser that supports :checked also supports :not(), so
+   it doesn’t make the test unnecessarily selective */
+.rating1:not(:checked) > input {
+    position:absolute;
+    /*                top:-9999px;*/
+    clip:rect(0,0,0,0);
+}
+
+.rating1:not(:checked) > label {
+    float:right;
+    width:1em;
+    padding:0 .1em;
+    overflow:hidden;
+    white-space:nowrap;
+    cursor:pointer;
+    font-size:200%;
+    line-height:1.2;
+    color:#ddd;
+    text-shadow:1px 1px #bbb, 2px 2px #666, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating1:not(:checked) > label:before {
+    content: '★ ';
+}
+
+.rating1 > input:checked ~ label {
+    color: #f70;
+    text-shadow:1px 1px #c60, 2px 2px #940, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating1:not(:checked) > label:hover,
+.rating1:not(:checked) > label:hover ~ label {
+    color: gold;
+    text-shadow:1px 1px goldenrod, 2px 2px #B57340, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating1 > input:checked + label:hover,
+.rating1 > input:checked + label:hover ~ label,
+.rating1 > input:checked ~ label:hover,
+.rating1 > input:checked ~ label:hover ~ label,
+.rating1 > label:hover ~ input:checked ~ label {
+    color: #ea0;
+    text-shadow:1px 1px goldenrod, 2px 2px #B57340, .1em .1em .2em rgba(0,0,0,.5);
+}
+
+.rating1 > label:active {
+    position:relative;
+    top:2px;
+    left:2px;
+}
+
+.ratingclass{
+    top: 0px;                
+}
+.odd_row{
+    background: #EFF4FA;;
+}
+
+.disableClass{
+    height: 30px;
+    position: absolute;
+    z-index: 4;
+    padding: 0px;
+}

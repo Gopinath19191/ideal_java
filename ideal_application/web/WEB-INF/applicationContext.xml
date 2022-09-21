@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <!--<bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:location="/WEB-INF/jdbc.properties" />-->
+
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+          <!--<property name="location" value="/WEB-INF/app.properties" />-->
+        <property name="locations" >
+            <list>
+                <value>/WEB-INF/jdbc.properties</value>
+                <value>/WEB-INF/config.properties</value>
+            </list>
+        </property>
+
+    </bean>
+
+<!--    class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+    class="org.apache.commons.dbcp.BasicDataSource"-->
+<!--    <bean id="dataSource"
+          class="org.apache.commons.dbcp.BasicDataSource"
+          p:driverClassName="${jdbc.driverClassName}"
+          p:url="${jdbc.url}"
+          p:username="${jdbc.username}"
+          p:password="${jdbc.password}" />-->
+  
+     <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+          p:driverClassName="${Driver}"
+          p:url="${Url}"
+          p:username="${Username}"
+          p:password="${Password}" />       
+
+<!--   <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="${jndi.name}"/>
+    </bean>-->
+
+    <!-- ADD PERSISTENCE SUPPORT HERE (jpa, hibernate, etc) -->
+
+    <bean id="sqlMap" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="configLocation">
+            <value>/WEB-INF/sqlMapConfig.xml</value>
+        </property>
+        <property name="dataSource" ref="dataSource" />
+        <property name="useTransactionAwareDataSource" value="true"/>
+    </bean>
+
+    <bean id="AuthenticatorDao" class="com.defiance.ideal.application.dao.AuthenticatorDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="CustomerService" class="com.defiance.ideal.application.service.CustomerServiceImpl">
+        <property name="customerDao">
+            <ref local="CustomerDao"/>
+        </property>
+    </bean>
+    <bean id="CustomerDao" class="com.defiance.ideal.application.dao.CustomerDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    <bean id="AgencyService" class="com.defiance.ideal.application.service.AgencyServiceImpl">
+        <property name="agencyDao">
+            <ref local="AgencyDao"/>
+        </property>
+    </bean>
+    <bean id="CustomerMappingService" class="com.defiance.ideal.application.service.CustomerMappingServiceImpl">
+        <property name="customerMappingDao">
+            <ref local="CustomerMappingDao"/>
+        </property>
+    </bean>
+   <!-- <bean id="RequestorService" class="com.defiance.requestor.service.RequestServiceImpl">
+        <property name="requestorDAOImplObj">
+            <ref local="RequestorDAOImpl"/>
+        </property>
+    </bean>-->
+
+
+   <!-- <bean id="RequestorService" class="com.defiance.requestor.service.RequestServiceImpl" >
+       <property name="requestorDAOImpl">  <ref local="RequestorDAOImpl"/>
+        </property>
+    </bean>-->
+    <bean name="RequestorService" class="com.defiance.ideal.application.service.RequestServiceImpl">
+        <property name="requestorDAOImpl" ref="RequestorDAO"/>
+    </bean>
+
+     <bean name="RequestorDAO" class="com.defiance.ideal.application.dao.RequestorDAOImpl">
+         <property name="sqlMapClient">   <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+
+    
+    
+    <bean id="AgencyDao" class="com.defiance.ideal.application.dao.AgencyDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="CustomerMappingDao" class="com.defiance.ideal.application.dao.CustomerMappingDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="CustomerGroupService" class="com.defiance.ideal.application.service.CustomerGroupServiceImpl">
+        <property name="customerGroupDao">
+            <ref local="CustomerGroupDao"/>
+        </property>
+    </bean>
+    <bean id="CustomerGroupDao" class="com.defiance.ideal.application.dao.CustomerGroupDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    <bean id="OJFSurveyService" class="com.defiance.ideal.application.service.OJFSurveyServiceImpl">
+        <property name="ojfSurveyDaoImpl">
+            <ref local="OJFSurveyDao"/>
+        </property>
+    </bean>
+    <bean id="OJFSurveyDao" class="com.defiance.ideal.application.dao.OJFSurveyDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+ <!--   <bean id="requestorDAO" class="com.defiance.requestor.dao.RequestorDAOImpll">
+        <property name="sqlMapClient">  <ref local="sqlMap"/>
+        </property>
+    </bean>-->
+
+</beans>

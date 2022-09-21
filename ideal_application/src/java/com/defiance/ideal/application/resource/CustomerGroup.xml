@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="CustomerGroupMap">
+
+<select id="fetchSelectedCustomerGroup" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+SELECT cg.id as "groupId",
+cg.group_name as "groupName",
+cg.group_code as "groupCode"
+FROM customer_groups AS cg
+WHERE cg.id = #groupId#
+order by group_name
+</select>
+
+<select id="checkCustomerGroupDuplication" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+SELECT cg.id as "groupId",
+cg.group_name as "groupName",
+cg.group_code as "groupCode"
+FROM customer_groups AS cg 
+WHERE cg.group_name = #groupName#
+</select>
+
+<select id="fetchCustomerGroupData" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+SELECT cg.id as "groupId",
+cg.group_name as "groupName",
+cg.group_code as "groupCode"
+FROM customer_groups AS cg order by group_name
+</select>
+
+<insert id="insertCustomerGroupDetails" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" >
+    INSERT INTO customer_groups set
+    group_name = #groupName#,
+    group_code = #groupCode#;
+</insert>
+
+<update id="updateCustomerGroupDetails" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+    UPDATE customer_groups set
+    group_name = #groupName#,
+    group_code = #groupCode#
+    WHERE id = #groupId#;
+</update>
+<select id="getDuplicateCustomerGroupName" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO"  resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+    SELECT id AS groupId FROM customer_groups WHERE group_name = #groupName#
+    <dynamic>
+        <isNotEmpty prepend="and" property="groupId">
+            id != #groupId#
+        </isNotEmpty>
+    </dynamic>
+    ;
+</select>
+
+</sqlMap>

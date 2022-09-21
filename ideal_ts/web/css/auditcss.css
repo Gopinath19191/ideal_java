@@ -1,0 +1,116 @@
+/* 
+    Document   : auditcss
+    Created on : 15 Mar, 2016, 9:55:59 AM
+    Author     : 16113
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+
+/*body {
+    color: #000000;
+    font-family: Verdana,Geneva,Arial,Helvetica,sans-serif;
+    font-size: 11px;
+    line-height: 15px;
+    background:#C3D5ED;
+    overflow: auto;
+}*/
+body {
+    clear: both;
+    margin: 0 auto;
+    width: 1100px;
+    font-family: Arial;
+    font-size: 16px;    
+}
+.center_content{
+    font-weight: bold;
+    color: Black;
+}
+.searchtable{
+    background: url("../images/box-strip.jpg") #e2e8ec repeat-x top; 
+    border:1px solid #bdc9d1;
+    margin-top: 10px;
+    padding: 10px;     
+}
+#main_container {
+    text-align: left;
+    width:95%;
+    padding: 0px 20px 0px 20px;
+}
+.page_heading {
+    font-weight: bold;
+    color:#666666;
+    font-size: 18px;
+
+
+}
+.filetrInnerWrap{   
+    font-family: "Times New Roman", Times, serif;
+
+    line-height: 1.8;
+
+}
+.tabletools {
+    background: url("../images/box-strip.jpg") repeat-x scroll center top rgb(226, 232, 236);
+    border:1px solid rgb(189, 201, 209);
+    margin: 10px 0;
+    padding: 10px;
+
+}
+td{
+    vertical-align: top;
+    padding: 8px;
+
+}
+th{
+    vertical-align: top;
+    padding: 8px;
+    background-color: #ebf1fa;
+}
+form label {
+    float: left;
+    display: block;
+    padding-right: 7px;
+    width: 115px;
+    text-align: left;
+    color: rgb(102, 102, 102);
+}
+.gobutton {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #BCCFEA;
+    color: #4D85B8;
+    float: left;
+    font-weight: bold;
+    height: 22px;
+    margin: 2px 0 0 5px;
+    width: 36px;
+}
+.dataTable{
+    width: 740px;
+    margin: 2px 0;
+    padding: 4px;
+    background-color: white;
+    text-align: center;
+    border-collapse: collapse;
+    font-size: 13px;  
+    border: 1px solid #CADFF2;
+}
+a {
+    text-decoration: none;
+    color: #005ce6;
+}
+a:hover{
+    text-decoration: underline;
+}
+
+.odd {
+    background-color: #fff ;
+}
+.even {
+    background-color: #EFF4FA;
+}

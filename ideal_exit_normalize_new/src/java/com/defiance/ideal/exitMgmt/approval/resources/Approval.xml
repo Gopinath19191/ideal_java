@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="ApprovalDetails">
+    <select id="getRegnEmpList" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT eem.id AS exitEmpId,eem.deleted,eem.employee_id AS empId,
+        emp.resigned_date AS resignedDate,emp.employment_status AS empStatus,emp.manager AS manager,
+        emp.mobile_number AS contactNo, eem.ffs_address_id AS contactAddrId, emp.personal_email_address  AS personalEmail, eem.leaving_reason AS leavingReason,
+        eem.submit_status AS submitStatus,
+        emp.employee_number AS employeeNumber, CONCAT( emp.first_name, ' ', emp.last_name ) AS employeeName,
+        band.name AS band, band.id AS bandId, subBand.name AS subBand, subBand.id AS subBandId, pg.id AS practiceGroupId, pg.name AS practiceGroup,
+        rm.id AS rmId, CONCAT( rm.first_name, ' ', rm.last_name ) AS rmName,
+        emp.joined_date AS empDoj,
+        exrm.survey_status AS surveyStatus,
+        exrm.id AS rmApprovalId, exrm.approver_id AS rmId, exrm.exit_trigger_date AS exitTriggerDate,
+        emp.released_date AS lastWorkingDate,
+        exrm.notice_wavier_value AS noticeWaiverValue,exrm.approved_date AS rmApprovedDate,
+        exrm.rm_clr_date AS rmClrDate,
+        exad.approved_date AS adApprovedDate,
+        exfin.approved_date AS finApprovedDate,
+        exns.approved_date AS nsApprovedDate,
+        exhr.approved_date AS hrApprovedDate
+        FROM dtl_exit_employee AS eem
+        LEFT JOIN employees AS emp ON ( emp.id = eem.employee_id )
+        LEFT JOIN bands AS subBand ON ( subBand.id = emp.band_id )
+        LEFT JOIN bands AS band ON ( band.id = subBand.parent_id )
+        LEFT JOIN company_structures AS pg ON ( pg.id = emp.structure_name )
+        LEFT JOIN employees AS rm ON ( rm.id = emp.manager )
+        LEFT JOIN dtl_exit_rm_approval AS exrm ON (exrm.exit_emp_id=eem.id)
+        LEFT JOIN dtl_exit_admin_approval AS exad ON (exad.exit_emp_id=eem.id)
+        LEFT JOIN dtl_exit_finance_approval AS exfin ON (exfin.exit_emp_id=eem.id)
+        LEFT JOIN dtl_exit_ns_approval AS exns ON (exns.exit_emp_id=eem.id)
+        LEFT JOIN dtl_exit_hr_approval AS exhr ON (exhr.exit_emp_id=eem.id)
+        WHERE 1=1 AND
+        <dynamic>
+            <isEqual prepend="" property="moduleId" compareValue="496">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    emp.manager = #empId# AND eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 2 AND exrm.approved_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    emp.manager = #empId# AND eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 2 AND exrm.approved_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="495">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    emp.manager = #empId# AND eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exrm.rm_clr_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    emp.manager = #empId# AND eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exrm.rm_clr_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="497">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exfin.approved_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exfin.approved_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="498">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exns.approved_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exns.approved_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="499">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exad.approved_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exad.approved_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="500">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exhr.approved_date IS NULL ORDER BY emp.released_date;
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    eem.deleted = 'N' AND eem.submit_status <![CDATA[ >= ]]> 3 AND exhr.approved_date IS NOT NULL ORDER BY emp.released_date DESC;
+                </isEqual>
+            </isEqual>                
+        </dynamic>
+    </select>
+    
+    <select id="getRmActionData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT exrm.id AS rmApprovalId,exrm.approver_id AS rmId,exemp.employee_id AS empId,
+        exrm.exit_trigger_date AS exitTriggerDate,emp.released_date AS lastWorkingDate,
+        if((DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1)> 90,90,DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1) AS daysServed,
+        #cmpNoticePeriodInDays#-if((DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1)> 90,90,DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1) AS balNoticePeriod,
+        exrm.notice_wavier_value AS noticeWaiverValue,
+        exrm.survey_status AS surveyStatus,exrm.company_doc AS compDoc,exrm.project_doc AS projDoc,
+        exrm.customer_approval AS custApproval,exrm.emp_qpd AS empQpd,exrm.rm_others AS rmOthers,
+        exrm.company_doc_remarks AS compDocRemarks,exrm.project_doc_remarks AS projDocRemarks,
+        exrm.customer_approval_remarks AS custApprovalRemarks,exrm.emp_qpd_remarks AS empQpdRemarks,exrm.rm_others_remarks AS rmOthersRemarks,
+        exrm.rm_overall_comments AS rmClrOverAllComments,
+        exrm.rm_comments as rmComments
+        FROM dtl_exit_rm_approval AS exrm
+        LEFT JOIN dtl_exit_employee AS exemp ON (exemp.id=exrm.exit_emp_id)
+        LEFT JOIN employees AS emp ON (emp.id=exemp.employee_id)
+        WHERE exrm.exit_emp_id =#exitEmpId#;
+    </select>
+
+    <select id="getFinActionData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT 	concat(e.first_name,' ',e.middle_name, ' ',e.last_name) as name, 
+        exfin.id AS finApprovalId,exfin.last_paid_salary AS lastPaidSalary,exfin.travel_advance AS travelAdvance,exfin.salary_advance AS salaryAdvance,
+        exfin.relocation,exfin.joining_bonus AS joiningBonus,
+        exfin.notice_reimburse AS noticeReimburse,exfin.professional_fee AS professionalFee,exfin.loans,exfin.official_expenses AS officialExpenses,
+        exfin.last_paid_salary_remarks AS lastPaidSalaryRemarks,exfin.travel_advance_remarks AS travelAdvanceRemarks,
+        exfin.salary_advance_remarks AS salaryAdvanceRemarks,exfin.relocation_remarks AS relocationRemarks,exfin.joining_bonus_remarks AS joiningBonusRemarks,
+        exfin.notice_reimburse_remarks AS noticeReimburseRemarks,exfin.professional_fee_remarks AS professionalFeeRemarks,
+        exfin.loans_remarks AS loansRemarks,exfin.official_expenses_remarks AS officialExpensesRemarks,
+        exfin.finance_overall_comments AS finOverAllComments,exfin.approver_id AS finApproverId,exfin.last_paid_salary_amount AS lastPaidSalaryAmt,
+        exfin.salary_advance_amount AS salAdvAmt,
+        exfin.travel_advance_amount AS travelAdvAmt,exfin.relocation_amount AS relocationAmt,exfin.joining_bonus_amount AS joiningBonusAmt,
+        exfin.notice_reimburse_amount AS noticeReimbAmt,exfin.professional_fee_amount AS professionalfeeAmt,exfin.loans_amount AS loansAmt,exfin.official_expenses_amount AS officialExpAmt,
+        (exfin.travel_advance_amount+exfin.salary_advance_amount+
+        exfin.relocation_amount+exfin.joining_bonus_amount+exfin.notice_reimburse_amount+
+        exfin.professional_fee_amount+exfin.loans_amount+exfin.official_expenses_amount+
+        sum(fotr.amount))
+        AS totalAmount
+        FROM dtl_exit_finance_approval AS exfin
+        left join employees e on (e.id=exfin.approver_id)
+        LEFT JOIN dtl_exit_fin_others fotr ON (fotr.fin_approval_id=exfin.id)
+        WHERE exfin.exit_emp_id =#exitEmpId# GROUP BY exfin.id;
+    </select>
+    
+    <select id="getEmailStatus" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT exe.id, exns.password_deactivation AS desktopPwd,exns.email_deactivation AS emailDeactivation,
+        exns.sales_crm AS salesCrm,exns.fin_dax AS finDax,exns.laptop AS laptop, exns.ns_others AS nsOthers FROM dtl_exit_ns_approval exns
+        Left join dtl_exit_employee as exe on (exns.exit_emp_id=exe.id)
+        WHERE exe.employee_id =#exitEmpId# AND exns.approved_date IS NOT NULL;
+    </select>
+    
+    <select id="getNSActionData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT 	concat(e.first_name,' ',e.middle_name, ' ',e.last_name) as name,
+        exns.id AS nsApprovalId,exns.password_deactivation AS desktopPwd,exns.email_deactivation AS emailDeactivation,
+        exns.sales_crm AS salesCrm,exns.fin_dax AS finDax,exns.ns_others AS nsOthers,exns.password_deactivation_remarks AS desktopPwdRemarks,
+        exns.email_deactivation_remarks AS emailDeactivationRemarks,exns.laptop AS laptop,exns.laptop_remarks AS laptopRemarks,
+        exns.sales_crm_remarks AS salesCrmRemarks,exns.fin_dax_remarks AS finDaxRemarks,exns.ns_others_remarks AS nsOtherRemarks,
+        exns.ns_overall_comments AS nsOverAllComments,exns.approver_id AS nsApproverId FROM dtl_exit_ns_approval exns
+        left join employees e on (e.id=exns.approver_id)
+        WHERE exns.exit_emp_id =#exitEmpId#;
+    </select>
+
+    <select id="getAdminActionData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT 	concat(e.first_name,' ',e.middle_name, ' ',e.last_name) as name,
+        exad.id AS adApprovalId,exad.id_card AS idCard,exad.drawer_key AS drawerKey,exad.business_card AS businessCard,
+        exad.data_card AS dataCard,exad.mobile_phone AS mobilePhone,exad.sim_card AS simCard,exad.laptop,exad.cmp_res_phone AS cmpResPhone,
+        exad.out_bill_clr AS outBillClr,exad.cd_pendrive AS cdPenDrive,exad.cabin_key AS cabinKey,exad.admin_others AS adOther,
+        exad.id_card_remarks AS idCardRemarks,exad.drawer_key_remarks AS drawerKeyRemarks,
+        exad.data_card_remarks AS dataCardRemarks,exad.business_card_remarks AS businessCardRemarks,
+        exad.mobile_phone_remarks AS mobilePhoneRemarks,exad.sim_card_remarks AS simCardRemarks,exad.laptop_remarks AS laptopRemarks,
+        exad.cmp_res_phone_remarks AS cmpResPhoneRemarks,
+        exad.out_bill_clr_remarks AS outBillClrRemarks,exad.cd_pendrive_remarks AS cdPenDriveRemarks,exad.cabin_key_remarks AS cabinKeyRemarks,exad.admin_others_remarks AS adOtherRemarks,exad.admin_overall_comments AS adOverAllComments,exad.approver_id AS adApproverId FROM dtl_exit_admin_approval AS exad
+        left join employees e on (e.id=exad.approver_id)
+        WHERE exad.exit_emp_id =#exitEmpId#;
+    </select>
+
+    <select id="getHrActionData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT concat(e.first_name,' ',e.middle_name, ' ',e.last_name) as name,exhr.exit_type AS empStatus,
+        exhr.id AS hrApprovalId,exhr.exit_type AS exitType,exhr.ideal_tool_deactivated AS idealToolDeactivated,exhr.leave_balance AS leaveBalance,
+        exhr.overseas_bond AS overseasBond,exhr.exit_interview AS exitInterview,exhr.hr_insurance AS hrInsurance,
+        exhr.hr_others AS hrOthers,exhr.exit_type_remarks AS exitTypeRemarks,
+        exhr.ideal_tool_deactivated_remarks AS idealToolDeactivatedRemarks,
+        exhr.leave_balance_remarks AS leaveBalanceRemarks,
+        exhr.overseas_bond_remarks AS overseasBondRemarks,
+        exhr.exit_interview_remarks AS exitInterviewRemarks,
+        exhr.hr_insurance_remarks AS hrInsuranceRemarks,
+        exhr.hr_others_remarks AS hrOthersRemarks,
+        exhr.hr_overall_comments AS hrOverAllComments,exhr.approver_id AS hrApproverId 
+        FROM dtl_exit_hr_approval AS exhr
+        left join employees e on (e.id=exhr.approver_id) WHERE exhr.exit_emp_id =#exitEmpId#;
+    </select>
+
+    <insert id="insertRmData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_exit_rm_approval(exit_emp_id,approver_id,approved_date,exit_trigger_date,notice_wavier_value,rm_clr_date,
+        company_doc,project_doc,customer_approval,emp_qpd,rm_others,company_doc_remarks,project_doc_remarks,
+        customer_approval_remarks,emp_qpd_remarks,rm_others_remarks,rm_overall_comments,rm_comments)
+        VALUES(#exitEmpId#,#rmId#,#rmApprovedDate#,#exitTriggerDate#,#noticeWaiverValue#,#rmClrDate#,
+        #compDoc#,#projDoc#,#custApproval#,#empQpd#,#rmOthers#,#compDocRemarks#,#projDocRemarks#,
+        #custApprovalRemarks#,#empQpdRemarks#,#rmOthersRemarks#,#rmClrOverAllComments#,#rmComments#);
+    </insert>
+
+    <update id="updateRmData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_rm_approval SET rm_clr_date=#rmClrDate#,company_doc=#compDoc#,project_doc=#projDoc#,customer_approval=#custApproval#,emp_qpd=#empQpd#,
+        rm_others=#rmOthers#,company_doc_remarks=#compDocRemarks#,project_doc_remarks=#projDocRemarks#,
+        customer_approval_remarks=#custApprovalRemarks#,emp_qpd_remarks=#empQpdRemarks#,rm_others_remarks=#rmOthersRemarks#,
+        rm_overall_comments=#rmClrOverAllComments#,approver_id=#rmId# WHERE exit_emp_id=#exitEmpId#;
+    </update>
+
+    <update id="updateEmpRmData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        UPDATE employees SET
+        <dynamic>
+            <isEqual prepend="" property="buttonName" compareValue="Approve" >
+                released_date=#lastWorkingDate#
+            </isEqual>
+            <isNotEqual prepend="" property="buttonName" compareValue="Approve" >
+                resigned_date=NULL
+            </isNotEqual>
+        </dynamic>
+        WHERE id=#resEmpId#;
+    </update>
+
+    <insert id="insertFinData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_exit_finance_approval(exit_emp_id,approved_date,last_paid_salary,travel_advance,salary_advance,relocation,joining_bonus,notice_reimburse,professional_fee,
+        loans,official_expenses,last_paid_salary_remarks,travel_advance_remarks,salary_advance_remarks,relocation_remarks,joining_bonus_remarks,notice_reimburse_remarks,
+        professional_fee_remarks,loans_remarks,official_expenses_remarks,finance_overall_comments,approver_id,last_paid_salary_amount,salary_advance_amount,travel_advance_amount,relocation_amount,joining_bonus_amount,notice_reimburse_amount,professional_fee_amount,loans_amount,official_expenses_amount)
+        VALUES(#exitEmpId#,#finApprovedDate#,#lastPaidSalary#,#travelAdvance#,#salaryAdvance#,#relocation#,#joiningBonus#,#noticeReimburse#,#professionalFee#,#loans#,
+        #officialExpenses#,#lastPaidSalaryRemarks#,#travelAdvanceRemarks#,#salaryAdvanceRemarks#,#relocationRemarks#,#joiningBonusRemarks#,#noticeReimburseRemarks#,
+        #professionalFeeRemarks#,#loansRemarks#,#officialExpensesRemarks#,#finOverAllComments#,#finApproverId#,#lastPaidSalaryAmt#,#salAdvAmt#,#travelAdvAmt#,#relocationAmt#,#joiningBonusAmt#,#noticeReimbAmt#,#professionalfeeAmt#,#loansAmt#,#officialExpAmt#);
+    </insert>
+
+    <update id="updateFinData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_finance_approval SET approved_date=#finApprovedDate#,last_paid_salary=#lastPaidSalary#,travel_advance=#travelAdvance#,salary_advance=#salaryAdvance#,relocation=#relocation#,joining_bonus=#joiningBonus#,notice_reimburse=#noticeReimburse#,
+        professional_fee=#professionalFee#,loans=#loans#,official_expenses=#officialExpenses#,last_paid_salary_remarks=#lastPaidSalaryRemarks#,travel_advance_remarks=#travelAdvanceRemarks#,
+        salary_advance_remarks=#salaryAdvanceRemarks#,relocation_remarks=#relocationRemarks#,joining_bonus_remarks=#joiningBonusRemarks#,notice_reimburse_remarks=#noticeReimburseRemarks#,
+        professional_fee_remarks=#professionalFeeRemarks#,loans_remarks=#loansRemarks#,official_expenses_remarks=#officialExpensesRemarks#,
+        finance_overall_comments=#finOverAllComments#,approver_id=#finApproverId#,last_paid_salary_amount=#lastPaidSalaryAmt#,salary_advance_amount=#salAdvAmt#,travel_advance_amount=#travelAdvAmt#,relocation_amount=#relocationAmt#,joining_bonus_amount=#joiningBonusAmt#,notice_reimburse_amount=#noticeReimbAmt#,professional_fee_amount=#professionalfeeAmt#,loans_amount=#loansAmt#,official_expenses_amount=#officialExpAmt# WHERE id=#finApprovalId#;
+    </update>
+
+    <insert id="insertNsData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_exit_ns_approval(exit_emp_id,approved_date,password_deactivation,email_deactivation,sales_crm,fin_dax,laptop,ns_others,password_deactivation_remarks,email_deactivation_remarks,
+        sales_crm_remarks,fin_dax_remarks,laptop_remarks,ns_others_remarks,ns_overall_comments,approver_id)
+        VALUES(#exitEmpId#,#nsApprovedDate#,#desktopPwd#,#emailDeactivation#,#salesCrm#,#finDax#,#laptop#,#nsOthers#,#desktopPwdRemarks#,
+        #emailDeactivationRemarks#,#salesCrmRemarks#,#finDaxRemarks#,#laptopRemarks#,#nsOtherRemarks#,#nsOverAllComments#,#nsApproverId#);
+    </insert>
+
+
+    <update id="updateNsData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_ns_approval SET approved_date=#nsApprovedDate#,password_deactivation=#desktopPwd#,email_deactivation=#emailDeactivation#,sales_crm=#salesCrm#,fin_dax=#finDax#,
+        sales_crm_remarks=#salesCrmRemarks#,fin_dax_remarks=#finDaxRemarks#,ns_others=#nsOthers#,laptop=#laptop#,laptop_remarks=#laptopRemarks#,
+        password_deactivation_remarks=#desktopPwdRemarks#,email_deactivation_remarks=#emailDeactivationRemarks#,ns_others_remarks=#nsOtherRemarks#,
+        ns_overall_comments=#nsOverAllComments#,approver_id=#nsApproverId# WHERE id=#nsApprovalId#;
+    </update>
+
+    <insert id="insertAdData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_exit_admin_approval(exit_emp_id,approved_date,id_card,business_card,drawer_key,data_card,mobile_phone,sim_card,laptop,cmp_res_phone,out_bill_clr,cd_pendrive,
+        cabin_key,admin_others,id_card_remarks,drawer_key_remarks,data_card_remarks,mobile_phone_remarks,sim_card_remarks,laptop_remarks,business_card_remarks,
+        cmp_res_phone_remarks,out_bill_clr_remarks,cd_pendrive_remarks,cabin_key_remarks,admin_others_remarks,admin_overall_comments,approver_id)
+        VALUES(#exitEmpId#,#adApprovedDate#,#idCard#,#businessCard#,#drawerKey#,#dataCard#,#mobilePhone#,#simCard#,#laptop#,#cmpResPhone#,#outBillClr#,#cdPenDrive#,
+        #cabinKey#,#adOther#,#idCardRemarks#,#drawerKeyRemarks#,#dataCardRemarks#,#mobilePhoneRemarks#,#simCardRemarks#,#laptopRemarks#,#businessCardRemarks#,
+        #cmpResPhoneRemarks#,#outBillClrRemarks#,#cdPenDriveRemarks#,#cabinKeyRemarks#,#adOtherRemarks#,#adOverAllComments#,#adApproverId#);
+    </insert>
+
+    <update id="updateAdData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_admin_approval SET approved_date=#adApprovedDate#,id_card=#idCard#,drawer_key=#drawerKey#,business_card=#businessCard#,data_card=#dataCard#,mobile_phone=#mobilePhone#,
+        sim_card=#simCard#,laptop=#laptop#,cmp_res_phone=#cmpResPhone#,out_bill_clr=#outBillClr#,cd_pendrive=#cdPenDrive#,
+        cabin_key=#cabinKey#,admin_others=#adOther#,id_card_remarks=#idCardRemarks#,drawer_key_remarks=#drawerKeyRemarks#,data_card_remarks=#dataCardRemarks#,
+        mobile_phone_remarks=#mobilePhoneRemarks#,sim_card_remarks=#simCardRemarks#,laptop_remarks=#laptopRemarks#,business_card_remarks=#businessCardRemarks#,
+        cmp_res_phone_remarks=#cmpResPhoneRemarks#,out_bill_clr_remarks=#outBillClrRemarks#,cd_pendrive_remarks=#cdPenDriveRemarks#,
+        cabin_key_remarks=#cabinKeyRemarks#,admin_others_remarks=#adOtherRemarks#,admin_overall_comments=#adOverAllComments#,approver_id=#adApproverId# WHERE id=#adApprovalId#;
+    </update>
+
+
+
+    <insert id="insertHrData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_exit_hr_approval(exit_emp_id,approved_date,exit_type,ideal_tool_deactivated,leave_balance,overseas_bond,exit_interview,hr_insurance,hr_others,
+        exit_type_remarks,ideal_tool_deactivated_remarks,leave_balance_remarks,overseas_bond_remarks,exit_interview_remarks,hr_insurance_remarks,
+        hr_others_remarks,hr_overall_comments,approver_id)VALUES(#exitEmpId#,#hrApprovedDate#,#employmentStatus#,#idealToolDeactivated#,
+        #leaveBalance#,#overseasBond#,#exitInterview#,#hrInsurance#,#hrOthers#,#remarks#,#idealToolDeactivatedRemarks#,#leaveBalanceRemarks#,
+        #overseasBondRemarks#,#exitInterviewRemarks#,#hrInsuranceRemarks#,#hrOthersRemarks#,#hrOverAllComments#,#hrApproverId#);
+    </insert>
+
+    <update id="updateHrData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_hr_approval SET approved_date=#hrApprovedDate#,exit_type=#employmentStatus#,ideal_tool_deactivated=#idealToolDeactivated#,leave_balance=#leaveBalance#,
+        overseas_bond=#overseasBond#,exit_interview=#exitInterview#,hr_insurance=#hrInsurance#,hr_others=#hrOthers#,
+        exit_type_remarks=#remarks#,ideal_tool_deactivated_remarks=#idealToolDeactivatedRemarks#,leave_balance_remarks=#leaveBalanceRemarks#,
+        overseas_bond_remarks=#overseasBondRemarks#,exit_interview_remarks=#exitInterviewRemarks#,
+        hr_insurance_remarks=#hrInsuranceRemarks#,hr_others_remarks=#hrOthersRemarks#,hr_overall_comments=#hrOverAllComments#,
+        approver_id=#hrApproverId# WHERE id=#hrApprovalId#;
+    </update>
+
+    <update id="updateEmpData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        UPDATE dtl_exit_employee SET reason_rejection = #reasonRejection#,submit_status=#submitStatus#,deleted=#deleted#
+        WHERE id=#exitEmpId#;
+    </update>
+
+    <select id="getSurveyQuestionsAndAnswers" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT ques.id AS questionId,ques.parent_id AS parentId,ques.question AS name,ques.question_hint AS questionDescription,
+        ques.answer_type AS answerType,map.emp_answer AS empAnswer from dtl_survey_questions AS ques
+        LEFT JOIN dtl_survey_mapping AS map on (ques.id=map.question_id AND map.emp_id=#exitEmpId#)
+        WHERE ques.category = 'E'
+        group by ques.id;
+    </select>
+
+    <select id="getSurveyAnswers" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT id,question_id AS questionId,answer_key AS answerKey,answer_value AS answerValue from dtl_survey_answers order by answer_key;
+    </select>
+
+    <select id="findFinApprovalId" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT id AS finApprovalId FROM dtl_exit_finance_approval e where exit_emp_id=#exitEmpId#;
+    </select>
+
+    <select id="checkSavedData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT * FROM dtl_survey_mapping WHERE emp_id =#exitEmpId# AND question_id between 1 and 32;
+    </select>
+
+    <select id="checkFinanceSavedData" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        select efo.id as otherId,efo.fin_approval_id as finApprovalId,efo.category as otherCategory,efo.status as other,
+        efo.amount as otherAmt, efo.remarks as otherRemarks
+        from dtl_exit_fin_others efo left join dtl_exit_finance_approval ef on (efo.fin_approval_id=ef.id)
+        where ef.exit_emp_id=#exitEmpId#;
+    </select>
+    
+    <select id = "getFile" parameterClass = "Map" resultClass = "com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        SELECT id as fileId,file_name as fileName,file_type as fileType,reference_name as referenceName,
+        ref_id as referenceId,module_name as moduleName from file_uploads 
+        WHERE ref_id=#referenceId# AND module_name=#moduleName#;
+    </select>
+
+    <insert id="insertFinLoan" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        insert into dtl_exit_fin_others(fin_approval_id,category,status,amount,remarks)
+        values(#finApprovalId#,#otherCategory#,#other#,#otherAmt#,#otherRemarks#);
+    </insert>
+
+    <delete id="deleteFinLoan" parameterClass="String" >
+        delete from dtl_exit_fin_others
+        where id=#deleteId#;
+    </delete>
+
+    <update id="updateFinLoan" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        update dtl_exit_fin_others SET status=#other#,amount=#otherAmt#,remarks=#otherRemarks#
+        where id=#otherId#;
+    </update>
+
+    <insert id="insertSurveyData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        INSERT INTO dtl_survey_mapping(emp_id,question_id,emp_answer)
+        VALUES(#empId#,#questionId#,#empAnswer#);
+    </insert>
+
+    <update id="updateSurveyData" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_survey_mapping SET emp_answer=#empAnswer#
+        WHERE emp_id=#empId# and question_id=#questionId#;
+    </update>
+
+    <update id="updateSurveyStatus" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO" >
+        UPDATE dtl_exit_rm_approval SET survey_status='Y',survey_empid = #session_empid# WHERE exit_emp_id=#exitEmpId#;
+    </update>
+    
+    <insert id = "addFileDb" parameterClass = "Map">
+        INSERT into file_uploads(file_name,file_type,reference_name,ref_id,module_name) values (#fileName#,#contentType#,#referenceName#,#refId#,#moduleName#);
+    </insert>
+     <select id="getWorkExperience" parameterClass="String"  resultClass="String">
+       SELECT  ((YEAR( e.released_date ) - YEAR( e.joined_date )) *12 + month( e.released_date ) - month( e.joined_date ) + if( day( e.released_date ) >= day( e.joined_date ) , 0, 1 )) AS work_experience FROM employees AS e WHERE id =#empId#;
+    </select>
+     <select id="getExitEmployeeStatus" parameterClass="String" resultClass = "com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+         select configuration_value AS exitValues,id AS exitKey from configuration_values where parent_id = 1099;
+     </select>
+     <update id = "updateFileDb" parameterClass = "Map">
+        UPDATE file_uploads SET file_name=#fileName#,file_type=#contentType#,reference_name=#referenceName# where ref_id=#refId# AND module_name=#moduleName#;
+    </update>
+    <select id="getEmploymentStatus" parameterClass="String" resultClass = "com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        select configuration_value AS employmentStatus,configuration_key AS employmentStatusId from configuration_values where configuration_key IN('t','r','b','q','o') AND parent_id=286;
+    </select>  
+     <insert id="insertRMChangedInfo" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+  INSERT INTO employee_info_histories (employee_id, changed_by, reason, changed_from, changed_to, field_changed, modified_time, created_time)
+SELECT id, #hrApproverId#,'manager changed via exit',#resEmpId#,#manager#,'manager',#modified_time#,#created_time#
+FROM employees
+where manager=#resEmpId# and employees.employment_status not in ('r','t','q','b','o','y');
+    </insert>
+    <insert id="insertEmpInfo" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        INSERT INTO employee_info_histories(employee_id, changed_by, reason, changed_from, changed_to, field_changed, modified_time, created_time)
+        VALUES(#resEmpId#,#hrApproverId#,#remarks#,#empStatus#,#employmentStatus#,'employment_status',#modified_time#,#created_time#)
+    </insert>
+    <update id="updateEmpStatus" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        UPDATE employees AS e
+        LEFT JOIN dtl_exit_employee AS ex ON(e.id=ex.employee_id)
+        SET e.employment_Status=#employmentStatus# where ex.id=#exitEmpId#
+    </update>
+    <update id="updateManager" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO">
+        UPDATE employees 
+        set manager=#manager# where manager=#resEmpId# and employees.employment_status not in ('r','t','q','b','o','y')
+    </update>
+</sqlMap>

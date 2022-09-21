@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "file:///D:/sql-map-2.dtd">
+<sqlMap namespace="EmployeeDetails">
+
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.exitMgmt.approval.dto.ApprovalDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT eem.id AS exitEmpId,eem.deleted,eem.employee_id as empId,eem.reason_rejection AS reasonRejection,
+        emp.resigned_date AS resignedDate,
+        emp.mobile_number AS contactNo, emp.personal_email_address AS personalEmail,eem.ffs_address_id AS contactAddrId,
+        cv.configuration_value AS leavingReason,eem.leaving_reason AS empLeavingReason,
+        eem.submit_status AS submitStatus,era.survey_status AS surveyStatus,
+        eem.employee_id AS resEmpId,emp.manager AS manager,
+        era.approved_date AS rmApprovedDate,
+        era.rm_clr_date AS rmClrDate,
+        efin.approved_date AS finApprovedDate,
+        ens.approved_date AS nsApprovedDate,
+        ead.approved_date AS adApprovedDate,        
+        <!--DATE_FORMAT(era.approved_date,'%d-%m-%Y') AS rmApprovedDate,
+        DATE_FORMAT(era.rm_clr_date,'%d-%m-%Y') AS rmClrDate,-->
+        <!--DATE_FORMAT(eem.rmClrDate,'%d-%m-%Y') AS rmClrDate,
+        DATE_FORMAT(eem.adApprovedDate,'%d-%m-%Y') AS adApprovedDate,
+        DATE_FORMAT(eem.finApprovedDate,'%d-%m-%Y') AS finApprovedDate,
+        DATE_FORMAT(eem.nsApprovedDate,'%d-%m-%Y') AS nsApprovedDate,-->
+        <!--DATE_FORMAT(ehr.approved_date,'%d-%m-%Y') AS hrApprovedDate,-->
+        ehr.approved_date AS hrApprovedDate,
+        emp.employee_number AS employeeNumber, CONCAT( emp.first_name, ' ', emp.last_name ) AS employeeName,
+        band.name AS band, band.id AS bandId, subBand.name AS subBand, subBand.id AS subBandId,
+        desig.designation AS designation,pg.id AS practiceGroupId, pg.name AS practiceGroup,
+        rm.id AS rmId, rm.employee_number AS rmEmpNumber,cmpLoc.address_line1 AS empBaseLocation,
+        CONCAT( rm.first_name, ' ', rm.last_name ) AS rmName,
+        emp.joined_date AS empDoj,emp.employment_status AS empStatus,
+        emp.released_date as lastWorkingDate,
+        CASE WHEN ehr.exit_type = 'r' THEN 'Resigned'
+        WHEN ehr.exit_type = 'o' THEN 'Optimization'
+        WHEN ehr.exit_type = 'b' THEN 'Absconding'
+        WHEN ehr.exit_type = 't' THEN 'Terminate'
+        WHEN ehr.exit_type = 'q' THEN 'Asked_to_resign'
+        END AS exitType,
+        if((DATEDIFF(emp.released_date,era.exit_trigger_date)+1)> 90,90,DATEDIFF(emp.released_date,era.exit_trigger_date)+1) AS daysServed,
+        #cmpNoticePeriodInDays#-if((DATEDIFF(emp.released_date,era.exit_trigger_date)+1)> 90,90,DATEDIFF(emp.released_date,era.exit_trigger_date)+1) AS noticePeriod,
+        era.notice_wavier_value AS noticeWavierType,
+        CONCAT( eadr.address_line1, ',', eadr.address_line2, ',', city.city, '-',eadr.zip_code,',', reg.region, ',', cnt.country) AS empAddress,
+        ((leav.no_of_days_allotted+leav.leave_brought_forward)-leav.leave_taken+leav.leave_cancelled-leav.leave_encashed) AS leaveBalance
+        FROM employees AS emp
+        LEFT JOIN bands AS subBand ON ( subBand.id = emp.band_id )
+        LEFT JOIN bands AS band ON ( band.id = subBand.parent_id )
+        LEFT JOIN designations AS desig ON ( desig.id = emp.designation_id )
+        LEFT JOIN company_structures AS pg ON ( pg.id = emp.structure_name )
+        LEFT JOIN company_locations AS cmpLoc ON ( cmpLoc.id = emp.company_location_id )
+        LEFT JOIN employees AS rm ON ( rm.id = emp.manager )
+        LEFT JOIN dtl_exit_employee AS eem ON ( emp.id = eem.employee_id  AND eem.deleted='N')
+        <!--LEFT JOIN dtl_exit_employee AS eem ON ( emp.id = eem.employee_id )-->
+        LEFT JOIN dtl_exit_rm_approval AS era ON (eem.id =era.exit_emp_id)
+        LEFT JOIN dtl_exit_hr_approval AS ehr ON (eem.id =ehr.exit_emp_id)
+        LEFT JOIN dtl_exit_finance_approval AS efin ON (eem.id =efin.exit_emp_id)
+        LEFT JOIN dtl_exit_ns_approval AS ens ON (eem.id =ens.exit_emp_id)
+        LEFT JOIN dtl_exit_admin_approval AS ead ON (eem.id =ead.exit_emp_id)
+        LEFT JOIN employee_addresses AS eadr ON (eem.ffs_address_id = eadr.id)
+        LEFT JOIN countries AS cnt ON ( cnt.id = eadr.country_id )
+        LEFT JOIN regions AS reg ON ( reg.id = eadr.region_id )
+        LEFT JOIN cities AS city ON ( city.id = eadr.city_id )
+        LEFT JOIN configuration_values cv ON (eem.leaving_reason=cv.id)
+        LEFT JOIN employee_leave_details AS leav ON (emp.id=leav.employee_id)
+        WHERE emp.id =#empId#
+        AND leav.leave_category_id=4 AND 
+        leav.year=(select max(year) from employee_leave_details where employee_id = #empId# and leave_category_id=4
+        group by employee_id)
+        <!--IF(MONTH(CURDATE())<![CDATA[ <= ]]>4, YEAR(leav.start_date)=YEAR(CURDATE())-1,  YEAR(leav.start_date)=YEAR(CURDATE()))-->
+    </select>
+
+    <select id="getEmployeeAddress"  parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  >
+        SELECT address_line1 AS AddressLine1,address_line2 AS AddressLine2,country_id  AS country,region_id AS region,city_id AS city,zip_code AS zipCode
+        FROM employee_addresses WHERE employee_id=#empId# AND address_type=#addressType#;
+    </select>
+
+    <select id="getEmpAddressDetails"  parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  >
+        <!--SELECT ea.id AS empAddressId,CONCAT( ea.address_line1, ',', ea.address_line2, ',', city.city, ',', reg.region, ',', cnt.country, ',', ea.zip_code ) AS empAddress-->
+        SELECT ea.id AS empAddressId,CONCAT( ea.address_line1, ',',COALESCE(ea.address_line2, ' '),',', city.city, '-',ea.zip_code,',', reg.region, ',', cnt.country) AS empAddress
+        FROM employee_addresses ea
+        LEFT JOIN countries AS cnt ON ( cnt.id = ea.country_id )
+        LEFT JOIN regions AS reg ON ( reg.id = ea.region_id )
+        LEFT JOIN cities AS city ON ( city.id = ea.city_id )
+        WHERE employee_id =#empId# and ea.deleted != 1;
+    </select>
+
+    <select id="getCountryList"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  >
+        SELECT id AS country,country AS countryName FROM countries ORDER BY country ASC;
+    </select>
+
+    <select id="getRegnEmpList" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT eem.id AS exitEmpId,emp.resigned_date AS resignedDate,eem.employee_id AS empId,
+        emp.mobile_number AS contactNo, emp.personal_email_address AS personalEmail,eem.ffs_address_id AS contactAddrId,
+        cv.configuration_value AS leavingReason,eem.submit_status AS submitStatus,
+        emp.employee_number AS employeeNumber, CONCAT( emp.first_name, ' ', emp.last_name ) AS employeeName,
+        band.name AS band, band.id AS bandId, subBand.name AS subBand, subBand.id AS subBandId, pg.id AS practiceGroupId, pg.name AS practiceGroup,
+        rm.id AS rmId, CONCAT( rm.first_name, ' ', rm.last_name ) AS rmName,emp.joined_date AS empDoj
+        FROM dtl_exit_employee AS eem
+        LEFT JOIN employees AS emp ON ( emp.id = eem.employee_id )
+        LEFT JOIN bands AS subBand ON ( subBand.id = emp.band_id )
+        LEFT JOIN bands AS band ON ( band.id = subBand.parent_id )
+        LEFT JOIN company_structures AS pg ON ( pg.id = emp.structure_name )
+        LEFT JOIN employees AS rm ON ( rm.id = emp.manager )
+        LEFT JOIN configuration_values cv ON (eem.leaving_reason=cv.id)
+        WHERE eem.rmId =#employeeId#;
+    </select>
+
+    <select id="getEmailAddress" parameterClass="String" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT emp.work_email_address AS empWorkMail,emp.structure_name AS empStructure,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,rm.work_email_address AS rmWorkMail,
+        emp.personal_email_address AS personalEmail,emp.employee_number AS employeeNumber,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rmName, cs.name AS band, DATE_FORMAT(emp.released_date,'%d-%m-%y') AS resDate, cv.configuration_value AS empStatus
+        FROM employees AS emp 
+        LEFT JOIN company_structures AS cs ON(emp.structure_name=cs.id)
+        LEFT JOIN configuration_values cv ON(cv.configuration_key=emp.employment_status AND cv.parent_id=286) 
+        LEFT JOIN employees AS rm ON(rm.id=emp.manager) 
+        WHERE emp.id IN($empId$); 
+    </select>
+    <select id="getEmailAddressNew" parameterClass="String" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT emp.work_email_address AS empWorkMail,emp.structure_name AS empStructure,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,rm.work_email_address AS rmWorkMail,
+        emp.personal_email_address AS personalEmail,emp.employee_number AS employeeNumber,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rmName, cs.name AS band, DATE_FORMAT(emp.released_date,'%d-%m-%y') AS resDate, cv.configuration_value AS empStatus
+        FROM employees AS emp 
+        LEFT JOIN company_structures AS cs ON(emp.structure_name=cs.id)
+        LEFT JOIN configuration_values cv ON(cv.configuration_key=emp.employment_status AND cv.parent_id=286) 
+        LEFT JOIN employees AS rm ON(rm.id=emp.manager) 
+        WHERE emp.id IN(#resEmpId#); 
+    </select>
+    <select id="getQualityHeadMailId" parameterClass="String" resultClass="String">
+        SELECT work_email_address from employees where id = #qualityHeadId#;
+    </select>
+    <select id="getAddtionalMailIds" parameterClass="String" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT GROUP_CONCAT(work_email_address) AS additionalMailIds FROM employees WHERE id IN ($additionalTriggerMailIds$) AND employment_status NOT IN ('r','t','b','q','o') GROUP BY employment_status;
+    </select>
+    
+    <select id="getPmMailIds" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT GROUP_CONCAT(work_email_address) AS pmWorkEmail 
+        FROM employees WHERE id IN (SELECT DISTINCT(prj.project_manager)
+        FROM employees AS emp
+        LEFT JOIN project_team_allocations AS pta ON(pta.employee_id=#resEmpId# AND #currentDate# BETWEEN pta.start_date AND pta.end_date AND deleted=0)
+        LEFT JOIN projects AS prj ON(prj.id=pta.project_id)
+        LEFT JOIN employees AS pm ON(pm.id=prj.project_manager)
+        WHERE emp.id=#resEmpId# GROUP BY pta.project_id,pta.employee_id,prj.project_manager);
+    </select>
+
+    <select id="getEmpName" parameterClass="String"  resultClass="String">
+        SELECT CONCAT(first_name,' ',last_name) AS employeeName FROM employees WHERE id=#employeeId#;
+    </select>
+
+    <!--    <select id="getGUAccessEmail" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT GROUP_CONCAT(emp.work_email_address) AS approvalWorkEmail,GROUP_CONCAT(emp.first_name) AS approvalEmpName  FROM aros_acos AS arcos
+        LEFT JOIN aros AS aroG ON (aroG.id=arcos.aro_id AND aroG.model ='Group')
+        LEFT JOIN aros AS aroU ON (aroU.id=arcos.aro_id AND aroU.model ='User')
+        LEFT JOIN users AS user ON (user.group_id=aroG.foreign_key OR user.id=aroU.foreign_key)
+        LEFT JOIN employees AS emp ON (emp.id=user.employee_id)
+        WHERE arcos.aco_id = #moduleId# AND arcos._create=1 AND arcos._read=1 AND arcos._update=1 AND arcos._delete=1 AND emp.employment_status NOT IN ('r','b','t')
+        WHERE arcos._create=1 AND arcos._read=1 AND arcos._update=1 AND arcos._delete=1 AND emp.employment_status NOT IN ('r','b','t','q','o')
+        <dynamic prepend=" ">
+               <iterate property="approvalMenuNames" open="(" close=")" conjunction="," >
+                   #approvalMenuNames[]#
+               </iterate>
+       </dynamic>
+    </select>-->
+    <select id="getGUAccessEmail" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+ 
+        SELECT GROUP_CONCAT(emp.work_email_address) AS approvalWorkEmail,GROUP_CONCAT(emp.first_name) AS approvalEmpName  
+        FROM employees AS emp
+        LEFT JOIN general_approvers ga ON (ga.emp_id=emp.id)
+        WHERE ga.function_id = 72 and ga.structure_id=#empStructure#; 
+    </select>
+    <select id="getResignationSubmissionEmail" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as dlmail from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=76 and mail_to_type='cc' and structure_id is null
+    </select>
+    <select id="getRmapprovalDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as rmApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=77 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getRmapprovalDLTo" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as rmApprovaldlto from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=77 and mail_to_type='to' and structure_id is null
+    </select> 
+    <select id="getPMMailIdForCC" parameterClass="String"  resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS pmWorkEmail 
+        FROM employees WHERE id IN (SELECT DISTINCT(prj.project_manager)
+        FROM employees AS emp
+        LEFT JOIN project_team_allocations AS pta ON(pta.employee_id=#resEmpId# AND CURDATE() BETWEEN pta.start_date AND pta.end_date AND deleted=0)
+        LEFT JOIN projects AS prj ON(prj.id=pta.project_id)
+        LEFT JOIN employees AS pm ON(pm.id=prj.project_manager)
+        WHERE emp.id=#resEmpId# GROUP BY pta.project_id,pta.employee_id,prj.project_manager);
+    </select> 
+    
+    <select id="getAdminapprovalDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as adminApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=78 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getFinanceapprovalDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as finApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=79 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getExitSurveyDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as exitsurveydl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=80 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getNSapprovalDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as nsApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=81 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getRMclearanceDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as rmClearancedl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=85 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getHRclearanceDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as hrApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=82 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getManualexitupdatesDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as rmApprovaldl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=83 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getRalPFDL" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as ralPFdl from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=84 and mail_to_type='cc' and structure_id is null
+    </select> 
+    <select id="getBUHEmail" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+       
+        select GROUP_CONCAT(dl_mail) as buhmail from dl_master dm
+        inner join dl_function_master dfm on (dfm.dl_id=dm.id)
+        where dfm.function_id=76 and mail_to_type='cc' and structure_id =#empStructure#;
+    </select>
+    <select id="getRMGEmail" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT GROUP_CONCAT(emp.work_email_address) AS rmgWorkEmail,GROUP_CONCAT(emp.first_name) AS rmgEmpName  
+        FROM employees AS emp
+        LEFT JOIN general_approvers ga ON (ga.emp_id=emp.id)
+        WHERE ga.function_id = 72 and ga.category='r' AND employment_status NOT IN ('r','t','b','q','o'); 
+    </select>
+    <insert id="insertExitEmpDetails" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO" >
+        INSERT INTO dtl_exit_employee(employee_id,ffs_address_id,leaving_reason,submit_status,deleted)
+        <!--VALUES(#empId#,#rmId#,#resignedDate#,#contactNo#,#contactAddr#,#personalEmail#,#leavingReason#,#submitDate#,#submitStatus#);-->
+        VALUES(#empId#,#addressType#,#leavingReason#,#submitStatus#,#deleted#);
+    </insert>
+
+    <update id="updateEmpRecords" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO" >
+        UPDATE employees SET resigned_date=#resignedDate#,mobile_number=#contactNo#,personal_email_address=#personalEmail# WHERE id=#empId#;
+    </update>
+
+ 
+    <update id="updateExitEmpDetails" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        UPDATE dtl_exit_employee SET ffs_address_id=#addressType#,leaving_reason=#leavingReason#,submit_status=#submitStatus#,deleted=#deleted# WHERE id=#exitEmpId#;
+    </update>
+    <select id="getEmpHolidays" parameterClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO"  resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        select holiday.holiday_date as cmpHoliday  from holidays as holiday  where city_id  in ( SELECT CompanyLocation.city_id 
+        FROM employees AS Employee
+        JOIN company_locations AS CompanyLocation ON CompanyLocation.id = Employee.current_location_id
+        WHERE Employee.id =  #empId# ) and holiday.holiday_date <![CDATA[ >= ]]> #resignedDate# and holiday.optional_holiday=0 order by holiday.holiday_date;
+    </select>
+  
+    <select id="getReporteesCount" parameterClass="String"  resultClass="String">
+        SELECT COUNT(*) FROM employees WHERE manager = #empId# AND employment_status NOT IN('r','t','b','q','o','y')
+    </select>
+  
+    <select id="getHRmailCC" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        select e.work_email_address  AS EmpToRmHrCC from employees e
+        LEFT JOIN general_approvers g ON(g.employee_id=e.employee_number)
+        where g.function_id=30 AND employment_status NOT IN ('r','t','b','q','o','y')
+    </select>
+</sqlMap>

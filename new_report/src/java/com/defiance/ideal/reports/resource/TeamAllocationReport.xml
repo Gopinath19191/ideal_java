@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : RollOutReport.xml
+    Created on : 21 January, 2013, 12:16 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="TeamAllocationReportMap">
+    <select id="teamAllocationReportList" parameterClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+<!--        SELECT CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,emp.employee_number AS empNumber, 
+        cmp.name AS sbu,cmpStruct.name AS subSbu, r.role_description AS role,MAX(DATE_FORMAT(accr.submitted_on, '%d-%m-%Y')) AS billingdate,
+        MAX(DATE_FORMAT(pta.start_date, '%d-%m-%Y')) AS prjStartDate,MAX(DATE_FORMAT(pta.end_date, '%d-%m-%Y')) AS prjEndDate,
+        IF(pta.end_date <![CDATA[ < ]]> CURDATE(),'0',DATEDIFF(pta.end_date, CURDATE()) ) AS datediff,
+        prj.project_code AS projectCode ,prj.project_name AS projectName, CONCAT(empMgr.first_name,' ',empMgr.last_name) AS pmName,cv2.configuration_value AS projectStatus, 
+        cst.customer_name AS customerName,cv.configuration_value AS empStatus ,
+	     CASE
+						WHEN pta.location_table = 'customer_work_locations'
+						THEN 
+						case when cct.city IS NULL
+						THEN
+						CONCAT(cusWrk.address_line,' - ',cco.country) 
+						ELSE
+						CONCAT(cusWrk.address_line,' - ',cct.city, ' - ',cco.country)
+						END
+						WHEN pta.location_table = 'company_locations'
+						THEN 
+						CASE 
+						WHEN pta.work_location_id = 0
+						THEN 'ALL'
+						ELSE
+						CONCAT(cv3.configuration_key,' - ',hct.city, '- ',hco.country)
+						END
+						END AS workLocation 
+        from project_team_allocations AS pta
+        LEFT JOIN projects AS prj ON(prj.id=pta.project_id)
+        LEFT JOIN employees AS emp ON(pta.employee_id=emp.id)
+        LEFT JOIN employees empMgr ON(empMgr.id=prj.project_manager)
+        LEFT JOIN customers AS cst ON(cst.id=prj.customer_id)
+        LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = pta.work_location_id)
+	LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+	LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+	LEFT JOIN company_locations cll ON(cll.id = pta.work_location_id)
+	LEFT JOIN cities hct ON (hct.id = cll.city_id)
+	LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN accrual_consolidations AS accr ON( accr.project_id=pta.project_id AND accr.emp_id=pta.employee_id)
+        LEFT JOIN configuration_values cv ON(cv.configuration_key=emp.employment_status AND cv.parent_id=286)
+        LEFT JOIN configuration_values cv2 on(cv2.configuration_key=prj.project_status AND cv2.parent_id=82)
+        LEFT JOIN configuration_values cv3 ON (cv3.parent_id = '639')	 
+        LEFT JOIN company_structures cmp1 ON(cmp1.id=prj.project_sbu)
+         LEFT JOIN roles AS r ON(r.id=pta.role_id)
+        LEFT JOIN company_structures cmpStruct1 ON(cmpStruct1.id=prj.project_sbu_subgroup)
+        LEFT JOIN company_structures cmp ON(cmp.id=emp.structure_name)
+        LEFT JOIN company_structures cmpStruct ON(cmpStruct.id=emp.structure_name_subgroup)
+        INNER JOIN 
+        (SELECT emp.id,pta.start_date,pta.end_date FROM projects AS prj
+        LEFT JOIN project_team_allocations AS pta ON(pta.project_id=prj.id AND pta.deleted=0)
+        LEFT JOIN employees AS emp ON(emp.id=pta.employee_id)) AS a
+        ON ((pta.start_date=a.start_date AND pta.end_date=a.end_date) OR(pta.start_date <![CDATA[ > ]]> a.start_date AND pta.end_date <![CDATA[ < ]]> a.end_date AND pta.employee_id=a.id))-->
+        SELECT CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        emp.employee_number AS empNumber, 
+        cmp.name AS sbu,cmpStruct.name AS subSbu, 
+        r.role_description AS role,
+        MAX(DATE_FORMAT(accr.submitted_on, '%d-%m-%Y')) AS billingdate,
+        MAX(DATE_FORMAT(pta.start_date, '%d-%m-%Y')) AS prjStartDate,
+        MAX(DATE_FORMAT(pta.end_date, '%d-%m-%Y')) AS prjEndDate,
+        IF(pta.end_date <![CDATA[ < ]]> CURDATE(),'0',DATEDIFF(pta.end_date, CURDATE()) ) AS DATEDIFF,
+        prj.project_code AS projectCode ,prj.project_name AS projectName, 
+        CONCAT(empMgr.employee_number,'-',empMgr.first_name,' ',empMgr.last_name) AS pmName,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rmName,
+        prcmod.configuration_value AS prjName,
+        cv2.configuration_value AS projectStatus, 
+        cst.customer_name AS customerName,
+        cv.configuration_value AS empStatus ,
+        CASE
+        WHEN pta.location_table = 'customer_work_locations'
+        THEN 
+        CASE WHEN cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_line,' - ',cco.country) 
+        ELSE
+        CONCAT(cusWrk.address_line,' - ',cct.city, ' - ',cco.country)
+        END
+        WHEN pta.location_table = 'company_locations'
+        THEN 
+        CASE 
+        WHEN pta.work_location_id = 0
+        THEN 'ALL'
+        ELSE
+        CONCAT(cv3.configuration_key,' - ',hct.city, '- ',hco.country)
+        END
+        END AS workLocation 
+        FROM project_team_allocations AS pta
+        LEFT JOIN projects AS prj ON(prj.id=pta.project_id)
+        LEFT JOIN employees AS emp ON(pta.employee_id=emp.id)
+        LEFT JOIN employees empMgr ON(empMgr.id=prj.project_manager)
+        LEFT JOIN employees rm ON(emp.manager=rm.id)
+        LEFT JOIN customers AS cst ON(cst.id=prj.customer_id)
+        LEFT JOIN project_so_masters AS pso ON (prj.id = pso.project_id)
+        LEFT JOIN sales_orders as so ON(pso.sales_order_id = so.id)
+        LEFT JOIN configuration_values AS prcmod ON(so.pricing_model = prcmod.configuration_key AND prcmod.parent_id=242)
+        LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = pta.work_location_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = pta.work_location_id)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN accrual_consolidations AS accr ON( accr.project_id=pta.project_id AND accr.emp_id=pta.employee_id)
+        LEFT JOIN configuration_values cv ON(cv.configuration_key=emp.employment_status AND cv.parent_id=286)
+        LEFT JOIN configuration_values cv2 ON(cv2.configuration_key=prj.project_status AND cv2.parent_id=82)
+        LEFT JOIN configuration_values cv3 ON (cv3.parent_id = '639')	 
+        LEFT JOIN company_structures cmp1 ON(cmp1.id=prj.project_sbu)
+        LEFT JOIN roles AS r ON(r.id=pta.role_id)
+        LEFT JOIN company_structures cmpStruct1 ON(cmpStruct1.id=prj.project_sbu_subgroup)
+        LEFT JOIN company_structures cmp ON(cmp.id=emp.structure_name)
+        LEFT JOIN company_structures cmpStruct ON(cmpStruct.id=emp.structure_name_subgroup)
+        WHERE pta.deleted=0 AND pta.end_date  <![CDATA[ >= ]]>  DATE_FORMAT(CURDATE(),"%Y-%m-01") AND emp.employment_status NOT IN('r','b','q','t','o','y') and prj.project_status ='e' 
+        <dynamic>
+            <isNotEmpty property="projectName" >
+                <isNotNull property="projectName">
+                    AND pta.project_id=#projectName#
+                </isNotNull>
+            </isNotEmpty>
+            <isNotEmpty property="sbu">
+                <isNotNull property="sbu">
+                    AND cmp1.id=#sbu#
+                </isNotNull>
+            </isNotEmpty>
+            <isNotEmpty property="pmName">
+                <isNotNull property="pmName">
+                    AND prj.project_manager=#pmName#
+                </isNotNull>
+            </isNotEmpty>
+            <isNotEmpty property="subSbu">
+                <isNotNull property="subSbu">
+                    AND cmpStruct1.id=#subSbu#
+                </isNotNull>
+            </isNotEmpty>
+            <isNotEmpty property="customerName">
+                <isNotNull property="customerName">
+                    AND prj.customer_id=#customerName#
+                </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+        group by pta.project_id,pta.employee_id,pta.role_id ORDER BY emp.id,pta.start_date;
+        
+    </select>
+
+    <select id="getprojectList" parameterClass = "com.defiance.ideal.reports.dto.TeamAllocationReportDTO" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+        SELECT id as projectId,CONCAT(COALESCE(project_code,""),' - ',project_name) as prjName FROM projects p WHERE deleted =0 and p.project_status = 'e' 
+        <dynamic>
+            <isNotEmpty property="customerId">
+                <isNotNull prepend="AND" property="customerId">
+                    p.customer_id = #customerId#
+                </isNotNull> 
+            </isNotEmpty>
+        </dynamic>
+        GROUP BY p.id ORDER BY p.id ASC
+    </select>
+    <select id="getSbuList" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+        <!--        SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id= #SBU.ID#-->
+        SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id= #sbuId#
+    </select>
+    <select id="getPmNameList" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+        SELECT DISTINCT(prj.project_manager) AS pmId,CONCAT(emp.first_name,' ',emp.last_name) AS pmName FROM projects prj
+        LEFT JOIN employees emp ON(emp.id=prj.project_manager)
+        WHERE deleted=0 AND emp.employment_status NOT IN ('r','b','q','t','o') order by emp.first_name;
+    </select>
+    <select id="getSubSbuList" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+        SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id IN ($sbuId$)
+    </select>
+    <select id="getcustomerList" parameterClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO" resultClass="com.defiance.ideal.reports.dto.TeamAllocationReportDTO">
+        SELECT c.id as customerId, CONCAT(COALESCE(customer_code,""),' - ',customer_name, '-', COALESCE(division,"")) AS customerName  FROM customers c
+        LEFT JOIN projects prj ON(prj.customer_id=c.id) 
+        WHERE 1=1 AND c.status = 'a' and (c.customer_code IS NOT NULL AND c.customer_code != '') AND prj.project_status = 'e' GROUP BY c.id ORDER BY c.id ASC;
+        <!--        <dynamic>
+            <isNotEmpty property="projectId">
+               <isNotNull property="projectId">
+                   and c.id in( SELECT customer_id FROM projects p WHERE p.id=#projectId#)
+               </isNotNull> 
+            </isNotEmpty>
+        </dynamic>-->
+    </select>
+    
+</sqlMap>
+

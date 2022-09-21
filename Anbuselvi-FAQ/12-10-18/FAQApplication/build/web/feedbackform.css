@@ -1,0 +1,38 @@
+table th,table td
+{
+	border:1px solid black;
+	padding:15px 57px 15px 57px;
+	text-align:center;
+	
+}
+.container-1 {
+    width: 960px;
+    /* height: 351px; */
+    border: 1px solid #99BBE8;
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 10px;
+/*	padding-bottom:10px;*/
+}
+
+#color
+{
+	
+	background-color: #316CA8;
+    color: #FFFFFF;
+    font-family: Arial;
+    font-size: 13px;
+    font-weight: bold;
+    height: 32px;
+	
+}
+table
+{
+	border-radius:10px;
+}
+.tbl
+{
+	width: 940px;
+    margin-left: 9px;
+	margin-top: 10px;
+}

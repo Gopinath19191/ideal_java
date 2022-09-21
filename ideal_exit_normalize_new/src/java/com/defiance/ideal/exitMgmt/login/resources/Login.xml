@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "file:///D:/sql-map-2.dtd">
+<sqlMap namespace="LoginDetails">
+
+    <select id="getIdealUserName" parameterClass="String"  resultClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#idealToken#;
+    </select>
+    
+    <select id="getLoginDetailsWOPassword" parameterClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO"  resultClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO">
+        SELECT user.id as userAccountId,user.username,user.password,user.group_id as groupId,user.employee_id as empId,
+        Count(emp.manager) AS manager from users AS user LEFT JOIN employees AS emp ON(emp.manager=user.employee_id) where user.username=#idealUserName#
+        GROUP BY user.id, user.username, user.password, user.group_id, user.employee_id;
+    </select>
+    
+    <select id="getLoginDetails" parameterClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO"  resultClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO">
+        SELECT user.id as userAccountId,user.username,user.password,user.group_id as groupId,user.employee_id as empId,
+        Count(emp.manager) AS manager from users AS user LEFT JOIN employees AS emp ON(emp.manager=user.employee_id) where user.username=#userName# AND user.password=#password#
+        GROUP BY user.id, user.username, user.password, user.group_id, user.employee_id;
+    </select>
+    
+    <select id="getAuthenticateUser" parameterClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO"  resultClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        <dynamic prepend="AND  arcos.aco_id IN">
+               <iterate property="moduleName" open="(" close=")" conjunction="," >
+                   #moduleName[]#
+               </iterate>
+       </dynamic>
+    </select>
+
+    <select id="getAuthenticateGroup" parameterClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO"  resultClass="com.defiance.ideal.exitMgmt.login.dto.LoginDTO">
+       SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+       arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+       <dynamic prepend="AND  arcos.aco_id IN">
+               <iterate property="moduleName" open="(" close=")" conjunction="," >
+                   #moduleName[]#
+               </iterate>
+       </dynamic>
+    </select>
+    
+</sqlMap>

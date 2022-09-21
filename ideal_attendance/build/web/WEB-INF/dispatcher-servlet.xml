@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="updateEmployeeBandDesigByExcel.htm">BulkUploadController</prop> 
+                <prop key="updateEmployeeMangerByExcel.htm">BulkUploadController</prop> 
+                <prop key="downloadFile.htm">BulkUploadController</prop>
+                <prop key="showAuditList.htm">BulkUploadController</prop>
+                <prop key="downloadAuditExcel.htm">BulkUploadController</prop>
+                <prop key="searchAuditList.htm">BulkUploadController</prop>
+                <prop key="addProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="procurementList.htm">PurchaseProcurementController</prop>
+                <prop key="editProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="saveProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="viewProcurementDetails.htm">PurchaseProcurementController</prop>
+                <prop key="updateProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="attachmentDownload.htm">PurchaseProcurementController</prop>
+                <prop key="procurementRMList.htm">PurchaseProcurementController</prop>
+                <prop key="procurementRMProcessedList.htm">PurchaseProcurementController</prop>
+                <prop key="procurementBUHList.htm">PurchaseProcurementController</prop>
+                <prop key="procurementBUHProcessedList.htm">PurchaseProcurementController</prop>
+                <prop key="procurementAdminList.htm">PurchaseProcurementController</prop>
+                <prop key="approveBUHProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="approveRMProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="approveAdminProcurement.htm">PurchaseProcurementController</prop>
+                <prop key="procurementExcelExport.htm">PurchaseProcurementController</prop>
+                <prop key="getEmployeeIdCardList.htm">IdCardGenerationController</prop>
+                <prop key="getEmployeeDetails.htm">IdCardGenerationController</prop>
+                <prop key="getPdfDownload.htm">IdCardGenerationController</prop>
+                <prop key="triggerMailtoFacility.htm">IdCardGenerationController</prop>
+                <prop key="getEmployeeDetailsForNda.htm">IdCardGenerationController</prop>
+                <prop key="downloadNda.htm">IdCardGenerationController</prop>
+                <prop key="downloadFormB.htm">IdCardGenerationController</prop>
+                <prop key="downloadBonafied.htm">IdCardGenerationController</prop>
+                <prop key="getEmployeeDetailsForBonafied.htm">IdCardGenerationController</prop>
+                <prop key="triggerBonafiedtoEmployee.htm">IdCardGenerationController</prop>
+                <prop key="getReport.htm">IdCardGenerationController</prop>
+                <prop key="getEmployeeDetailsForDeputation.htm">IdCardGenerationController</prop>
+                <prop key="downloadDeputation.htm">IdCardGenerationController</prop>
+                <prop key="getExcelDownload.htm">IdCardGenerationController</prop>
+                <prop key="updateEmployeeDetails.htm">IdCardGenerationController</prop>
+                <prop key="getEmployeeIdCardDownload.htm">IdCardGenerationController</prop>
+                <prop key="getDcEmployeeList.htm">IdCardGenerationController</prop>
+                <prop key="getDcEmployeeDetails.htm">IdCardGenerationController</prop>
+                <prop key="getExtensionLetterDownload.htm">IdCardGenerationController</prop>
+                <prop key="getIncrementLetterDownload.htm">IdCardGenerationController</prop>
+                <prop key="getServiceLetterDownload.htm">IdCardGenerationController</prop>
+                <prop key="triggerServiceLetter.htm">IdCardGenerationController</prop>
+                <prop key="getActiveEmployeeList.htm">IdCardGenerationController</prop>
+                <prop key="getProbationLetter.htm">IdCardGenerationController</prop>
+                <prop key="getIdDislay.htm">IdCardGenerationController</prop>
+           </props>
+        </property>
+    </bean>
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+    
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="index" >
+    </bean>
+    <bean name="AuthenticationController" 
+              class="com.ideal.hrMaster.controller.AuthenticationController" > 
+    </bean>
+    <bean name="BulkUploadController" 
+              class="com.ideal.hrMaster.controller.BulkUploadController" > 
+    </bean>
+    
+    <bean name="PurchaseProcurementController" 
+              class="com.ideal.hrMaster.controller.PurchaseProcurementController" > 
+    </bean>
+    <bean name="IdCardGenerationController" 
+              class="com.ideal.hrMaster.controller.IdCardGenerationController" > 
+    </bean>
+    
+</beans>

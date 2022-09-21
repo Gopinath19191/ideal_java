@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="index.htm">indexController</prop>
+
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="/custMap/*.htm">CustomerMappingController</prop>
+                <prop key="/agency/*.htm">AgencyController</prop>
+                <prop key="customersList.htm">CustomerController</prop>
+                <prop key="customersAdd.htm">CustomerController</prop>
+                <prop key="customersEdit.htm">CustomerController</prop>
+                <prop key="customerView.htm">CustomerController</prop>
+                <prop key="customersApprovalList.htm">CustomerController</prop>
+                <prop key="approveCustomer.htm">CustomerController</prop>
+                <prop key="approveCustomerProcess.htm">CustomerController</prop>
+                <prop key="saveCustomer.htm">CustomerController</prop>
+                <prop key="getRegionList.htm">CustomerController</prop>
+                <prop key="getCityList.htm">CustomerController</prop>
+                <prop key="getCityListByCountry.htm">CustomerController</prop>
+                <prop key="getsubRBUList.htm">CustomerController</prop>
+                <prop key="getDuplicateCustomerName.htm">CustomerController</prop>
+                <prop key="getCustomerXL.htm">CustomerController</prop>
+                <prop key="getDuplicateCustomerGroupName.htm">CustomerGroupController</prop>
+                <prop key="customersGroupList.htm">CustomerGroupController</prop>
+                <prop key="customersGroupAdd.htm">CustomerGroupController</prop>
+                <prop key="customersGroupEdit.htm">CustomerGroupController</prop>
+                <prop key="saveCustomerGroup.htm">CustomerGroupController</prop>
+                <prop key="OJFSurveyInfo.htm">OJFSurveyController</prop>
+                <prop key="saveOJFSurveyData.htm">OJFSurveyController</prop>
+                <prop key="OJFSurveyList.htm">OJFSurveyController</prop>
+                <prop key="OJFSurveyView.htm">OJFSurveyController</prop>
+                <prop key="downloadEmployeeSurveyData.htm">OJFSurveyController</prop>
+                <prop key="OJFSurveyRedirect.htm">OJFSurveyController</prop>
+                <prop key="qualityCustomerList.htm">RequestorController</prop>
+                <prop key="newRequest.htm">RequestorController</prop>
+                <prop key="addNewRequest.htm">RequestorController</prop>
+                <prop key="getFocusArea.htm">RequestorController</prop>
+                <prop key="getRequestDetails.htm">RequestorController</prop>
+                <prop key="fileDownload.htm">RequestorController</prop>
+                <prop key="getReportList.htm">RequestorController</prop>
+                <prop key="getEmployeeList.htm">RequestorController</prop>
+                <prop key="updateRequest.htm">RequestorController</prop>
+                <prop key="generateReport.htm">RequestorController</prop>
+                <prop key="getRequestExcel.htm">RequestorController</prop>
+                <prop key="attachmentDownload.htm">CustomerController</prop>
+                <prop key="getRegion.htm">CustomerController</prop>
+                <prop key="getCity.htm">CustomerController</prop>
+                <prop key="saveEditCustomer.htm">CustomerController</prop>
+                <prop key="customerDivisionList.htm">CustomerController</prop>
+                <prop key="customerAddDivision.htm">CustomerController</prop>
+                <prop key="getSalesPersonPhoneNumber.htm">CustomerController</prop>
+                <prop key="financeView.htm">CustomerController</prop>
+                <prop key="financeViewSearchCustomer.htm">CustomerController</prop>
+                <prop key="updateCustomerActiveInactive.htm">CustomerController</prop>
+                <prop key="customerProjectMapping.htm">CustomerController</prop>
+                <prop key="userManualDownload.htm">CustomerController</prop>
+                <prop key="getGstCode.htm">CustomerController</prop>
+                <prop key="dunningReportList.htm">CustomerController</prop>
+                <prop key="dunningFileDownload.htm">CustomerController</prop>
+                <prop key="getDunningDate.htm">CustomerController</prop>
+                <prop key="dunningStatusList.htm">CustomerController</prop>
+                <prop key="updateDunningStatus.htm">CustomerController</prop>
+                <prop key="dunningExport.htm">CustomerController</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="index" />
+
+    <bean name="AuthenticationController" class="com.defiance.ideal.application.controller.AuthenticationController" />
+    <bean name="CustomerMappingController" class="com.defiance.ideal.application.controller.CustomerMappingController" />
+    <bean name="CustomerController" class="com.defiance.ideal.application.controller.CustomerController" />
+    <bean name="CustomerGroupController" class="com.defiance.ideal.application.controller.CustomerGroupController" />
+    <bean name="OJFSurveyController" class="com.defiance.ideal.application.controller.OJFSurveyController" />
+    <bean name="RequestorController" class="com.defiance.ideal.application.controller.RequestorController" />
+    <bean name="AgencyController" class="com.defiance.ideal.application.controller.AgencyController" />
+<!--<bean name="/user/*.htm" class="com.defiance.ideal.reports.UserController" />-->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+       
+       </bean>
+</beans>

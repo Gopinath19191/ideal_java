@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="ReportMap">
+    
+    <select id="getFranceLeaveList" parameterClass="com.defiance.ideal.reports.dto.FranceLeaveReportDTO" resultClass="com.defiance.ideal.reports.dto.FranceLeaveReportDTO">
+        SELECT emp.employee_number AS empNumber, CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) AS empName,
+        lc.leave_type as leave_type, elr.leave_reason as leave_reason, DATE_FORMAT(elr.date_applied,'%d-%m-%Y') AS appliedDate,
+        DATE_FORMAT(elr.date_approved,'%d-%m-%Y') as date_approved, DATE_FORMAT(elr.from_date,'%d-%m-%Y') AS atartDate, DATE_FORMAT(elr.to_date,'%d-%m-%Y') AS endDate,
+        CASE 
+        WHEN elr.from_half_day=0 THEN 'No'
+        WHEN elr.from_half_day=1 THEN 'Yes'
+        END AS half_day,
+        elr.length_days AS duration,
+        config.configuration_value AS leave_status,
+        CONCAT(emp_app.employee_number,' - ',emp_app.first_name,' ',emp_app.last_name) AS approvedBy, elr.reason_for_rejection as reason_for_rejection
+        FROM employee_leave_requests AS elr
+        LEFT JOIN leave_categories lc ON (lc.id=elr.leave_category_id)
+        LEFT JOIN employees AS emp ON (emp.id = elr.employee_id)
+        LEFT JOIN configuration_values AS config ON (config.configuration_key=elr.leave_status AND config.parent_id='88')
+        LEFT JOIN employees AS emp_app ON (emp_app.id = elr.approved_by)
+        WHERE emp.employment_status NOT IN ('r','t','q','b','o','y') AND emp.current_location_id='47'
+        <dynamic>
+            <isNotNull property="employee_no">
+                <isNotEmpty prepend="AND" property="employee_no">
+                    <isNotNull property="employee_name">
+                        <isNotEmpty property="employee_name">
+                            emp.id=#employee_no#
+                        </isNotEmpty>
+                    </isNotNull>
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull property="atartDate">
+                <isNotEmpty prepend="AND" property="atartDate">
+                    elr.to_date <![CDATA[ >= ]]>#atartDate# 
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull property="endDate">
+                <isNotEmpty prepend="AND" property="endDate">
+                    elr.from_date <![CDATA[ <= ]]>#endDate# 
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull property="end_page">
+                <isNotEmpty property="end_page">
+                    LIMIT #start_page#, #end_page#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+    </select>
+    
+    <select id="getSearchList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.FranceLeaveReportDTO">
+        SELECT Employee.id AS employee_no,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employee_name
+        FROM employees AS Employee
+        WHERE (Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key# ) AND Employee.employment_status IN ('p','v','g','d','e') AND Employee.current_location_id='47'
+    </select>
+    
+    <select id="getFranceLeaveCount" parameterClass="com.defiance.ideal.reports.dto.FranceLeaveReportDTO" resultClass="java.lang.Integer">
+       SELECT COUNT(*) AS recordCount FROM employee_leave_requests as elr 
+       inner JOIN employees AS emp ON (emp.id = elr.employee_id)
+       WHERE emp.employment_status NOT IN ('r','t','q','b','o','y') AND emp.current_location_id='47'
+       AND elr.to_date <![CDATA[ >= ]]>#atartDate# AND elr.from_date <![CDATA[ <= ]]>#endDate# 
+        <dynamic>
+            <isNotNull property="employee_no">
+            <isNotEmpty prepend="AND" property="employee_no">
+                <isNotNull property="employee_name">
+                    <isNotEmpty property="employee_name">
+                        emp.id=#employee_no#
+                    </isNotEmpty>
+                </isNotNull>
+            </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+<!--        <dynamic>
+            <isNotNull property="atartDate">
+                <isNotEmpty prepend="AND" property="atartDate">
+                    elr.from_date <![CDATA[ >= ]]> #atartDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>-->
+    </select>
+    
+</sqlMap>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BillableMap">
+
+<select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.BillableStatusFilterDTO">
+    SELECT id as sbuId, name as sbuName 
+    FROM company_structures
+    WHERE parent_id = #employeeId#
+</select>
+
+<select id="billableData" parameterClass="com.defiance.ideal.reports.dto.BillableStatusFilterDTO" resultClass="com.defiance.ideal.reports.dto.BillableStatusDataDTO">
+    SELECT pta.id, emp.employee_number as empNumber,
+    CONCAT(emp.first_name,' ', emp.last_name) AS empName,
+    CONCAT(mgr.first_name,' ', mgr.last_name) AS pmName,
+    emp.billable as empBilable,
+    emp.employment_status as eStat,
+    empstat.configuration_value AS empStatus,
+    DATE_FORMAT(emp.joined_date, '%d-%m-%Y') as joinedDate,
+    CASE emp.employment_status
+    WHEN 't' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y')
+    WHEN 'r' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y')
+    WHEN 'b' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y')
+    WHEN 'o' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y')
+    ELSE ''
+    END AS releasedDate,
+    cs1.name AS sbuName,
+    cs2.name AS subSbu,
+    prj.project_code as projectCode,
+    prj.project_name as projectName,
+    cst.customer_name as custName,
+    CASE prj.billable
+    WHEN 'i' THEN 'Internal Billable'
+    WHEN 'n' THEN 'Internal Non Billable'
+    WHEN 'e' THEN 'External Billable'
+    WHEN 'x' THEN 'External Non Billable'
+    ELSE 'Non Billable'
+    END AS billStatus
+    FROM employees AS emp
+    LEFT JOIN (project_team_allocations as pta, projects AS prj)
+    ON (pta.employee_id = emp.id AND pta.deleted = 0
+    AND pta.start_date <![CDATA[ <= ]]> current_date()
+    AND pta.end_date <![CDATA[ >= ]]> current_date()
+    AND prj.project_status IN ("e")
+    AND prj.id = pta.project_id)
+    LEFT JOIN company_structures AS cs1 ON (emp.structure_name = cs1.id)
+    LEFT JOIN company_structures AS cs2 ON (emp.structure_name_subgroup = cs2.id)
+    LEFT JOIN employees AS mgr ON (prj.project_manager = mgr.id)
+    LEFT JOIN customers AS cst ON (prj.customer_id = cst.id)
+    LEFT JOIN configuration_values as empstat on(empstat.configuration_key = emp.employment_status and empstat.parent_id = 286)
+    WHERE emp.billable="b"
+    <dynamic>
+    <isNotEmpty prepend="AND" property="sbuFilter">
+        emp.structure_name = #sbuFilter#
+    </isNotEmpty>
+
+    <isNotEmpty prepend="AND" property="monthFilter">
+         DATE_FORMAT(emp.joined_date,'%m') = #monthFilter#
+    </isNotEmpty>
+
+    <isNotEmpty prepend="AND" property="yearFilter">
+         DATE_FORMAT(emp.joined_date, '%Y') = #yearFilter# 
+    </isNotEmpty>
+</dynamic>
+<!--    having pta.id NOT IN (select ptan.id from (project_team_allocations as ptan
+    , projects AS prt) INNER JOIN employees AS em ON (ptan.employee_id = em.id AND ptan.deleted = 0
+    AND ptan.start_date  <![CDATA[ <= ]]>  current_date()
+    AND ptan.end_date  <![CDATA[ >= ]]>  current_date()
+    AND prt.id = ptan.project_id)
+    where prt.billable NOT IN ("e")
+    AND (select count(pat.id) from project_team_allocations as pat
+    WHERE pat.employee_id = em.id
+    AND pat.deleted = 0
+    AND pat.start_date  <![CDATA[ <= ]]>  current_date()
+    AND pat.end_date  <![CDATA[ >= ]]>  current_date()) > 0 )-->
+    having pta.id IN (select pat.id from project_team_allocations as pat INNER JOIN projects as pj
+    ON  pat.project_id = pj.id
+    AND pat.deleted = 0
+    AND pat.start_date <![CDATA[ <= ]]> current_date()
+    AND pat.end_date <![CDATA[ >= ]]> current_date()
+    INNER JOIN employees AS em ON pat.employee_id = em.id
+    WHERE pat.employee_id = em.id
+    AND pat.id NOT IN (select pat1.id from
+    project_team_allocations as pat1 INNER JOIN projects as pj1
+    ON  pat1.project_id = pj1.id
+    AND pat1.deleted = 0
+    AND pat1.start_date <![CDATA[ <= ]]> current_date()
+    AND pat1.end_date <![CDATA[ >= ]]> current_date()
+    where pj1.billable NOT IN ("e") ) )
+
+    OR
+
+    pta.id IN (select pat.id from project_team_allocations as pat INNER JOIN projects as pj
+    ON  pat.project_id = pj.id
+    AND pat.deleted = 0
+    AND pat.start_date <![CDATA[ <= ]]> current_date()
+    AND pat.end_date <![CDATA[ >= ]]> current_date()
+    INNER JOIN employees AS em ON pat.employee_id = em.id
+    WHERE pat.employee_id = em.id
+    AND pj.billable NOT IN ("e")
+    AND em.id NOT IN (select em1.id from
+    project_team_allocations as pat1
+    INNER JOIN projects as pj1 ON pat1.project_id = pj1.id
+    INNER JOIN employees AS em1 ON pat1.employee_id = em1.id
+    WHERE pat1.employee_id = em.id
+    AND pat1.deleted = 0
+    AND pat1.start_date <![CDATA[ <= ]]> current_date()
+    AND pat1.end_date <![CDATA[ >= ]]> current_date()
+    AND pj1.billable IN ("e")) )
+
+    OR
+
+    pta.id IN (select pat.id from project_team_allocations as pat INNER JOIN projects as pj
+    ON  pat.project_id = pj.id
+    AND pat.deleted = 0
+    AND pat.start_date <![CDATA[ <= ]]> current_date()
+    AND pat.end_date <![CDATA[ >= ]]> current_date()
+    INNER JOIN employees AS em ON pat.employee_id = em.id
+    WHERE pat.employee_id = em.id
+    AND pj.billable NOT IN ("e")
+    AND pat.id NOT IN (select pat1.id from
+    project_team_allocations as pat1
+    INNER JOIN projects as pj1 ON pat1.project_id = pj1.id
+    INNER JOIN employees AS em1 ON pat1.employee_id = em1.id
+    WHERE pat1.employee_id = em.id
+    AND pat1.deleted = 0
+    AND pat1.start_date <![CDATA[ <= ]]> current_date()
+    AND pat1.end_date <![CDATA[ >= ]]> current_date()
+    AND pj1.billable IN ("e")) )
+
+    OR
+
+    pta.id IS NULL
+ORDER BY emp.employee_number ASC
+</select>
+
+</sqlMap>

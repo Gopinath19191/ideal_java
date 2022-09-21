@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="PcMap">
+    <select id="getConsultantList" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" resultClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        select pc.id as consultant_empid,pc_code as pc_code,
+        concat( pc.pc_firstname," ", pc.pc_lastname )as consultantName, 
+        partnering_company_name as company,pc_mobileno as pmobile,htl_manager as rmId,concat( man.first_name," ", man.last_name ) as rmName,
+        pc.structure_name as practiceGroup,pg.name as practiceGroupName,pc.structure_name_subgroup as subPracticeGroup,spg.name as subPracticeGroupName,
+        DATE_FORMAT(contract_start_date, '%d-%m-%Y') as startdate,
+        DATE_FORMAT(contract_end_date, '%d-%m-%Y') as enddate,
+        Concat(p.project_code,"-",p.project_name) as projectName,email_address as mail,
+        ea.address_line as address,coun.id as countryId,coun.country as countryName,reg.id as regionId,reg.region as regionName,cit.id as cityId,cit.city as cityName,
+        ec.contact_person_name as contactname,ec.relationship as relationship,ec.mobile_number as mobile,id.aadhar_number as aadhar,
+		pc.Work_location_id AS workLocationId,
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line)
+        END AS workLocationName,
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_shortcode) 
+        ELSE
+        CONCAT(cusWrk.address_shortcode)
+        END AS shortcode,
+        substring_index(attachment_file_path ,'~~',-1) as attachment_file_path,
+ attachment_file_path as fullFileName
+        from partner_consultants pc
+		LEFT JOIN company_locations cl ON(pc.Work_location_id = cl.id)
+		LEFT JOIN cities ct ON (ct.id = cl.city_id)
+	LEFT JOIN countries co ON (co.id = cl.country_id)
+		 LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = pc.Work_location_id)
+		  LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = pc.Work_location_id)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        
+		
+        left join  employees man on(man.id=pc.htl_manager)
+        left join company_structures pg ON pg.id=pc.structure_name
+        left join company_structures spg ON spg.id=pc.structure_name_subgroup
+        left join projects p on (p.id=pc.project_id)
+        left join pc_addresses ea on(ea.pc_id=pc.id)
+        left join countries coun on (coun.id=ea.country_id)
+        left join regions reg on (reg.id=ea.region_id )
+        left join cities cit on (cit.id=ea.city_id )
+        left join pc_emergency_contacts ec on(ec.pc_id=pc.id)
+        left join pc_id_proofs id on(id.pc_id=pc.id)
+        where 1=1   
+        <dynamic>
+            <isNotNull prepend="AND" property="fstartdate">
+                contract_start_date<![CDATA[ >= ]]>#fstartdate#
+            </isNotNull>
+            <isNotNull prepend="AND" property="fenddate">
+                contract_end_date<![CDATA[ <= ]]>#fenddate#
+            </isNotNull>
+        </dynamic>
+       group by pc_code  order by pc.id
+    </select>
+    <select id="getConsultantListByName" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" resultClass="com.ideal.pc.ticket.dto.PcDataDTO">
+       select pc.id as consultant_empid,pc_code as pc_code,
+        concat( pc.pc_firstname," ", pc.pc_lastname )as consultantName, 
+        partnering_company_name as company,pc_mobileno as pmobile,htl_manager as rmId,concat( man.first_name," ", man.last_name ) as rmName,
+        pc.structure_name as practiceGroup,pg.name as practiceGroupName,pc.structure_name_subgroup as subPracticeGroup,spg.name as subPracticeGroupName,
+        DATE_FORMAT(contract_start_date, '%d-%m-%Y') as startdate,
+        DATE_FORMAT(contract_end_date, '%d-%m-%Y') as enddate,
+        Concat(p.project_code,"-",p.project_name) as projectName,email_address as mail,
+        ea.address_line as address,coun.id as countryId,coun.country as countryName,reg.id as regionId,reg.region as regionName,cit.id as cityId,cit.city as cityName,
+        ec.contact_person_name as contactname,ec.relationship as relationship,ec.mobile_number as mobile,id.aadhar_number as aadhar,
+		pc.Work_location_id AS workLocationId,
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line)
+        END AS workLocationName,
+        substring_index(attachment_file_path ,'~~',-1) as attachment_file_path,
+ attachment_file_path as fullFileName
+        from partner_consultants pc
+		LEFT JOIN company_locations cl ON(pc.Work_location_id = cl.id)
+		LEFT JOIN cities ct ON (ct.id = cl.city_id)
+	LEFT JOIN countries co ON (co.id = cl.country_id)
+		 LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = pc.Work_location_id)
+		  LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = pc.Work_location_id)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        
+		
+        left join  employees man on(man.id=pc.htl_manager)
+        left join company_structures pg ON pg.id=pc.structure_name
+        left join company_structures spg ON spg.id=pc.structure_name_subgroup
+        left join projects p on (p.id=pc.project_id)
+        left join pc_addresses ea on(ea.pc_id=pc.id)
+        left join countries coun on (coun.id=ea.country_id)
+        left join regions reg on (reg.id=ea.region_id )
+        left join cities cit on (cit.id=ea.city_id )
+        left join pc_emergency_contacts ec on(ec.pc_id=pc.id)
+        left join pc_id_proofs id on(id.pc_id=pc.id)
+        where 1=1  
+		and pc.id=#consultant_empid# 
+        and contract_start_date<![CDATA[ >= ]]>#fstartdate# and contract_end_date <![CDATA[ <= ]]>#fenddate#
+       group by pc_code  order by pc.id
+    </select>
+    <select id="editConsultantById" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" resultClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        select pc.id as consultant_empid,pc_code as pc_code,
+        concat( pc.pc_firstname," ", pc.pc_lastname )as consultantName, 
+        partnering_company_name as company,pc_mobileno as pmobile,htl_manager as rmId,concat( man.first_name," ", man.last_name ) as rmName,
+        pc.structure_name as practiceGroup,pg.name as practiceGroupName,pc.structure_name_subgroup as subPracticeGroup,spg.name as subPracticeGroupName,
+        DATE_FORMAT(contract_start_date, '%d-%m-%Y') as startdate,
+        DATE_FORMAT(contract_end_date, '%d-%m-%Y') as enddate,
+        Concat(p.project_code,"-",p.project_name) as projectName,email_address as mail,
+        ea.address_line as address,coun.id as countryId,coun.country as countryName,reg.id as regionId,reg.region as regionName,cit.id as cityId,cit.city as cityName,
+        ec.contact_person_name as contactname,ec.relationship as relationship,ec.mobile_number as mobile,id.aadhar_number as aadhar,
+		pc.Work_location_id AS workLocationId,
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line)
+        END AS workLocationName,
+        substring_index(attachment_file_path ,'~~',-1) as attachment_file_path,
+ attachment_file_path as fullFileName
+        from partner_consultants pc
+		LEFT JOIN company_locations cl ON(pc.Work_location_id = cl.id)
+		LEFT JOIN cities ct ON (ct.id = cl.city_id)
+	LEFT JOIN countries co ON (co.id = cl.country_id)
+		 LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = pc.Work_location_id)
+		  LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = pc.Work_location_id)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        
+		
+        left join  employees man on(man.id=pc.htl_manager)
+        left join company_structures pg ON pg.id=pc.structure_name
+        left join company_structures spg ON spg.id=pc.structure_name_subgroup
+        left join projects p on (p.id=pc.project_id)
+        left join pc_addresses ea on(ea.pc_id=pc.id)
+        left join countries coun on (coun.id=ea.country_id)
+        left join regions reg on (reg.id=ea.region_id )
+        left join cities cit on (cit.id=ea.city_id )
+        left join pc_emergency_contacts ec on(ec.pc_id=pc.id)
+        left join pc_id_proofs id on(id.pc_id=pc.id)
+        where 1=1   and pc.id=#pcId#   group by pc_code order by pc.id
+    </select>
+    <select id="getCountryList" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT id,country as countryName FROM countries ORDER by country ASC;
+    </select>
+    <select id="getWorklocationList" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT  
+        DISTINCT
+        CASE
+        WHEN empWrk.location_table = 'customer_work_locations'
+        THEN 
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cusWrk.address_shortcode,' - ',cusWrk.address_line)
+        END
+        WHEN empWrk.location_table = 'company_locations'
+        THEN 
+        CASE 
+        WHEN empWrk.work_location_id = 0
+        THEN 'ALL'
+        ELSE
+        CONCAT(cv.configuration_key,' - ',hco.country, '- ',hct.city)
+        END
+        END AS workLocationName,
+        empWrk.work_location_id AS workLocationId
+        FROM
+        employee_work_location empWrk 
+        LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = empWrk.work_location_id)
+        LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = empWrk.work_location_id AND cll.deleted = 0)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        LEFT JOIN employees e ON (empWrk.employee_id = e.id)
+        WHERE e.employment_status IN ('p','d','v','e','g')
+        ORDER BY workLocationName;
+    </select>
+    <select id="getRegionList" parameterClass="String" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT id,region as regionName FROM regions WHERE country_id=#cntyId# ORDER BY region ASC;
+    </select>
+
+    <select id="getCityList" parameterClass="Map" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT id,city as cityName FROM cities WHERE country_id=#cntyId# AND region_id=#regId# ORDER BY city ASC;
+    </select>
+    <select id="getCmpStructData" parameterClass="String" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT id, name FROM company_structures WHERE parent_id =#parentId#;
+    </select>
+    <select id="getPgData" parameterClass="String" resultClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        SELECT id, name FROM company_structures WHERE parent_id =1;
+    </select>
+    <select id = "getPcIds" parameterClass = "java.lang.String" resultClass = "com.ideal.pc.ticket.dto.PcDataDTO">
+        SELECT  id as consultant_empid,pc_code as pc_code,
+        concat( pc.pc_firstname," ", pc.pc_lastname )as consultantName,
+        concat(pc.pc_firstname," ",pc.pc_lastname," - ",pc_code) AS empName
+        FROM partner_consultants pc  
+        WHERE  
+       ( pc_code LIKE $refVal$ 
+        OR pc_firstname LIKE $refVal$ 
+        OR concat( pc_code, "-", pc_firstname," ", pc_lastname) LIKE $refVal$ );
+    </select> 
+    <select id = "getPcIdd" parameterClass = "java.lang.String" resultClass = "com.ideal.pc.ticket.dto.PcDataDTO">
+        SELECT  id as consultant_empid,pc_code as pc_code,
+        concat( pc.pc_firstname," ", pc.pc_lastname )as consultantName,
+        concat(pc.pc_firstname," ",pc.pc_lastname," - ",pc_code) AS empName
+        FROM partner_consultants pc  
+        WHERE  
+       ( pc_code LIKE $refVal$ 
+        OR pc_firstname LIKE $refVal$ 
+        OR concat(pc_firstname," ", pc_lastname," - ",pc_code) LIKE $refVal$ );
+    </select> 
+    <select id = "getEmpIds" parameterClass = "java.lang.String" resultClass = "com.ideal.pc.ticket.dto.PcDataDTO">
+        SELECT  id as employee_idd,emp.employee_number as empNumber,
+        work_email_address as mailId, 
+        concat(emp.first_name," ", emp.last_name ) AS consultantName, 
+        concat(emp.first_name," ",emp.last_name," - ",emp.employee_number) AS empName,
+        work_email_address as consultantMail
+        FROM Employees emp  
+        WHERE  emp.employment_status NOT IN('r','b','t','q','o') AND
+       ( emp.employee_number LIKE $refVal$ 
+        OR emp.first_name LIKE $refVal$ 
+        OR concat( emp.employee_number, "-", emp.first_name," ", emp.last_name) LIKE $refVal$ );
+    </select> 
+    <select id = "getEmpId" parameterClass = "java.lang.String" resultClass = "com.ideal.pc.ticket.dto.PcDataDTO">
+        SELECT  id as employee_idd,
+        work_email_address as mailId, 
+        concat(emp.first_name," ", emp.last_name ) AS consultantName, 
+        concat(emp.first_name," ",emp.last_name," - ",emp.employee_number) AS empName 
+        FROM Employees emp  
+        WHERE emp.employment_status NOT IN('r','b','t','q','o') AND
+        id = $refVal$ 
+        
+    </select> 
+    <select id = "getPrjIds" parameterClass = "java.lang.String" resultClass = "com.ideal.pc.ticket.dto.PcDataDTO">
+        select id as pid,concat(project_code,"-",project_name) as projectName from projects 
+        WHERE project_status in ('e','d') and status='a' and (project_code LIKE $refVal$ OR project_name LIKE $refVal$ OR 
+        concat(project_code,"-",project_name) LIKE $refVal$ )
+    </select> 
+    <select id = "getPrjId" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select id as pid,concat(project_code,"-",project_name) as projectName from projects 
+        WHERE project_status in ('e','d') and status='a' and (project_code LIKE $refVal$ OR project_name LIKE $refVal$ OR 
+        concat(project_code,"-",project_name) LIKE $refVal$ )
+    </select> 
+    <select id = "getRMmail" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select work_email_address as rmMail  from employees where id=#rmId#;
+    </select>
+    <select id = "getNSmail"  resultClass = "java.lang.String">
+        select emp.work_email_address as nsMail 
+        from general_approvers
+        inner join employees emp on (emp.employee_number=employee_id)
+        where function_id=33 and category='n';
+    </select> 
+    <select id="getHighestRefNo" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" resultClass="java.lang.Integer">
+        <!--        SELECT SUBSTR(pc_code, 3 ) as highest_ref FROM partner_consultants ORDER BY SUBSTR(pc_code, 3) DESC LIMIT 1;-->
+        SELECT 
+        case when count(id) IS NULL or count(id) = ''
+        then '0'
+        else max(SUBSTR(pc_code,3))
+        end
+        as highest_ref 
+        FROM partner_consultants ORDER BY SUBSTR(pc_code, 3) DESC LIMIT 1;
+    </select>
+    <insert id="insertConsultant" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+        insert into partner_consultants
+        (pc_code,pc_firstname,pc_lastname,partnering_company_name,Work_location_id,pc_mobileno,htl_manager,structure_name,structure_name_subgroup,
+        created_date,contract_start_date,contract_end_date,project_id,email_address,attachment_file_path)
+        values
+        (#pc_code#,#firstname#,#lastname#,#company#,#workLocationId#,#pmobile#,#rmId#,#practiceGroup#,#subPracticeGroup#,
+        #created_date#,#startdate#,#enddate#,#projectId#,#mail#,#attachment_file_path#);
+    </insert>
+   <select id = "getpcid"  resultClass = "java.lang.String">
+       select MAX( id ) as consultant_empid from partner_consultants 
+
+   </select>
+    <update id="updateConsultant" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        update partner_consultants set partnering_company_name=#company#,Work_location_id=#workLocationId#,pc_mobileno=#pmobile#,
+        htl_manager=#rmId#,structure_name=#practiceGroup#,structure_name_subgroup=#subPracticeGroup#,
+        contract_start_date=#startdate#,contract_end_date=#enddate#,project_id=#projectId#,email_address=#mail#
+        where id=#consultant_empid# ;
+    </update>
+	
+    <insert id="insertConsultantAddress" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+			insert into pc_addresses
+			(pc_id,address_line,country_id,region_id,city_id)
+			values
+			(#consultant_empid#,#address#,#countryId#,#regionId#,#cityId#)
+	</insert>
+    <update id="updateConsultantAddress" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        update pc_addresses set address_line=#address#,
+        country_id=#countryId#,region_id=#regionId#,city_id=#cityId#
+        where pc_id=#consultant_empid# ;
+    </update>
+	<insert id="insertConsultantProof" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+			insert into pc_id_proofs
+			(pc_id,aadhar_number,file_path)
+			values
+			(#consultant_empid#,#aadhar#,'--')
+	</insert>
+    <update id="updateConsultantProof" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        update pc_id_proofs set aadhar_number=#aadhar#
+        where pc_id=#consultant_empid# ;
+    </update>
+	<insert id="insertConsultantContact" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO" >
+	insert into pc_emergency_contacts
+	(pc_id,contact_person_name,relationship,mobile_number)
+	values
+	(#consultant_empid#,#contactname#,#relationship#,#mobile#)
+	</insert>
+	
+    <update id="updateConsultantContact" parameterClass="com.ideal.pc.ticket.dto.PcDataDTO">
+        update pc_emergency_contacts set contact_person_name=#contactname#,relationship=#relationship#,mobile_number=#mobile#
+        where pc_id=#consultant_empid# ;
+    </update>
+    
+</sqlMap>

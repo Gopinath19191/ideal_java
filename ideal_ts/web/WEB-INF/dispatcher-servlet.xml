@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!--<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+       http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd">-->
+       
+       <beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+    <!--    <mvc:annotation-driven></mvc:annotation-driven>-->
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="adminhome.htm">indexController</prop>
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="showEmployees.htm">TicAdminController</prop>
+                <prop key="selectEmpByRef.htm">TicAdminController</prop>
+                <prop key="insertResponse.htm">TicAdminController</prop>
+                <prop key="search_feedback_admin.htm">TicAdminController</prop>
+                <prop key="feedback_search.htm">TicAdminController</prop>
+                <prop key="employee_search.htm">TicAdminController</prop>
+                <prop key="assign_engineer.htm">TicAdminController</prop>
+                <prop key="excelexportTicAdmin.htm">TicAdminController</prop>
+                <prop key="downloadFile.htm">TicAdminController</prop>
+                <prop key="getStatus.htm">TicAdminController</prop>
+                <prop key="getStatusList.htm">TicAdminController</prop>
+                <prop key="getSelectedStatus.htm">TicAdminController</prop>
+                <prop key="feedback_user.htm">TicSystemController</prop>
+                <prop key="search_feedback_user.htm">TicSystemController</prop>
+                <prop key="employee_search_user.htm">TicSystemController</prop>
+                <prop key="feedback_search_user.htm">TicSystemController</prop>
+                <prop key="addFeedback.htm">TicSystemController</prop>
+                <prop key="editOnSaveFeedbackRequest.htm">TicSystemController</prop>
+                <prop key="saveFeedbackRequest.htm">TicSystemController</prop>
+                <prop key="selectEmpByRef_user.htm">TicSystemController</prop>
+                <prop key="downloadFile_user.htm">TicSystemController</prop>
+                <prop key="removeExistingFile.htm">TicSystemController</prop>
+                <prop key="showFeedback.htm">TicMasterController</prop>
+                <prop key="add_issuetype.htm">TicMasterController</prop>
+                <prop key="insertIssue.htm">TicMasterController</prop>
+                <prop key="editIssue.htm">TicMasterController</prop>
+                <prop key="deleteIssue.htm">TicMasterController</prop>
+                <prop key="updateIssue.htm">TicMasterController</prop>
+                <prop key="getEmployeeNameForCC.htm">TicSystemController</prop>
+                <prop key="getRequestTypes.htm">TicSystemController</prop>
+                <prop key="getRequestAreas.htm">TicSystemController</prop>
+                <prop key="getSubUnitList.htm">TicSystemController</prop>
+                <prop key="getNextStatus.htm">TicAdminController</prop>
+                <prop key="getSupportEngineerList.htm">TicAdminController</prop>                  
+            </props>
+        </property>
+    </bean>
+ <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="maxUploadSize" value="1000000"/>
+     </bean>
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="adminhome" />
+
+          <bean name="TicAdminController"
+              class="com.ideal.admin.ticket.controller.TicAdminController"/>
+        <bean name="AuthenticationController" 
+          class="com.ideal.admin.ticket.controller.AuthenticationController" />   
+     <bean name="TicSystemController"
+              class="com.ideal.system.ticket.controller.TicSystemController"/>
+    <bean name="TicMasterController" 
+          class="com.ideal.master.ticket.controller.TicMasterController"/>
+
+       </beans>

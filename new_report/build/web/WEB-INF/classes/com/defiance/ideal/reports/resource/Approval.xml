@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "file:///D:/sql-map-config-2.dtd">
+
+<sqlMap namespace="queryMap">
+    
+    <select id="getProjectList"  parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO"  resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+        SELECT `Project`.`id` As projectId, `Project`.`project_name` As projectName, `Project`.`project_code` As projectCode FROM `timesheet_entry_projects` AS `TimesheetEntryProject`
+        INNER JOIN projects AS `Project` ON (`Project`.`id` = `TimesheetEntryProject`.`project_id`)
+        INNER JOIN timesheet_entries AS `TimesheetEntry` ON (`TimesheetEntry`.`id` = `TimesheetEntryProject`.`timesheet_entry_id`)
+        WHERE `Project`.`project_manager` = #employeeId# AND `Project`.`project_status` IN ("e", "d") 
+       
+        <dynamic>
+<!--        <isEqual property="approveType" compareValue="pending" >
+                AND   `TimesheetEntryProject`.`status` IN ("m")
+            </isEqual>
+            <isEqual property="approveType" compareValue="processed" >
+                AND    `TimesheetEntryProject`.`status` IN ("a")
+            </isEqual>-->
+
+        </dynamic>
+        AND Project.status IN ("a") AND `Project`.`project_model` NOT IN ("wopo") AND `TimesheetEntryProject`.`deleted` = 0
+        GROUP BY `Project`.`project_code`
+        ORDER BY `Project`.`project_status` desc , `Project`.`project_code` ASC ;
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+        SELECT DISTINCT(emp.id) As empId,tep.status,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name , '  ' , emp.last_name) As empName
+        FROM employees AS emp
+        INNER JOIN timesheet_entries AS te ON(te.employee_id=emp.id)
+        INNER JOIN timesheet_entry_projects AS tep on(tep.timesheet_entry_id=te.id)
+        WHERE 1=1  AND (emp.employment_status NOT IN ('t', 'r', 'b', 'q', 'o', 'y' ) 
+        or emp.released_date >= date_format(now()- INTERVAL 1 MONTH,'%Y-%m-01'))
+        AND te.timesheet_date>='2016-06-01'
+        <dynamic>
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND emp.manager=#employeeId#
+            </isEqual>
+            <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND tep.project_id=#projectId# 
+            </isNotEqual>
+<!--             <isEqual prepend="AND" property="approveType" compareValue="pending">
+                tep.status IN('m') 
+            </isEqual>
+            <isEqual prepend="AND" property="approveType" compareValue="processed">
+                tep.status IN('a') 
+            </isEqual>-->
+        </dynamic>
+        group by emp.employee_number
+        order by emp.first_name 
+    </select>
+    
+     <select id="getTimesheetEntryProjects" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+SELECT
+DISTINCT (CASE WHEN F_IsAttendance_Available(te.employee_id,te.timesheet_date) = 1 THEN
+TIME_FORMAT(TIMEDIFF(IFNULL(empattd.carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+ELSE F_GetAvailableHrs(te.employee_id,te.timesheet_date) END)
+AS attendance_hours, 
+tep.id AS entryProjectId,
+tep.project_id AS projectId,
+F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+tep.worked_hours AS workedHours,
+CASE WHEN tep.approved_hours IS NULL
+THEN tep.worked_hours 
+ELSE tep.approved_hours
+END AS approvedHrs,
+tep.approved_minutes AS approvedMins,
+SUBSTRING(tep.approved_hours,1,2) AS approvedHrsValue,
+tep.task_remarks AS taskRemarks,
+tep.status AS entryStatus,
+tep.remarks AS timeSheetRemarks,
+DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') AS timesheetDate,
+te.employee_id AS empId,
+te.employeeNumber AS employeeNumber,
+te.employeeName,
+te.shift AS shiftKey,
+shift_config.configuration_value AS shiftName,
+CASE 
+WHEN tep.phase_id = 'others' THEN 'Others'
+WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+ELSE (SELECT pp1.phase_name FROM project_phases AS pp1 WHERE tep.phase_id = pp1.id) 
+END AS phaseName,
+CASE 
+WHEN tep.task_id = 'others' THEN 'Others'
+WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+ELSE (SELECT ppt.task_name  FROM project_phase_tasks AS ppt WHERE tep.task_id = ppt.id) 
+END AS taskNamee,
+te.location AS locationKey,
+CASE WHEN location_config.configuration_value ='Offshore'
+THEN CONCAT('HTL - ', city.city)
+ELSE
+CASE 
+WHEN cusWrk.address_shortcode IS NULL OR cusWrk.address_shortcode = ''
+THEN cus.customer_name	
+ELSE cusWrk.address_shortcode
+END	
+END AS locationName,
+te.role_id AS roleId,
+Role.role_description AS roleName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  'Non_Project_Activity'
+ELSE tep.projectName
+END AS projectName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN   '--'   
+ELSE   tep.projectCode   
+END AS projectCode,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  '--'
+ELSE pricing_config.configuration_value
+END AS pricingType,
+so.pricing_model AS pricingKey,
+empattd.attendance_date AS attendance_date,
+tep.regularization_reason AS regReason,
+CASE 
+WHEN tep.status='m' THEN 'submitted'
+WHEN tep.status='a' THEN 'approved'
+WHEN tep.status='r' THEN 'rejected'
+WHEN tep.status='s' THEN 'saved'
+ELSE '--'
+ END AS statuss
+FROM timesheet_entry_prj_report tep
+LEFT JOIN view_timesheet_entries_report AS te ON te.id=tep.timesheet_entry_id
+LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=tep.project_id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')
+LEFT JOIN cities city ON(city.id = cl.city_id)
+LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+LEFT JOIN project_so_masters AS psm ON (psm.project_id=tep.project_id)
+LEFT JOIN sales_orders AS so ON (so.id=psm.sales_order_id)
+LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+LEFT JOIN configuration_values AS location_config ON(location_config.configuration_key=te.location AND location_config.parent_id='205')
+       where  
+     1=1
+        
+        <dynamic>
+           <isNotNull property="value">
+               $value$
+            </isNotNull>
+<!--            <isEqual prepend="AND" property="approveType" compareValue="pending">
+               tep.status ='m'
+            </isEqual>
+           <isEqual prepend="AND" property="approveType" compareValue="processed">
+                  tep.status ='a'
+            </isEqual>-->
+           
+        </dynamic>
+		group by te.id
+       ORDER BY te.timesheet_date ASC
+         
+        <dynamic>
+            <isEqual property="approveType" compareValue="processed">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+            <isEqual property="approveType" compareValue="pending">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+        </dynamic>
+       
+    </select>
+    <select id="getTimesheetEntryProjectsExport" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+SELECT
+DISTINCT (CASE WHEN F_IsAttendance_Available(te.employee_id,te.timesheet_date) = 1 THEN
+TIME_FORMAT(TIMEDIFF(IFNULL(empattd.carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+ELSE F_GetAvailableHrs(te.employee_id,te.timesheet_date) END)
+AS attendance_hours, 
+tep.id AS entryProjectId,
+tep.project_id AS projectId,
+F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+tep.worked_hours AS workedHours,
+CASE WHEN tep.approved_hours IS NULL
+THEN tep.worked_hours 
+ELSE tep.approved_hours
+END AS approvedHrs,
+tep.approved_minutes AS approvedMins,
+SUBSTRING(tep.approved_hours,1,2) AS approvedHrsValue,
+tep.task_remarks AS taskRemarks,
+tep.status AS entryStatus,
+tep.remarks AS timeSheetRemarks,
+DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') AS timesheetDate,
+te.employee_id AS empId,
+te.employeeNumber AS employeeNumber,
+te.employeeName,
+te.shift AS shiftKey,
+shift_config.configuration_value AS shiftName,
+CASE 
+WHEN tep.phase_id = 'others' THEN 'Others'
+WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+ELSE (SELECT pp1.phase_name FROM project_phases AS pp1 WHERE tep.phase_id = pp1.id) 
+END AS phaseName,
+CASE 
+WHEN tep.task_id = 'others' THEN 'Others'
+WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+ELSE (SELECT ppt.task_name  FROM project_phase_tasks AS ppt WHERE tep.task_id = ppt.id) 
+END AS taskNamee,
+te.location AS locationKey,
+CASE WHEN location_config.configuration_value ='Offshore'
+THEN CONCAT('HTL - ', city.city)
+ELSE
+CASE 
+WHEN cusWrk.address_shortcode IS NULL OR cusWrk.address_shortcode = ''
+THEN cus.customer_name	
+ELSE cusWrk.address_shortcode
+END	
+END AS locationName,
+te.role_id AS roleId,
+Role.role_description AS roleName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  'Non_Project_Activity'
+ELSE tep.projectName
+END AS projectName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN   '--'   
+ELSE   tep.projectCode   
+END AS projectCode,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  '--'
+ELSE pricing_config.configuration_value
+END AS pricingType,
+so.pricing_model AS pricingKey,
+empattd.attendance_date AS attendance_date,
+tep.regularization_reason AS regReason,
+CASE 
+WHEN tep.status='m' THEN 'submitted'
+WHEN tep.status='a' THEN 'approved'
+WHEN tep.status='r' THEN 'rejected'
+WHEN tep.status='s' THEN 'saved'
+ELSE '--'
+ END AS statuss
+FROM timesheet_entry_prj_report tep
+LEFT JOIN view_timesheet_entries_report AS te ON te.id=tep.timesheet_entry_id
+LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=tep.project_id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')
+LEFT JOIN cities city ON(city.id = cl.city_id)
+LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+LEFT JOIN project_so_masters AS psm ON (psm.project_id=tep.project_id)
+LEFT JOIN sales_orders AS so ON (so.id=psm.sales_order_id)
+LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+LEFT JOIN configuration_values AS location_config ON(location_config.configuration_key=te.location AND location_config.parent_id='205')
+       where  
+     1=1
+        
+        <dynamic>
+           <isNotNull property="value">
+               $value$
+            </isNotNull>
+<!--            <isEqual prepend="AND" property="approveType" compareValue="pending">
+               tep.status ='m'
+            </isEqual>
+           <isEqual prepend="AND" property="approveType" compareValue="processed">
+                  tep.status ='a'
+            </isEqual>-->
+           
+        </dynamic>
+		group by te.id
+       ORDER BY te.timesheet_date ASC
+         
+       
+       
+    </select>
+    <select id="getNonProjectTimesheetEntry" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+
+       SELECT DISTINCT
+        (case when F_IsAttendance_Available(te.employee_id,te.timesheet_date) =1 then
+        TIME_FORMAT(TIMEDIFF(IFNULL(carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+        else F_GetAvailableHrs(te.employee_id,te.timesheet_date) end)
+        AS attendance_hours, 
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+		F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') AS timesheetDate,
+        tep.worked_hours AS workedHours,
+        CASE 
+        WHEN tep.approved_hours IS NULL
+        THEN tep.worked_hours 
+        ELSE tep.approved_hours
+        END AS approvedHrs,
+        tep.status AS entryStatus,
+        tep.remarks AS timeSheetRemarks,
+        tep.task_remarks AS taskRemarks,
+        te.employee_id AS empId,
+       te.employeeNumber AS employeeNumber,
+       te.employeeName,
+        te.shift AS shiftKey,
+        shift_config.configuration_value AS shiftName,
+        CASE WHEN tep.phase_id = 'others' THEN 'Others'
+        WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+        Else npp.phase_name END AS phaseName,
+         CASE WHEN tep.task_id = 'others' THEN 'Others'
+        WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+        Else nppt.task_name END AS taskNamee,
+        empattd.attendance_date AS attendance_date,
+          tep.regularization_reason AS regReason,
+		  CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  'Non_Project_Activity'
+ELSE tep.projectName
+END AS projectName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN   '--'   
+ELSE   tep.projectCode   
+END AS projectCode,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  '--'
+ELSE pricing_config.configuration_value
+END AS pricingType,
+te.role_id AS roleId,
+Role.role_description AS roleName,
+        CASE 
+WHEN tep.status='m' THEN 'submitted'
+WHEN tep.status='a' THEN 'approved'
+WHEN tep.status='r' THEN 'rejected'
+WHEN tep.status='s' THEN 'saved'
+ELSE '--'
+ END AS statuss
+        FROM timesheet_entry_prj_report tep
+        LEFT JOIN view_timesheet_entries_report AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN non_project_phases AS npp ON ( npp.id = tep.phase_id )
+        LEFT JOIN non_project_phase_tasks AS nppt ON ( nppt.id = tep.task_id )
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+        LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+        LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+        WHERE te.manager=#employeeId# 
+       
+         <dynamic>
+             <isNotNull property="value">
+               $value$
+             </isNotNull>
+<!--             <isEqual prepend="AND" property="approveType" compareValue="pending">
+                 tep.status ='m'
+             </isEqual>
+             <isEqual prepend="AND" property="approveType" compareValue="processed">
+                 tep.status ='a'   
+             </isEqual>-->
+             
+         </dynamic>
+		 group by te.id
+         ORDER BY te.employee_id,te.timesheet_date ASC
+         <dynamic>
+            <isEqual property="approveType" compareValue="processed">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+            <isEqual property="approveType" compareValue="pending">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+        </dynamic>
+    </select>
+     <select id="getNonProjectTimesheetEntryExport" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="com.defiance.ideal.reports.dto.ApprovalDTO">
+
+       SELECT DISTINCT
+        (case when F_IsAttendance_Available(te.employee_id,te.timesheet_date) =1 then
+        TIME_FORMAT(TIMEDIFF(IFNULL(carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+        else F_GetAvailableHrs(te.employee_id,te.timesheet_date) end)
+        AS attendance_hours, 
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+		F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') AS timesheetDate,
+        tep.worked_hours AS workedHours,
+        CASE 
+        WHEN tep.approved_hours IS NULL
+        THEN tep.worked_hours 
+        ELSE tep.approved_hours
+        END AS approvedHrs,
+        tep.status AS entryStatus,
+        tep.remarks AS timeSheetRemarks,
+        tep.task_remarks AS taskRemarks,
+        te.employee_id AS empId,
+       te.employeeNumber AS employeeNumber,
+       te.employeeName,
+        te.shift AS shiftKey,
+        shift_config.configuration_value AS shiftName,
+        CASE WHEN tep.phase_id = 'others' THEN 'Others'
+        WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+        Else npp.phase_name END AS phaseName,
+         CASE WHEN tep.task_id = 'others' THEN 'Others'
+        WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+        Else nppt.task_name END AS taskNamee,
+        empattd.attendance_date AS attendance_date,
+          tep.regularization_reason AS regReason,
+		  CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  'Non_Project_Activity'
+ELSE tep.projectName
+END AS projectName,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN   '--'   
+ELSE   tep.projectCode   
+END AS projectCode,
+CASE WHEN tep.project_id='Non_Project_Activity'
+THEN  '--'
+ELSE pricing_config.configuration_value
+END AS pricingType,
+te.role_id AS roleId,
+Role.role_description AS roleName,
+        CASE 
+WHEN tep.status='m' THEN 'submitted'
+WHEN tep.status='a' THEN 'approved'
+WHEN tep.status='r' THEN 'rejected'
+WHEN tep.status='s' THEN 'saved'
+ELSE '--'
+ END AS statuss
+        FROM timesheet_entry_prj_report tep
+        LEFT JOIN view_timesheet_entries_report AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN non_project_phases AS npp ON ( npp.id = tep.phase_id )
+        LEFT JOIN non_project_phase_tasks AS nppt ON ( nppt.id = tep.task_id )
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+        LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+        LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+        WHERE te.manager=#employeeId# 
+       
+         <dynamic>
+             <isNotNull property="value">
+               $value$
+             </isNotNull>
+<!--             <isEqual prepend="AND" property="approveType" compareValue="pending">
+                 tep.status ='m'
+             </isEqual>
+             <isEqual prepend="AND" property="approveType" compareValue="processed">
+                 tep.status ='a'   
+             </isEqual>-->
+             
+         </dynamic>
+		 group by te.id
+         ORDER BY te.employee_id,te.timesheet_date ASC
+        
+    </select>
+    <select id="getTimesheetEntryCount" parameterClass="com.defiance.ideal.reports.dto.ApprovalDTO" resultClass="String">
+       SELECT COUNT(*) AS recordCount 
+        FROM timesheet_entry_prj_report tep
+        <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+        LEFT JOIN view_timesheet_entries_report AS te ON te.id=tep.timesheet_entry_id
+LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=tep.project_id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')
+LEFT JOIN cities city ON(city.id = cl.city_id)
+LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+LEFT JOIN project_so_masters AS psm ON (psm.project_id=tep.project_id)
+LEFT JOIN sales_orders AS so ON (so.id=psm.sales_order_id)
+LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+LEFT JOIN configuration_values AS location_config ON(location_config.configuration_key=te.location AND location_config.parent_id='205')
+       where  
+     1=1
+        </isNotEqual>
+        <isEqual property="projectId" compareValue="Non_Project_Activity" >
+         LEFT JOIN view_timesheet_entries_report AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN non_project_phases AS npp ON ( npp.id = tep.phase_id )
+        LEFT JOIN non_project_phase_tasks AS nppt ON ( nppt.id = tep.task_id )
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+        LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+        LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+        WHERE 1=1
+        </isEqual>
+        <dynamic>
+
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND te.manager=#employeeId#
+            </isEqual>
+            <isNotNull property="value">
+              $value$
+            </isNotNull>
+           
+        </dynamic>
+    </select>
+</sqlMap>

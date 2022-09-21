@@ -1,0 +1,32 @@
+-- Alter queries for QPD Live
+ALTER TABLE  `qpd_eligible_associates` CHANGE  `appraiserRating`  `appraiserRating` VARBINARY( 50 ) NULL DEFAULT NULL ,
+CHANGE  `reviewerRating`  `reviewerRating` VARBINARY( 50 ) NULL DEFAULT  '0',
+CHANGE  `normalisedReviewerRating`  `normalisedReviewerRating` VARBINARY( 50 ) NULL DEFAULT  '0',
+CHANGE  `correctedNormalizerRating`  `correctedNormalizerRating` VARBINARY( 50 ) NOT NULL ;
+
+
+
+UPDATE `qpd_eligible_associates` set 
+`appraiserRating` = AES_ENCRYPT(`appraiserRating`,`appraiseeId`),
+`reviewerRating` = AES_ENCRYPT(`reviewerRating`,`appraiseeId`),
+`normalisedReviewerRating` = AES_ENCRYPT(`normalisedReviewerRating`,`appraiseeId`),
+`correctedNormalizerRating` = AES_ENCRYPT(`correctedNormalizerRating`,`appraiseeId`);
+
+
+
+ALTER TABLE  `qpd_associate_kra_map` ADD  `appraiserCommentsNew` TEXT NOT NULL;
+
+ALTER TABLE  `qpd_eligible_associates` ADD  `areasOfImprovement` TEXT NOT NULL ,
+ADD  `technologyTraining` VARCHAR( 26 ) NOT NULL ,
+ADD  `softskillTraining` VARCHAR( 26 ) NOT NULL;
+
+
+ALTER TABLE  `qpd_eligible_associates` ADD  `managerSurvey` INT( 2 ) NULL;
+
+
+
+
+
+
+
+ALTER TABLE `qpd_eligible_associates` CHANGE `managerSurvey` `managerSurvey` INT( 2 ) NULL ;

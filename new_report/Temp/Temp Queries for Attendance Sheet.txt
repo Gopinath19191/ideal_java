@@ -1,0 +1,337 @@
+SELECT 
+ProjectTeamAllocation.*,
+Employee.id, 
+Employee.first_name, 
+Employee.last_name, 
+Employee.employee_number, 
+Project.id from project_team_allocations as ProjectTeamAllocation 
+LEFT JOIN employees as Employee on ProjectTeamAllocation.employee_id = Employee.id 
+LEFT JOIN projects as Project on ProjectTeamAllocation.project_id = Project.id 
+WHERE 
+ProjectTeamAllocation.project_id= '213' 
+and ProjectTeamAllocation.deleted = 0
+AND
+CONCAT(`BillingAdvice`.`billing_year`, `BillingAdvice`.`billing_month`) 
+BETWEEN EXTRACT(YEAR_MONTH FROM `ProjectTeamAllocation`.`start_date`) AND EXTRACT(YEAR_MONTH FROM `ProjectTeamAllocation`.`end_date`) 
+
+SELECT 
+`BillingAdvice`.`id`, 
+`Project`.`project_code`, 
+`Project`.`project_name`, 
+`Project`.`pricing`, 
+`Customer`.`customer_name`, `RBU`.`name` AS `RBU`, `SBU`.`name` AS `SBU`, `Employee`.`employee_number`, concat(Employee.first_name, " ", Employee.last_name)AS employee_name, `Role`.`role_description`, `BillingAdvice`.`working_place`, concat(emp2.first_name, " ", emp2.last_name) AS "pm_name", concat(emp3.first_name, " ", emp3.last_name) AS "sales_person", `BillingAdvice`.`billing_month`, `BillingAdvice`.`billing_year`, `BillingAdvice`.`billable_effort`, `BillingAdvice`.`submitted_on`, `BillingAdvice`.`accrual_sno`, `BillingAdvice`.`invoice_sno`, `BillingAdvice`.`invoice_refno`, `BillingAdvice`.`approved_on`, `Project`.`efforts_uom`, `ProjectTeamAllocation`.`billing_rate`, `Currency`.`currency_code`, `BillingAdvice`.`billable_amount` FROM `billing_advices` AS `BillingAdvice` LEFT JOIN projects AS `Project` ON (`BillingAdvice`.`project_id` = `Project`.`id`) LEFT JOIN employees AS `Employee` ON (`BillingAdvice`.`employee_id` = `Employee`.`id`) LEFT JOIN employees AS `emp2` ON (`emp2`.`id` = `Project`.`project_manager`) LEFT JOIN employees AS `emp3` ON (`emp3`.`id` = `Project`.`sales_person`) LEFT JOIN project_team_allocations AS `ProjectTeamAllocation` ON (`ProjectTeamAllocation`.`project_id` = `BillingAdvice`.`project_id` AND `ProjectTeamAllocation`.`employee_id` = `BillingAdvice`.`employee_id` AND `ProjectTeamAllocation`.`working_place` = `BillingAdvice`.`working_place` AND `ProjectTeamAllocation`.`role_id`=`BillingAdvice`.`role_id`) LEFT JOIN roles AS `Role` ON (`Role`.`id` = `BillingAdvice`.`role_id`) LEFT JOIN currencies AS `Currency` ON (`Currency`.`id` = `Project`.`currency_id`) LEFT JOIN customers AS `Customer` ON (`Customer`.`id` = `Project`.`customer_id`) LEFT JOIN company_structures AS `RBU` ON (`Project`.`project_rbu` = `RBU`.`id`) LEFT JOIN company_structures AS `SBU` ON (`Project`.`project_sbu` = `SBU`.`id`) LEFT JOIN `employees` AS `SalesPerson` ON (`SalesPerson`.`id` = `Project`.`sales_person`) LEFT JOIN `employees` AS `ProjectManager` ON (`ProjectManager`.`id` = `Project`.`project_manager`) WHERE `BillingAdvice`.`deleted` = 0 AND `ProjectTeamAllocation`.`deleted` = '0' AND `Project`.`project_status` IN ("d","e", "c") AND `BillingAdvice`.`status` IN ("a", "m") AND CONCAT(`BillingAdvice`.`billing_year`, `BillingAdvice`.`billing_month`) BETWEEN EXTRACT(YEAR_MONTH FROM `ProjectTeamAllocation`.`start_date`) AND EXTRACT(YEAR_MONTH FROM `ProjectTeamAllocation`.`end_date`) AND `BillingAdvice`.`billing_year` = Year(CURDATE()) AND `BillingAdvice`.`billing_month` = Month(CURDATE()) ORDER BY `BillingAdvice`.`accrual_sno`
+
+
+
+
+
+
+SELECT tse.id,tsep.id,
+tse.employee_id,
+tse.timesheet_date, tse.shift,tse.location,tse.role_id,tse.status,tsep.timesheet_entry_id,tsep.project_id, tsep.phase_id,tsep.task_id,tsep.worked_hours,tsep.status,tsep.task_remarks,tsep.deleted 
+FROM 
+timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tsep.timesheet_entry_id = tse.id) 
+WHERE 
+tse.deleted = 0 
+AND tsep.deleted = 0 AND tsep.project_id = '644' 
+AND tse.timesheet_date = '2011-09-01' 
+AND tse.employee_id = 303
+
+SELECT tse.id,tsep.id,
+tse.employee_id,
+tse.timesheet_date, tse.shift,tse.location,tse.role_id,tse.status,tsep.timesheet_entry_id,tsep.project_id, tsep.phase_id,tsep.task_id,tsep.worked_hours,tsep.status,tsep.task_remarks,tsep.deleted 
+FROM 
+timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tsep.timesheet_entry_id = tse.id) 
+WHERE 
+tse.deleted = 0 
+AND tsep.deleted = 0 AND tsep.project_id = '644' 
+AND tse.employee_id = 303
+
+
+
+
+SELECT tse.id,tsep.id,
+tse.employee_id,
+tse.timesheet_date, tse.shift,tse.location,tse.role_id,tse.status,tsep.timesheet_entry_id,tsep.project_id, tsep.phase_id,tsep.task_id,tsep.worked_hours,tsep.status,tsep.task_remarks,tsep.deleted 
+FROM 
+timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tsep.timesheet_entry_id = tse.id) 
+WHERE 
+tse.deleted = 0 
+AND tsep.deleted = 0 AND tsep.project_id = '502' 
+AND tse.employee_id = 303
+AND EXTRACT(YEAR_MONTH FROM tse.timesheet_date) = 201106
+
+
+SELECT 
+tse.timesheet_date,tsep.worked_hours  
+FROM 
+timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tsep.timesheet_entry_id = tse.id) 
+WHERE 
+tse.deleted = 0 
+AND tsep.deleted = 0 AND tsep.project_id = '502' 
+AND tse.employee_id = 303
+AND EXTRACT(YEAR_MONTH FROM tse.timesheet_date) = 201108
+
+
+SELECT tse.timesheet_date,tsep.worked_hours
+FROM timesheet_entries AS tse
+LEFT JOIN timesheet_entry_projects AS tsep ON ( tsep.timesheet_entry_id = tse.id ) 
+WHERE tse.deleted =0
+AND tsep.deleted =0
+AND tsep.project_id =  '502'
+AND tse.employee_id =303
+AND tse.timesheet_date =  '2011-06-01'
+
+
+SELECT * FROM `project_team_allocations` 
+WHERE project_id=502 
+AND employee_id=303 
+AND '2011-08-05' 
+BETWEEN start_date AND end_date 
+AND deleted=1
+
+
+SELECT *
+FROM (SELECT "2011-08-01","2011-08-02") LEFT JOIN `project_team_allocations`
+WHERE project_id =502
+AND employee_id =303
+AND start_date <= '2011-08-01'
+AND end_date >= '2011-08-31'
+AND deleted =1
+
+
+
+SELECT * FROM timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id) 
+WHERE tse.employee_id = 303   
+AND tse.timesheet_date = '2011-07-31'   
+AND tsep.project_id = 502
+
+
+SELECT SEC_TO_TIME(SUM(TIME_TO_SEC(worked_hours))) AS worked_hours FROM timesheet_entries AS tse 
+LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id) 
+WHERE tse.employee_id = 303  
+AND tse.timesheet_date = '2011-07-31'  
+AND tsep.project_id = 502
+
+SELECT accrual from billing_advices 
+WHERE 
+employee_id = 428 
+AND billing_month = 08 
+AND billing_year = 2011 
+AND project_id = 939 
+AND status IN ('m','a')
+AND deleted = 0
+
+
+
+SELECT billable_effort
+FROM billing_advices
+WHERE employee_id =589
+AND billing_month =08
+AND billing_year =2011
+AND project_id =609
+AND deleted =0
+
+
+AND STATUS IN ('m','a')
+
+
+
+        SELECT
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        LEFT JOIN billing_advices AS ba ON (ba.project_id=tsep.project_id AND ba.employee_id=tse.employee_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != r
+        AND tsep.project_id = #projectFilter#
+        AND tse.employee_id = #assocId#
+        AND tse.timesheet_date = CONCAT(#yearFilter#,'-',#monthFilter#,'-',#dayFilter#)
+        GROUP BY tsep.project_id;
+        
+        
+        
+        SELECT
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec,
+        billable_effort AS accrEffort,status AS accrStatus
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        LEFT JOIN billing_advices AS ba ON (ba.project_id=tsep.project_id AND ba.employee_id=tse.employee_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != r
+        AND tsep.project_id = 609
+        AND tse.employee_id = 589
+        AND tse.timesheet_date = CONCAT(2011,'-',08,'-',28)
+        GROUP BY tsep.project_id;
+        
+        
+        
+        
+        SELECT
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec,
+        CASE SUM(TIME_TO_SEC(tsep.worked_hours)) WHEN   SUM(TIME_TO_SEC(tsep.approved_hours)) THEN "TRUE"
+        ELSE "FALSE"
+        END AS "Working Hours" 
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        LEFT JOIN billing_advices AS ba ON (ba.project_id=tsep.project_id AND ba.employee_id=tse.employee_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != 'r'
+        AND tsep.project_id = 502
+        AND tse.employee_id = 303
+        AND tse.timesheet_date = CONCAT('2011','-','08','-','05')
+        GROUP BY tsep.project_id;
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+SELECT tse.id,tsep.id,
+tse.employee_id,
+tse.timesheet_date, tse.shift,tse.location,tse.role_id,tse.status,tsep.timesheet_entry_id,tsep.project_id, tsep.phase_id,tsep.task_id,tsep.worked_hours,tsep.status,tsep.task_remarks,tsep.deleted 
+FROM time_intervals as ti 
+LEFT JOIN timesheet_entries AS tse ON (tse.timesheet_date = ti.dateList) 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tsep.timesheet_entry_id = tse.id) 
+WHERE 
+tse.deleted = 0 
+AND tsep.deleted = 0 AND tsep.project_id = '644'      
+        
+        
+        
+        
+         SELECT
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec,
+        CASE SUM(TIME_TO_SEC(tsep.worked_hours)) WHEN SUM(TIME_TO_SEC(tsep.approved_hours)) THEN "TRUE"
+        ELSE "FALSE"
+        END AS approvType
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != 'r'
+        AND tsep.project_id = #projectFilter#
+        AND tse.employee_id = #assocId#
+        AND tse.timesheet_date = CONCAT(#yearFilter#,'-',#monthFilter#,'-',#dayFilter#)
+        GROUP BY tsep.project_id;
+        
+        
+        
+SELECT dateList,tse.id as tseID,tsep.id as tsepID,
+tse.employee_id,
+tse.timesheet_date, tse.shift,tse.location,tse.role_id,tse.status,tsep.timesheet_entry_id,tsep.project_id, tsep.phase_id,tsep.task_id,tsep.worked_hours,tsep.status,tsep.task_remarks,tsep.deleted 
+FROM time_intervals as ti 
+LEFT JOIN timesheet_entries AS tse ON (tse.timesheet_date = ti.dateList AND tse.deleted = 0 AND tse.employee_id = '303') 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tse.id = tsep.timesheet_entry_id AND tsep.deleted = 0 AND tsep.project_id = '502') 
+WHERE tsep.timesheet_entry_id IS NOT NULL
+GROUP BY dateList
+
+SELECT * 
+FROM time_intervals as ti 
+LEFT JOIN timesheet_entries AS tse ON (tse.timesheet_date = ti.dateList AND tse.deleted = 0 AND tse.employee_id = '303')
+ 
+LEFT JOIN timesheet_entry_projects AS tsep ON(tse.id = tsep.timesheet_entry_id AND tsep.deleted = 0 AND tsep.project_id = '502' )
+
+
+
+
+
+
+SELECT DAY(tse.timesheet_date) AS tsDate,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.worked_hours))) AS workedHrs,
+        SUM(TIME_TO_SEC(tsep.worked_hours)) AS workedHrsSec,
+        SEC_TO_TIME(SUM(TIME_TO_SEC(tsep.approved_hours))) AS approvedHrs,
+        SUM(TIME_TO_SEC(tsep.approved_hours)) AS approvedHrsSec,
+        CASE SUM(TIME_TO_SEC(tsep.worked_hours)) WHEN SUM(TIME_TO_SEC(tsep.approved_hours)) THEN "TRUE"
+        ELSE "FALSE"
+        END AS approvType
+        FROM timesheet_entries AS tse
+        LEFT JOIN timesheet_entry_projects AS tsep ON (tse.id=tsep.timesheet_entry_id)
+        WHERE tse.deleted = 0
+        AND tsep.deleted = 0
+        AND tsep.status != 'r'
+        AND tsep.project_id = 609
+        AND tse.employee_id = 1293
+        AND MONTH(tse.timesheet_date) = 08
+        AND YEAR(tse.timesheet_date) = 2011
+        GROUP BY tsep.project_id,tse.timesheet_date;
+        
+call get_date_list('2011-08-01','2011-08-31');
+SELECT dateList FROM time_intervals as ti,employee_leave_requests 
+WHERE dateList BETWEEN from_date AND to_date AND leave_status != 'c';
+
+CALL get_date_list('2011-08-01','2011-09-01');
+SELECT dateList as leaveDate FROM time_intervals as ti,employee_leave_requests 
+WHERE dateList BETWEEN from_date AND to_date AND employee_id=1293;         
+
+CALL get_date_list('2011-08-01','2011-09-01');
+Select * from time_intervals;
+SELECT dateList as allocDate
+        FROM time_intervals as ti,project_team_allocations
+        WHERE project_id=609
+        AND employee_id=1293
+        AND dateList
+        BETWEEN start_date AND end_date
+        AND deleted=0
+        
+        
+        
+        
+    ,accrualStatus,
+    invoiceStatus
+        
+    SELECT prj.project_code as projectCode,prj.project_name as projectName,CONCAT(emp.first_name,' ',emp.last_name) as pmName,
+    COUNT(ba.id)
+    FROM projects as prj 
+    LEFT JOIN employees as emp ON (prj.project_manager = emp.id)
+    LEFT JOIN billing_advices as ba ON (ba.project_id = prj.id AND ba.billing_month = 07 AND ba.billing_year = 2011 AND ba.status IN ('m'))
+    WHERE prj.id=520
+    GROUP BY prj.id
+    
+    
+    SELECT prj.project_code as projectCode,prj.project_name as projectName,CONCAT(emp.first_name,' ',emp.last_name) as pmName,
+    CASE WHEN COUNT(ba.id) > 0 THEN "Submitted" ELSE "Not Submitted" END AS accrualStatus
+    FROM projects as prj
+    LEFT JOIN employees as emp ON (prj.project_manager = emp.id)
+    LEFT JOIN billing_advices as ba ON (ba.project_id = prj.id AND ba.billing_month = 07 AND ba.billing_year = 2011 AND ba.status IN ('a'))
+    WHERE prj.project_status = 'd' AND prj.project_sbu = 10 
+    AND 201109 BETWEEN EXTRACT(YEAR_MONTH FROM planned_start_date) AND EXTRACT(YEAR_MONTH FROM planned_end_date)
+    GROUP BY prj.id
+    
+    
+    SELECT prj.project_code as projectCode,prj.project_name as projectName,CONCAT(emp.first_name,' ',emp.last_name) as pmName,
+    CASE WHEN COUNT(ba.id) > 0 THEN "Submitted" ELSE "Not Submitted" END AS accrualStatus,ba.status as billingStatus
+    FROM projects as prj
+    LEFT JOIN employees as emp ON (prj.project_manager = emp.id)
+    LEFT JOIN billing_advices as ba ON (ba.project_id = prj.id AND ba.billing_month = #monthFilter# AND ba.billing_year = #yearFilter# AND ba.status IN ('m','a'))
+    WHERE prj.project_status = #statsFilter# AND prj.project_sbu = #sbuFilter#
+    AND 201109 BETWEEN EXTRACT(YEAR_MONTH FROM planned_start_date) AND EXTRACT(YEAR_MONTH FROM planned_end_date)
+    GROUP BY prj.id
+    
+    
+    WHERE parent_id = #employeeId#
+    

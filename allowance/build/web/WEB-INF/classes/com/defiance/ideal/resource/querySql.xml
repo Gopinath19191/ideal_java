@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="queryMap">
+
+    <select id="getUserDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT user.id AS userAccountId, user.username, user.password, user.group_id AS groupId, user.employee_id AS empId, emp.structure_name AS designation
+        FROM users AS user
+        LEFT JOIN employees AS emp ON ( user.employee_id = emp.id )
+        WHERE user.username =#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="authenticateGroup" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="loginCheck" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#userName#;
+    </select>
+
+    <select id="getProjectList" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT CONCAT(prj.project_code,'-' ,prj.project_name)  AS projectName,CONCAT(emp.first_name,' ',emp.last_name) AS managerName,prj.id AS projectId FROM project_team_allocations AS Pta
+        INNER JOIN projects AS prj ON (prj.id = pta.project_id)
+        INNER JOIN employees AS emp ON (emp.id = prj.project_manager) 
+        WHERE pta.employee_id = #employeeId# AND pta.deleted = 0
+    </select>
+
+    <select id="getHolidayList" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT DATE_FORMAT( holiday.holiday_date, '%c-%e-%Y' ) AS holiday
+        FROM employees AS emp
+        INNER JOIN company_locations AS loc ON loc.id = emp.company_location_id
+        INNER JOIN holidays AS holiday ON holiday.city_id = loc.city_id
+        WHERE emp.id = #employeeId#
+        UNION SELECT DATE_FORMAT( edh.holiday_date, '%c-%e-%Y' ) AS holiday FROM employee_declared_holidays AS edh WHERE edh.employee_id = #employeeId# AND status = 'a' 
+        ORDER BY holiday ASC
+    </select>
+    
+    <insert id="addRequest" parameterClass="com.defiance.ideal.dto.HolidayDto">
+        INSERT INTO holiday_allowances (allowance_date,employee_id,project_id,total_hours,reason,status,created,modified)
+        VALUES(#allowance_date#,#employeeId#,#project_id#,#total_hours#,#reason#,#status#,#created#,#modified#)
+    </insert>
+
+    <select id="getAllowanceDetails" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT res.id as allowanceId,prj.project_name,res.allowance_date,res.total_hours,res.approved_hours,res.reason,res.status,res.created,child.configuration_value AS statusVal
+        FROM holiday_allowances AS res
+        LEFT JOIN projects AS prj ON (prj.id = res.project_id)
+        LEFT JOIN configuration_values as child ON (child.configuration_key = res.status)
+        LEFT JOIN configuration_values AS pt ON (pt.id = child.parent_id)
+        WHERE
+            pt.configuration_key = 'declared_holiday_status_list' AND res.employee_id = #employeeId#
+        <dynamic prepend="AND">
+            <isNotEmpty property="startFilter">
+                    res.allowance_date &gt;=  #startFilter#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEmpty property="endFilter">
+                    res.allowance_date &lt;=  #endFilter#
+            </isNotEmpty>
+        </dynamic>
+        ORDER BY res.created DESC 
+        LIMIT #start_page#,#end_page# 
+    </select>
+
+    <select id="getRecordCount" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount
+        FROM holiday_allowances AS Res
+        WHERE 
+           Res.employee_id = #employeeId#
+        <dynamic prepend="AND">
+            <isNotEmpty property="startFilter">
+                    res.allowance_date &gt;=  #startFilter#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEmpty property="endFilter">
+                    res.allowance_date &lt;=  #endFilter#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getRequestData" parameterClass="String"  resultClass="com.defiance.ideal.dto.HolidayDto">
+         SELECT ha.id as allowanceId,ha.employee_id as employeeId,ha.project_id,DATE_FORMAT(ha.allowance_date,'%d-%m-%Y') as allowance_date,
+            ha.total_hours AS total_hours,ha.approved_hours AS approved_hours,reason AS reason,ha.status ,
+            CONCAT(emp.first_name,' ',emp.last_name) AS empName,
+            CONCAT(prj.project_code,'-' ,prj.project_name) AS prajectName,
+            ha.reason_for_rejection AS rejectReason
+            FROM holiday_allowances ha
+            LEFT JOIN employees  emp ON(emp.id=ha.employee_id)
+            LEFT JOIN projects  prj ON(prj.id=ha.project_id)
+        WHERE ha.id = #allowanceId#
+    </select>
+
+    <insert id="updateRequest" parameterClass="com.defiance.ideal.dto.HolidayDto">
+        UPDATE holiday_allowances set project_id = #project_id#,total_hours = #total_hours#,reason = #reason#,status = #status#,modified = #modified#
+        WHERE id = #requestId# AND employee_id = #employeeId#
+    </insert>
+
+    <select id="getEmployeeSearchList" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT
+            Employee.id AS empId,
+            CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE
+            Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+
+    <select id="getEmployeeName" parameterClass="java.lang.String"  resultClass="java.lang.String">
+        SELECT CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empSearchName
+        FROM employees AS Employee
+        WHERE Employee.id = #key#
+    </select>
+
+    <select id="getTotalRecordCount" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount
+        FROM holiday_allowances AS res
+        WHERE
+            res.id != '' AND
+            res.status IN ('a') 
+        <dynamic prepend="AND">
+            <isNotEmpty property="employeeId">
+                res.employee_id = #employeeId#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEmpty property="month_filter">
+                res.modified BETWEEN #start_date# AND #end_date#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getTotalAllowanceDetails" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT
+            res.id as allowanceId,CONCAT(prj.project_code,' - ',prj.project_name) AS project_name,DATE_FORMAT(res.allowance_date,'%d-%m-%Y') AS allowance_date,res.total_hours,res.approved_hours,res.reason,res.status,DATE_FORMAT(res.created,'%d-%m-%Y') AS created_date,DATE_FORMAT(res.modified,'%d-%m-%Y') AS approved_date,
+            child.configuration_value AS statusVal,CONCAT(emp.first_name,' ',emp.last_name) As employeeName,emp.employee_number As employeeNumber 
+        FROM holiday_allowances AS res
+        LEFT JOIN projects AS prj ON (prj.id = res.project_id)
+        LEFT JOIN configuration_values as child ON (child.configuration_key = res.status)
+        LEFT JOIN configuration_values AS pt ON (pt.id = child.parent_id)
+        LEFT JOIN employees AS emp ON (emp.id = res.employee_id) 
+        WHERE
+            pt.configuration_key = 'declared_holiday_status_list' AND
+            res.status IN ('a') 
+        <dynamic prepend="AND">
+            <isNotEmpty property="employeeId">
+                res.employee_id = #employeeId#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEmpty property="month_filter">
+                res.modified BETWEEN #start_date# AND #end_date#
+            </isNotEmpty>
+        </dynamic>
+        ORDER BY res.modified ASC
+        <isNull property="excelbuttonName">
+            LIMIT #start_page#,#end_page#
+        </isNull>
+    </select>
+
+    <select id="getProjectName" parameterClass="java.lang.String"  resultClass="java.lang.String">
+        SELECT CONCAT(Project.project_code,'-' ,Project.project_name) AS projectName
+        FROM projects AS Project
+        WHERE Project.id = #key#
+    </select>
+
+    <select id="getManagerRecord" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT concat(Employee.first_name,' ',Employee.last_name) As managerName,Employee.work_email_address AS managerEmail 
+        FROM projects AS Project
+        INNER JOIN employees AS Employee ON (Project.project_manager = Employee.id)
+        WHERE Project.id = #key#
+    </select>
+
+    <select id="getEmployeeRecord" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT concat(Employee.first_name,' ',Employee.last_name) As employeeName,Employee.work_email_address AS employeeEmail 
+        FROM employees AS Employee
+        WHERE Employee.id = #key#
+    </select>
+
+    <select id="getWorkedDaysList" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT DATE_FORMAT( ha.allowance_date, '%c-%e-%Y' ) AS workedDay
+        FROM holiday_allowances AS ha
+        WHERE ha.employee_id = #employeeId#
+    </select>
+    
+    <select id="getRMApprovalDetails" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT CONCAT(empl.employee_number,'-',empl.first_name,' ',empl.last_name) AS empName, 
+        empl.employee_number AS employeeNumber,
+        CONCAT(empl.first_name,' ',empl.last_name) As employeeName,
+        ha.id As id,
+        ha.employee_id AS employeeId,
+        ha.allowance_date AS holidayDate,
+        ha.project_id AS projectId,
+        CONCAT(prj.project_code,'-' ,prj.project_name) AS prajectName,
+        SUBSTRING(SEC_TO_TIME(SUM(TIME_TO_SEC(tep.worked_hours))),1,5) AS timesheetEnteredHours,
+        SUBSTRING(SEC_TO_TIME(SUM(TIME_TO_SEC(tep.approved_hours))),1,5) AS timesheetApprovedHours,
+        ha.total_hours AS totalHours,
+        ha.approved_hours AS approvedHours,
+        DATE_FORMAT(ha.allowance_date,'%d-%m-%Y') AS allowance_date,
+        ha.reason AS reason,
+        ha.status AS status,
+        ha.created,
+        DATE_FORMAT(ha.created,'%d-%m-%Y') AS created_date,
+        DATE_FORMAT(ha.modified,'%d-%m-%Y') AS approved_date
+        FROM holiday_allowances ha
+        LEFT JOIN projects AS prj ON (prj.id = ha.project_id)
+        LEFT JOIN employees AS emp ON(emp.id=prj.project_manager)
+        LEFT JOIN employees AS empl ON(empl.id=ha.employee_id)
+        LEFT JOIN timesheet_entries as te on(empl.id = te.employee_id and te.timesheet_date = ha.allowance_date and te.deleted=0)
+        LEFT JOIN timesheet_entry_projects as tep on (tep.timesheet_entry_id = te.id and tep.deleted = 0 and tep.status in('m','a') and prj.id = tep.project_id)
+        WHERE  prj.project_manager=#emploId# AND ha.allowance_date > DATE_FORMAT(NOW() - INTERVAL 2 MONTH,'%Y-%m-01')
+        <dynamic>
+            <isNull prepend="AND" property="rmSubmit">
+                <isEqual property="requestStatus" compareValue="pending">
+                 ha.status IN ('m') AND prj.project_status IN ('e','c','d')
+                </isEqual>
+                <isEqual property="requestStatus" compareValue="processed">
+                 ha.status IN ('a','r')  
+                </isEqual>
+            </isNull>
+            <isNotNull property="rmSubmit">
+                <isEqual property="list" compareValue="pending">
+                    <isNotEmpty property="employeeId" >
+                        AND ha.employee_id=#employeeId#  
+                    </isNotEmpty>
+                    <isNotEmpty property="project_name">
+                        AND ha.project_id=#project_name#
+                    </isNotEmpty>
+
+                    <isNotEmpty property="selYear" >
+                      AND year(allowance_date) IN (#selYear#)
+                    </isNotEmpty>
+
+                    <isNotEmpty property="selMon" >
+                      AND MONTH(allowance_date) IN (#selMon#) AND year(allowance_date) IN (#selYear#)
+                    </isNotEmpty>
+
+                     AND ha.status IN ('m') AND prj.project_status IN ('e','c','d')
+                </isEqual>           
+                <isEqual property="list" compareValue="processed">
+                    <isNotEmpty property="employeeId" >
+                        AND ha.employee_id=#employeeId#  
+                    </isNotEmpty>
+                    <isNotEmpty property="project_name">
+                        AND ha.project_id=#project_name#
+                    </isNotEmpty>
+
+                      <isNotEmpty property="selYear" >
+                      AND year(allowance_date) IN (#selYear#)
+                    </isNotEmpty>
+
+                    <isNotEmpty property="selMon" >
+                      AND MONTH(allowance_date) IN (#selMon#) AND year(allowance_date) IN (#selYear#)
+                    </isNotEmpty>
+                     AND ha.status IN ('a','r')  
+                </isEqual>
+            </isNotNull>                        
+        </dynamic>
+        
+<!--        <isNull property="excelbuttonName">
+            <isEqual property="list" compareValue="processed">
+            LIMIT #start_page#,#end_page#
+            </isEqual>
+        </isNull>-->
+        group by ha.id order by ha.allowance_date DESC
+    </select>
+    
+    <select id="getEmployeeList"    resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE Employee.employment_status not in ('r','t','b','q') AND 
+        Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+    
+    <select id="getProjectsName"  parameterClass="com.defiance.ideal.dto.HolidayDto" resultClass="com.defiance.ideal.dto.HolidayDto">
+        SELECT id AS projectId,CONCAT(p.project_code,'-' ,p.project_name) AS projectName,project_code AS projectCode,project_manager AS managerId ,deleted
+        FROM projects p WHERE p.project_manager=#emploId#
+        <dynamic prepend="AND">
+            <isEqual property="requestStatus" compareValue="pending">
+                p.project_status  IN('c','e','d') AND p.status IN('a');
+            </isEqual>
+            <isEqual property="requestStatus" compareValue="processed">
+                p.project_status  IN('c','e','d') AND p.status IN('a');
+            </isEqual>
+        </dynamic>
+    </select>
+    
+    <update id="pmUpdateStatus" parameterClass="com.defiance.ideal.dto.HolidayDto" >
+        UPDATE holiday_allowances SET status=#status# ,approved_hours=#approved_hours#,modified=#modified#
+        WHERE id=#requestId#;
+    </update>
+    
+    <update id="pmUpdateRejectStatus" parameterClass="com.defiance.ideal.dto.HolidayDto" >
+        UPDATE holiday_allowances SET status=#status#,reason_for_rejection=#rejectReason#,modified=#modified#
+        WHERE id=#requestId#;
+    </update>   
+    
+    <select id="getPmRecordCount" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount
+        FROM holiday_allowances AS Res
+        LEFT JOIN projects AS prj ON (prj.id = Res.project_id)
+        WHERE prj.project_manager=#emploId#
+        <dynamic prepend="AND">
+            <isEqual property="requestStatus" compareValue="pending">
+              Res.status IN ('m') AND prj.project_status IN ('c','e','d')
+            </isEqual>
+            <isEqual property="requestStatus" compareValue="processed">
+              Res.status IN ('a','r') 
+            </isEqual>
+        </dynamic>
+    </select>
+    
+    <select id="getZZTotalRecordCount" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount
+        FROM holiday_allowances AS res
+         LEFT JOIN projects AS prj ON (prj.id = res.project_id)
+        WHERE
+            res.id != '' AND prj.project_manager=#emploId#
+        <dynamic>
+            <isNotEmpty  prepend="AND" property="employeeId">
+                <isEqual property="requestStatus" compareValue="pending">
+              res.status IN ('m') AND  res.employee_id = #employeeId# 
+                </isEqual>
+                <isEqual property="requestStatus" compareValue="processed">
+              res.status IN ('a','r') AND  res.employee_id = #employeeId#
+                </isEqual>
+            </isNotEmpty>
+            <isNotEmpty  prepend="AND" property="project_name">
+                <isEqual property="requestStatus" compareValue="pending">
+              res.status IN ('m') AND  res.project_id=#project_name#
+                </isEqual>
+                <isEqual property="requestStatus" compareValue="processed">
+              res.status IN ('a','r') AND  res.project_id=#project_name#
+                </isEqual>
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    
+    <select id="getPMTotalRecordCount" parameterClass="com.defiance.ideal.dto.HolidayDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount
+        FROM holiday_allowances AS res
+         LEFT JOIN projects AS prj ON (prj.id = res.project_id)
+        WHERE
+            res.id != '' AND prj.project_manager=#emploId#
+        <dynamic>
+            <isEqual property="requestStatus" compareValue="pending">
+                <isNotEmpty  prepend="AND" property="employeeId">
+                  res.employee_id = #employeeId#
+                </isNotEmpty>
+                <isNotEmpty  prepend="AND" property="project_name">
+                      res.project_id=#project_name#
+                </isNotEmpty>
+               AND res.status IN ('m') AND prj.project_status IN ('c','e','d')
+            </isEqual>
+            <isEqual property="requestStatus" compareValue="processed">
+                <isNotEmpty  prepend="AND" property="employeeId">
+                  res.employee_id = #employeeId#
+                </isNotEmpty>
+                <isNotEmpty  prepend="AND" property="project_name">
+                      res.project_id=#project_name#
+                </isNotEmpty>
+              AND res.status IN ('a','r') 
+            </isEqual>
+        </dynamic>
+    </select>
+
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.dto.HolidayDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    
+</sqlMap>

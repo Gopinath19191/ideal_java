@@ -1,0 +1,26 @@
+/* 
+    Document   : style
+    Created on : Mar 19, 2014, 12:18:50 PM
+    Author     : jegan
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+#loginform{
+    position: absolute;
+    top: 134px;
+    bottom: 93px;
+    left: 586px;
+}
+#logintoregister{
+   position: absolute;
+    top: 238px;
+    bottom: 93px;
+    left: 586px; 
+}
+#registerform{
+    position: absolute;
+    top: 134px;
+    bottom: 93px;
+    left: 586px;
+}

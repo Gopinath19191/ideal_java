@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="eCardMap">
+
+    <select id="getEcardList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto" >
+        SELECT id AS card_id, card_name AS card_name, file_name AS file_name
+        FROM ecard_details WHERE deleted = 0;
+    </select>
+    
+    <select id="getEmployeeSearch" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto"  >
+        SELECT Emp.id AS employee_id,
+        CONCAT( Emp.employee_number, ' - ', Emp.first_name, ' ', Emp.last_name ) AS employee_name,
+        CONCAT( rm.employee_number, ' - ', rm.first_name, ' ', rm.last_name ) AS rm_name,
+        band.name AS band_name, des.designation AS designation,
+        unit.name AS unit_name, sub_unit.name AS sub_unit_name
+        FROM employees AS Emp
+        LEFT JOIN bands AS band ON (Emp.band_id = band.id)
+        LEFT JOIN designations AS des ON (Emp.designation_id = des.id)
+        LEFT JOIN employees AS rm ON (Emp.manager = rm.id)
+        LEFT JOIN company_structures AS unit ON(Emp.structure_name = unit.id)
+        LEFT JOIN company_structures AS sub_unit ON(Emp.structure_name_subgroup = sub_unit.id)
+        WHERE (Emp.employee_number LIKE #key# OR Emp.first_name LIKE #key# OR Emp.last_name LIKE #key# ) 
+        AND Emp.employment_status NOT IN ('r','t','b','q','o','y');    
+    </select>
+    
+    <insert id="giveEcard" parameterClass="com.defiance.ideal.dto.ECardDto">
+        INSERT INTO employee_ecard_details (given_to, given_by, given_on, card_id, file_name, remarks)
+            VALUES(#given_to#, #created_by#, now(), #card_id#, #file_name#, #comments#);
+        <selectKey resultClass="String" keyProperty="last_id">
+            select last_insert_id() as last_id;
+        </selectKey>
+    </insert>
+    
+    <select id="getEmployeeName" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto">
+        SELECT employee_number AS employee_id, CONCAT(first_name,' ',last_name) AS employee_name FROM employees
+        WHERE id = #id#;
+    </select>
+    
+    <select id="getGivenCardLists" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto" >
+        SELECT eed.id AS card_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        card.card_name AS card_name,
+        DATE_FORMAT(given_on,"%d-%m-%Y") AS given_on,
+        eed.file_name AS file_name
+        FROM employee_ecard_details AS eed
+        LEFT JOIN employees AS emp ON (eed.given_to = emp.id)
+        LEFT JOIN ecard_details AS card ON(eed.card_id = card.id)
+        WHERE eed.given_by = #created_by# AND given_to IS NOT NULL
+        ORDER BY eed.id DESC;
+    </select>
+    
+    <select id="getReceivedCardLists" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto" >
+        SELECT eed.id AS card_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        card.card_name AS card_name,
+        DATE_FORMAT(given_on,"%d-%m-%Y") AS given_on,
+        eed.file_name AS file_name
+        FROM employee_ecard_details AS eed
+        LEFT JOIN employees AS emp ON (eed.given_by = emp.id)
+        LEFT JOIN ecard_details AS card ON(eed.card_id = card.id)
+        WHERE eed.given_to = #created_by# AND given_to IS NOT NULL
+        ORDER BY eed.id DESC;
+    </select>
+    
+    <select id="getEcardDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto"  >
+        SELECT Emp.id AS employee_id,
+        CONCAT( Emp.employee_number, ' - ', Emp.first_name, ' ', Emp.last_name ) AS employee_name,
+        CONCAT( rm.employee_number, ' - ', rm.first_name, ' ', rm.last_name ) AS rm_name,
+        CONCAT( cb.employee_number, ' - ', cb.first_name, ' ', cb.last_name ) AS created_by,
+        band.name AS band_name, des.designation AS designation,
+        unit.name AS unit_name, sub_unit.name AS sub_unit_name,
+        crd.card_name AS card_name,
+        eed.file_name AS file_name,
+        DATE_FORMAT(eed.given_on,"%d-%m-%Y") AS given_on,
+        eed.remarks AS comments
+        FROM employee_ecard_details AS eed
+        LEFT JOIN employees AS Emp ON(eed.given_to = Emp.id)
+        LEFT JOIN employees AS cb ON(eed.given_by = cb.id)
+        LEFT JOIN bands AS band ON (Emp.band_id = band.id)
+        LEFT JOIN designations AS des ON (Emp.designation_id = des.id)
+        LEFT JOIN employees AS rm ON (Emp.manager = rm.id)
+        LEFT JOIN company_structures AS unit ON(Emp.structure_name = unit.id)
+        LEFT JOIN company_structures AS sub_unit ON(Emp.structure_name_subgroup = sub_unit.id)
+        LEFT JOIN ecard_details AS crd ON(eed.card_id = crd.id)
+        WHERE eed.id = #card_id#;
+    </select>
+    
+    <select id="getMailTo" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT work_email_address AS mail_to 
+        FROM employees
+        WHERE id = #id#;
+    </select>
+    
+    <select id="getMailCcList" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT CONCAT(emp.manager,",",eed.given_by,",",hc.practice_head)
+        FROM employee_ecard_details AS eed
+        LEFT JOIN employees AS emp ON (eed.given_to = emp.id)
+        LEFT JOIN head_configurations AS hc ON(emp.structure_name_subgroup = hc.sub_sbu)
+        WHERE eed.id = #card_id# LIMIT 1; 
+    </select>
+    
+    <select id="getMailCc" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT GROUP_CONCAT(work_email_address) FROM employees
+        WHERE id IN($cc_id$) AND id NOT IN(SELECT configuration_value FROM configuration_values WHERE id = 1112);
+    </select>
+    
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.dto.ECardDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    
+    <select id="getExcelReport" parameterClass="com.defiance.ideal.dto.ECardDto" resultClass="com.defiance.ideal.dto.ECardDto"  >
+        SELECT Emp.employee_number AS employee_id,
+        CONCAT(Emp.first_name, ' ', Emp.last_name ) AS employee_name,
+        band.name AS band_name, des.designation AS designation,
+        CONCAT( rm.employee_number, ' - ', rm.first_name, ' ', rm.last_name ) AS rm_name,
+        unit.name AS unit_name, sub_unit.name AS sub_unit_name,
+        empst.configuration_value AS configValue, 
+        cnty.country AS country, 
+        cty.city AS work_location,
+        CONCAT( cb.employee_number, ' - ', cb.first_name, ' ', cb.last_name ) AS created_by,
+        DATE_FORMAT(eed.given_on,"%d-%m-%Y") AS given_on,
+        crd.card_name AS card_name,
+        eed.remarks AS comments
+        FROM employee_ecard_details AS eed
+        LEFT JOIN employees AS Emp ON(eed.given_to = Emp.id)
+        LEFT JOIN employees AS cb ON(eed.given_by = cb.id)
+        LEFT JOIN bands AS band ON (Emp.band_id = band.id)
+        LEFT JOIN designations AS des ON (Emp.designation_id = des.id)
+        LEFT JOIN employees AS rm ON (Emp.manager = rm.id)
+        LEFT JOIN company_structures AS unit ON(Emp.structure_name = unit.id)
+        LEFT JOIN company_structures AS sub_unit ON(Emp.structure_name_subgroup = sub_unit.id)
+        LEFT JOIN ecard_details AS crd ON(eed.card_id = crd.id)
+        LEFT JOIN company_locations AS cl ON (emp.current_location_id = cl.id)
+        LEFT JOIN countries AS cnty ON(cl.country_id = cnty.id)
+        LEFT JOIN cities AS cty ON(cl.city_id = cty.id)
+        LEFT JOIN configuration_values AS empst ON(emp.employment_status = empst.configuration_key AND empst.parent_id = 286)
+        WHERE 1=1 AND eed.card_id IS NOT NULL
+        <dynamic>
+            <isNotNull property="unit_name" prepend="AND">
+                <isNotEqual property="unit_name" compareValue="" >
+                    emp.structure_name = #unit_name#
+                </isNotEqual>
+            </isNotNull>
+            <isNotNull property="sub_unit_name" prepend="AND">
+                <isNotEqual property="sub_unit_name" compareValue="" >
+                    emp.structure_name_subgroup = #sub_unit_name#
+                </isNotEqual>
+            </isNotNull>
+            <isNotNull property="from_date" prepend="AND">
+                <isNotEqual property="from_date" compareValue="" >
+                    eed.given_on <![CDATA[ >= ]]> #from_date#
+                </isNotEqual>
+            </isNotNull>
+            <isNotNull property="to_date" prepend="AND">
+                <isNotEqual property="to_date" compareValue="" >
+                    eed.given_on <![CDATA[ <= ]]> #to_date#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic> 
+    </select>
+    
+    <select id="getUnitName" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.ECardDto" >
+        SELECT id AS last_id, name AS unit_name
+        FROM company_structures 
+        WHERE parent_id IN(SELECT id FROM company_structures WHERE parent_id=0)
+        ORDER BY parent_id;
+    </select>
+    
+    <select id="getAreaofInterest" resultClass="com.defiance.ideal.dto.EmpEngagementDto" >
+        SELECT id AS interest_id, configuration_value AS interest_name
+        FROM configuration_values 
+        WHERE parent_id = 1113;
+    </select>
+    
+    <select id="getInterestLevel" resultClass="com.defiance.ideal.dto.EmpEngagementDto" >
+        SELECT id AS interest_id, configuration_value AS interest_name
+        FROM configuration_values 
+        WHERE parent_id = 1122;
+    </select>
+    
+    <select id="getCommitmentLevel" resultClass="com.defiance.ideal.dto.EmpEngagementDto" >
+        SELECT id AS interest_id, configuration_value AS interest_name
+        FROM configuration_values 
+        WHERE parent_id = 1126;
+    </select>
+    
+    <insert id="submitEmployeeEngagement" parameterClass="com.defiance.ideal.dto.EmpEngagementDto">
+        INSERT INTO employee_engagement_activities (employee_id, willingness, commitment, extend_hobby, leadership, reason, created_on)
+        VALUES(#employee_id#, #willingness#, #commitment#, #extend_hobby#, #leadership#, #reason#, NOW());
+        <selectKey resultClass="String" keyProperty="last_id">
+            select last_insert_id() as last_id;
+        </selectKey>
+    </insert>
+    
+    <insert id="submitEmployeeEngagementDetails" parameterClass="com.defiance.ideal.dto.EmpEngagementDto">
+        INSERT INTO employee_engagement_interest (ee_id, interest_id, interest_level, interest_comments, created_on)
+        VALUES(#ee_id#, #interest#, #interest_level#, #interest_description#, NOW());
+    </insert>
+    
+    <select id="getLastSubmittedData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.EmpEngagementDto" >
+        SELECT id AS ee_id,
+        willingness AS willingness,
+        commitment AS commitment,
+        extend_hobby AS extend_hobby,
+        leadership AS leadership,
+        reason AS reason
+        FROM employee_engagement_activities
+        WHERE employee_id = #employee_id# 
+        ORDER BY created_on DESC
+        LIMIT 1;
+    </select>
+    
+    <select id="getInterestLists" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.EmpEngagementDto" >
+        SELECT interest_id AS interest_id,
+        interest_level AS interest_level,
+        interest_comments AS interest_description
+        FROM employee_engagement_interest
+        WHERE ee_id = #ee_id#;
+    </select>
+    
+</sqlMap>

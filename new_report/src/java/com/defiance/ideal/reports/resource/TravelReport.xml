@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="TravelReportMap">
+
+    <select id="travelProjectDetailsList" parameterClass="com.defiance.ideal.reports.dto.TravelReportDetails" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select project_code,project_name from projects
+        where project_code is not null 
+        order by project_code
+    </select>
+
+    <!--    <select id="travelReportList" parameterClass="com.defiance.ideal.reports.dto.TravelReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select
+          CONCAT(et.travel_type,'T1200',et.travel_specific_id) AS 'travel_requestid',
+          p.project_code,
+          p.project_name,
+          emp.employee_number,
+          emp.first_name,
+          emp.last_name,
+          et.request_date,
+          et.travel_startdate,
+          et.travel_enddate,
+          et.travel_purpose,
+          DATE_FORMAT(et.approved_date,'%d-%m-%Y') AS approved_date,
+          sbu.name sbu_name,
+          sub_sbu.name sub_sbu_name,
+          rm.employee_number rm_emp_num,
+          rm.first_name rm_first_name,
+          rm.last_name rm_last_name,
+          CASE
+          WHEN concat('',emptick.destination_from * 1) = emptick.destination_from
+          THEN mts.city
+          ELSE emptick.destination_from
+          END AS destination_from,
+          CASE
+          WHEN concat('',emptick.destination_to * 1) = emptick.destination_to THEN mtsto.city
+          ELSE emptick.destination_to END  AS destination_to,
+          CASE et.status WHEN '0' THEN 'RM Pending' 
+          WHEN '1' THEN 'RM Approved'
+          WHEN '2' THEN 'RM Rejected'
+          WHEN '3' THEN 'Finance Approved'
+          WHEN '4' THEN 'Finance Rejected'
+          WHEN '5' THEN 'Employee Saved Status'
+          WHEN '6' THEN 'BUH Approved'
+          WHEN '7' THEN 'BUH Rejected'
+          WHEN '8' THEN 'CFO Approved'
+          WHEN '9' THEN 'CFO Rejected'
+          WHEN '10' THEN 'Travel Cancelled'
+          WHEN '11' THEN 'CFO Approval Reqd'
+          WHEN '12' THEN 'Treasury Desk'
+          WHEN '13' THEN 'MD Approved'
+          WHEN '14' THEN 'MD Rejected'
+          WHEN '15' THEN 'Closed'
+          ELSE 'NA' END AS 'status'
+        from employee_travel et
+        LEFT JOIN projects AS p ON(p.id=et.project_id)
+        LEFT JOIN employees AS emp ON(emp.id=et.emp_id)
+        LEFT JOIN company_structures AS sbu ON(sbu.id = emp.structure_name )
+        LEFT JOIN employees AS rm ON(rm.id = emp.manager)
+        LEFT JOIN company_structures AS sub_sbu ON(sub_sbu.id = emp.structure_name_subgroup)
+        LEFT JOIN employee_travel_ticket emptick ON(emptick.travel_requestid=et.travel_requestid)
+        LEFT JOIN metropolitans mts ON(mts.id=emptick.destination_from)
+        LEFT JOIN metropolitans mtsto ON(mtsto.id=emptick.destination_to)
+        where
+        STR_TO_DATE(et.request_date,'%d-%m-%Y') &gt;= #fromDate#
+        and
+        STR_TO_DATE(et.request_date,'%d-%m-%Y') &lt;= #toDate#
+        <dynamic>
+          <isNotEmpty prepend="AND" property="projectCode">
+              p.project_code like #projectCode#
+          </isNotEmpty>
+          <isNotEmpty prepend="AND" property="subSbuId">
+              emp.structure_name_subgroup = #subSbuId#
+          </isNotEmpty>
+          <isNotEmpty prepend="AND" property="sbuId">
+              emp.structure_name = #sbuId#
+          </isNotEmpty>
+        </dynamic>
+        GROUP BY et.travel_requestid Order by emptick.id
+    </select>-->
+    
+    <select id="travelReportList" parameterClass="com.defiance.ideal.reports.dto.TravelReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select
+        et.tp_reference_id AS 'travel_requestid',
+        p.project_code,
+        p.project_name,
+        emp.employee_number,
+        emp.first_name,
+        emp.last_name,
+        Case et.travel_type when 'd' then 'Domestic' when 'l' then 'Local conveyance' else 'International' end as travelType,
+        DATE_FORMAT(et.travel_requested_date,'%d-%m-%Y') as request_date,
+        DATE_FORMAT(et.travel_start_date,'%d-%m-%Y') as travel_startdate,
+        DATE_FORMAT(et.travel_end_date,'%d-%m-%Y') as travel_enddate,
+        et.travel_purpose,
+        sbu.name as sbu_name,
+        sub_sbu.name as sub_sbu_name,
+        rm.employee_number as rm_emp_num,
+        rm.first_name as rm_first_name,
+        rm.last_name as rm_last_name,
+        CASE  WHEN emptick.from_city=0 THEN emptick.from_city_others WHEN emptick.from_city=-1 THEN emptick.from_city_others WHEN emptick.from_city IS NULL THEN '--' ELSE mts.city END As destination_from,
+        CASE  WHEN emptick.to_city=0 THEN emptick.to_city_others WHEN emptick.to_city=-1 THEN emptick.to_city_others WHEN emptick.to_city IS NULL THEN '--' ELSE mtsto.city END As destination_to,
+        CASE
+        WHEN et.status='b' THEN 'Pending with BUH' 
+        WHEN et.status='r' THEN 'Pending with RM' 
+        WHEN et.status='f' THEN 'Pending with Finance' 
+        WHEN et.status='o' THEN 'Rejected' 
+        WHEN et.status='x' THEN 'Cancelled' 
+        WHEN et.status='s' THEN 'Saved'
+        WHEN et.status='c' THEN 'Pending with CFO'
+        WHEN et.status='m' THEN 'Pending with MD'
+        when (et.status='a' and (et.previous_status='f' or et.previous_status='t' or et.previous_status='q')) AND (et.admin_action_required = 'Y') AND ( et.admin_approved_by = '' OR et.admin_approved_by = 0 OR et.admin_approved_by IS NULL)THEN 'Pending with Admin'
+        when et.previous_status = 'a' and et.status='a' and (et.advance_required != '' or et.advance_required != 0) AND (et.treasury_approved_by = '' OR et.treasury_approved_by = 0 OR et.treasury_approved_by IS NULL) THEN 'Pending with Tresury'
+        when et.previous_status = 'a' and et.status='a' and (et.advance_required != '' or et.advance_required != 0) AND (et.treasury_approved_by != '' OR et.treasury_approved_by != 0 OR et.treasury_approved_by IS NOT NULL) THEN 'Ticket Booked'
+        when (et.status = 'a' and (et.previous_status = 'f' or et.previous_status = 'q') and (et.admin_action_required = 'N' or et.admin_action_required IS NULL or et.admin_action_required = '')) then 'Pending with Tresury'
+        when (et.previous_status = 'a' and et.status = 'a' and (et.advance_required = 0 or et.advance_required IS NULL)) then 'Ticket Booked'
+        when (et.previous_status = 't' and et.status = 'a' and (et.admin_action_required = 'N' or et.admin_action_required IS NULL or et.admin_action_required = '')) then 'Money Deposited'
+        when (et.previous_status = 't' and et.status = 'a' and et.admin_action_required = 'y' and ( et.admin_approved_by != '' OR et.admin_approved_by != 0 OR et.admin_approved_by IS NOT NULL)) then 'Money Deposited'
+        <!--        when et.previous_status='a' then 'ticket booked'
+        when et.previous_status='t' then 'Money deposited'-->
+        ELSE 'NULL' END  AS status,
+        CASE
+        WHEN et.travel_billable = 'N' THEN 'NO'
+        WHEN et.travel_billable = 'Y' THEN 'YES'
+        WHEN et.travel_billable IS NULL THEN '--'
+        END as projectTravel,
+        CASE
+        WHEN et.client_reimbursable = 'Y' THEN 'YES'
+        WHEN et.client_reimbursable = 'N' THEN 'NO'
+        WHEN et.client_reimbursable IS NULL THEN '--'
+        END as clientReimbursement,
+        CASE
+        WHEN et.customer_id = -1 THEN et.customer_others
+        WHEN (et.customer_id != -1 AND et.customer_id IS NOT NULL) THEN cust.customer_name
+        WHEN et.customer_id IS NULL THEN '--'
+        END as customerName,
+        et.rm_action_date as rmActionDate,
+        et.buh_action_date as buhActionDate,
+        et.md_action_date as mdActionDate,
+        et.finance_action_date as financeActionDate,
+        et.cfo_action_date as cfoActionDate,
+        et.admin_action_date as adminActionDate,
+        et.treasury_action_date as treasuryActionDate
+        from tp_master as et
+        LEFT JOIN projects AS p ON(p.id=et.project_id)
+        LEFT JOIN employees AS emp ON(emp.id=et.employee_id)
+        LEFT JOIN company_structures AS sbu ON(sbu.id = emp.structure_name )
+        LEFT JOIN employees AS rm ON(rm.id = emp.manager)
+        LEFT JOIN company_structures AS sub_sbu ON(sub_sbu.id = emp.structure_name_subgroup)
+        LEFT JOIN tp_travel_ticket emptick ON(emptick.master_id=et.id)
+        LEFT JOIN cities mts ON(mts.id=emptick.from_city)
+        LEFT JOIN cities mtsto ON(mtsto.id=emptick.to_city)
+        LEFT JOIN customers as cust on (et.customer_id = cust.id)
+        where
+        et.travel_requested_date <![CDATA[ >= ]]> #fromDate#
+        and
+        et.travel_requested_date <![CDATA[ <= ]]> #toDate#
+        <dynamic>
+            <isEqual prepend="AND" property="status_search" compareValue='b'>
+                et.status = 'b'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='r'>
+                et.status = 'r'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='f'>
+                et.status = 'f'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='s'>
+                et.status = 's'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='o'>
+                et.status = 'o'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='x'>
+                et.status = 'x'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='c'>
+                et.status = 'c'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='m'>
+                et.status = 'm'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='a'>
+                (et.status='a' and (et.previous_status='f' or et.previous_status='t' or et.previous_status='q')) AND (et.admin_action_required = 'Y')
+                AND ( et.admin_approved_by = '' OR et.admin_approved_by = 0 OR et.admin_approved_by IS NULL)
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='t'>
+                ((et.previous_status = 'a' and et.status='a' and (et.advance_required != '' or et.advance_required != 0) AND (et.treasury_approved_by = '' OR et.treasury_approved_by = 0 OR et.treasury_approved_by IS NULL))
+                or 
+                (et.status = 'a' and (et.previous_status = 'f' or et.previous_status = 'q') and (et.admin_action_required = 'N' or et.admin_action_required IS NULL or et.admin_action_required = '')))
+            </isEqual>
+            <!--            <isEqual prepend="AND" property="status_search" compareValue='487'>
+                et.previous_status='a'
+            </isEqual>
+            <isEqual prepend="AND" property="status_search" compareValue='488'>
+                et.previous_status='t'
+            </isEqual>-->
+            
+            <isEqual prepend="AND" property="status_search" compareValue='tc'>
+                ((et.previous_status = 'a' and et.status = 'a' and (et.advance_required = 0 or et.advance_required IS NULL))
+                or
+                (et.previous_status = 'a' and et.status='a' and (et.advance_required != '' or et.advance_required != 0) AND (et.treasury_approved_by != '' OR et.treasury_approved_by != 0 OR et.treasury_approved_by IS NOT NULL)))
+            </isEqual>
+            
+            <isEqual prepend="AND" property="status_search" compareValue='mn'>
+                ((et.previous_status = 't' and et.status = 'a' and et.admin_action_required = 'N')
+                or
+                (et.previous_status = 't' and et.status = 'a' and et.admin_action_required = 'y' and ( et.admin_approved_by != '' OR et.admin_approved_by != 0 OR et.admin_approved_by IS NOT NULL)))
+            </isEqual>
+            
+            <isNotEmpty prepend="AND" property="projectCode">
+                p.project_code like #projectCode#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="subSbuId">
+                emp.structure_name_subgroup = #subSbuId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="sbuId">
+                emp.structure_name = #sbuId#
+            </isNotEmpty>
+        </dynamic>
+        order by et.id, emptick.id
+    </select>
+
+    <select id="SbuList" parameterClass="com.defiance.ideal.reports.dto.TravelReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select name, id as sbu_id from company_structures cs
+        where
+        cs.parent_id = #parentId#
+    </select>
+    <select id="sbuDesc" parameterClass="com.defiance.ideal.reports.dto.TravelReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select name as sbu_name from company_structures cs
+        where
+        cs.id = #sbuId#
+    </select>
+    <select id="subSbuDesc" parameterClass="com.defiance.ideal.reports.dto.TravelReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.TravelReportDetails">
+        select name as sbu_name from company_structures cs
+        where
+        cs.id = #subSbuId#
+        and
+        cs.parent_id = #sbuId#
+    </select>
+    
+</sqlMap>

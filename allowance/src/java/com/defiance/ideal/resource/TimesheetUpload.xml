@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="timesheetUploadMap">
+    
+    <select id="validateEmployeeId" parameterClass="com.defiance.ideal.dto.TimesheetDto" resultClass="java.lang.String" >
+        SELECT id FROM employees 
+        WHERE joined_date <![CDATA[ <= ]]>  #date# AND (released_date IS NULL OR released_date <![CDATA[ >= ]]>  #date#) 
+        AND employee_number = #employee_number#;
+    </select>
+    
+    <select id="getProjectId" parameterClass="com.defiance.ideal.dto.TimesheetDto" resultClass="com.defiance.ideal.dto.TimesheetDto" >
+        SELECT prj.id AS project_id, pta.role_id AS role_id
+        FROM projects AS prj
+        LEFT JOIN project_team_allocations AS pta ON prj.id = pta.project_id
+        LEFT JOIN project_roles AS pr ON (pta.role_id = pr.role_id AND pta.project_id = pr.project_id)
+        WHERE prj.project_code = #project_code# AND pta.employee_id = #employee_id#
+        AND pr.role_type = #role_type# 
+        AND #date# BETWEEN pta.start_date AND pta.end_date 
+        ORDER BY pta.id DESC 
+        LIMIT 1;     
+    </select>
+<!--    <insert id="insertTimesheet" parameterClass="com.defiance.ideal.dto.TimesheetDto">
+        <selectKey resultClass="String" keyProperty="p_insert_status">
+            call P_Ins_Upd_TimeSheet_USA(#employee_id#,#date#,'g',#role_id#,#project_id#,'Others','Others',#timesheet_hours#,' ',' ','m',0,' ');
+        </selectKey>
+        
+    </insert>-->
+    <parameterMap id="insertTimesheet" class="com.defiance.ideal.dto.TimesheetDto" >
+        <parameter property="employee_id" jdbcType="INTEGER" mode="IN" />
+        <parameter property="date" jdbcType="DATE" mode="IN" />
+        <parameter property="role_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="project_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="timesheet_hours" jdbcType="VARCHAR" mode="IN" />
+    </parameterMap>
+    
+    <procedure id="insertTimesheet" parameterMap="insertTimesheet" resultClass = "String">
+       {call P_Ins_Upd_TimeSheet_USA(?,?,'g',?,?,'Others','Others',?,' ',' ','m',0,' ')}
+    </procedure>
+    
+    <delete id="deleteTimesheet" parameterClass="java.lang.Integer">
+       DELETE FROM timesheet_upload_temp
+    </delete>
+    
+    <insert id="insertTimesheetTemp" parameterClass="com.defiance.ideal.dto.TimesheetDto">
+        INSERT INTO timesheet_upload_temp (id, employee_id, employee_number, date, project_id, 
+        project_code, timesheet_hours, role_id, role_type, reason) VALUES
+        (#row_id#, #employee_id#, #employee_number#, #date#, #project_id#, #project_code#, 
+        #timesheet_hours#, #role_id#, #role_type#, #reason#);
+    </insert>
+    
+    <select id="getErrorEmployee" parameterClass="com.defiance.ideal.dto.TimesheetDto" resultClass="com.defiance.ideal.dto.TimesheetDto" >
+        SELECT DISTINCT(employee_number) AS employee_number, reason AS reason 
+        FROM timesheet_upload_temp 
+        WHERE reason IN('Project Allocation issue', 'Employee Id issue');
+    </select>
+    
+    <update id="updateErrorData" parameterClass="com.defiance.ideal.dto.TimesheetDto">
+        UPDATE timesheet_upload_temp SET reason = #reason# WHERE employee_number = #employee_number#;
+    </update>
+    
+    <select id="getTimesheetDetails" parameterClass="com.defiance.ideal.dto.TimesheetDto" resultClass="com.defiance.ideal.dto.TimesheetDto" >
+        SELECT id AS row_id,
+        employee_id AS employee_id, 
+        project_id AS project_id,
+        role_id AS role_id,
+        date AS date,
+        timesheet_hours AS timesheet_hours
+        FROM timesheet_upload_temp 
+        WHERE (reason IS NULL OR reason = "");
+    </select>
+    
+    <update id="updateTimesheetStatus" parameterClass="com.defiance.ideal.dto.TimesheetDto">
+        UPDATE timesheet_upload_temp SET reason = #reason# 
+        WHERE employee_id = #employee_id# AND role_id = #role_id# AND id = #row_id#;
+    </update>
+    
+    <select id="getUploadStatus" parameterClass="com.defiance.ideal.dto.TimesheetDto" resultClass="com.defiance.ideal.dto.TimesheetDto" >
+        SELECT id AS row_id,
+        reason AS reason
+        FROM timesheet_upload_temp
+        GROUP BY id;
+    </select>
+    
+</sqlMap>

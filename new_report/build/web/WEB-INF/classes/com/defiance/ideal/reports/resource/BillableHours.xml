@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BillableHoursMap">
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.BillableStatusFilterDTO">
+        SELECT id as sbuId, name as sbuName
+        FROM company_structures
+        WHERE parent_id = #employeeId#
+    </select>
+    <select id="getCustomerList" resultClass="com.defiance.ideal.reports.dto.BillableHoursFilterDTO">
+        SELECT id as custId, CONCAT(customer_name,' ',COALESCE(division,''),'-',customer_code) as custName
+        FROM customers where deleted = 0 and status in('a','d') order by customer_code  
+    </select>
+    <select id="getProjectList" parameterClass="map" resultClass="com.defiance.ideal.reports.dto.BillableHoursFilterDTO">
+        SELECT id as projId,CONCAT(COALESCE(project_code,""),' - ',project_name) as projName
+             FROM projects where project_type in ("e","d","c")
+        <dynamic prepend="AND">
+            <isNotEqual property="sbuId" compareValue="">
+             project_sbu=#sbuId#
+            </isNotEqual>
+        </dynamic>
+           <dynamic prepend="AND">
+            <isNotEqual property="subSbuId" compareValue="All">
+             project_sbu_subgroup=#subSbuId#
+            </isNotEqual>
+        </dynamic>
+   order by id
+    </select>
+    <select id="billableData" parameterClass="com.defiance.ideal.reports.dto.BillableHoursFilterDTO" resultClass="com.defiance.ideal.reports.dto.BillableHoursDataDTO">
+    SELECT prj.status, prj.project_code as code, prj.project_name as name,
+    CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Pricing Not Specified" END as pricing,
+    cst.customer_name As customer,
+    CONCAT(emp1.first_name,' ',emp1.last_name) As manager,
+    emp.employee_number As empId,
+    CONCAT(emp.first_name,' ',emp.last_name) As empName,
+    cstruct.name As sbu,
+    cstructs.name As subSbu,
+    SUBSTRING(MONTHNAME(STR_TO_DATE(ba.billing_month, '%m')),1,3) as month,ba.billing_year as year,prj.efforts_uom as uom,
+    CONCAT(SEC_TO_TIME(SUM(TIME_TO_SEC(tsp.worked_hours)))) AS workedHrs,
+    CONCAT(SEC_TO_TIME(SUM(TIME_TO_SEC(tsp.approved_hours)))) AS approvedHrs,
+    CASE pta.location_table WHEN "company_locations" THEN "OffShore" WHEN "customer_work_locations" THEN "Onsite" ELSE "Model Not Specified" END AS location,
+<!--    CASE
+    WHEN prj.efforts_uom ='h' THEN billable_effort
+    WHEN prj.efforts_uom ='d' AND pta.location_table = 'company_locations' THEN replace(ba.billable_effort,':','.') * 9
+    WHEN prj.efforts_uom ='d' AND pta.location_table = 'customer_work_locations' THEN replace(ba.billable_effort,':','.') * 8
+    WHEN prj.efforts_uom ='m' AND pta.location_table = 'company_locations' THEN replace(ba.billable_effort,':','.') * 9 *  weekdaydiff(if(emp.joined_date <![CDATA[ < ]]> #startDate#, #startDate#, emp.joined_date), if((emp.released_date <![CDATA[ > ]]> #endDate# OR emp.released_date IS NULL), #endDate#, emp.released_date),#startYear#,#startMonth#,ba.employee_id)
+    WHEN prj.efforts_uom ='m' AND pta.location_table = 'customer_work_locations' THEN replace(ba.billable_effort,':','.') * 8  *  weekdaydiff(if(emp.joined_date <![CDATA[ < ]]> #startDate#, #startDate#, emp.joined_date), if((emp.released_date <![CDATA[ > ]]> #endDate# OR emp.released_date IS NULL), #endDate#, emp.released_date),#startYear#,#startMonth#, ba.employee_id)    
+    END as accrued,-->
+    prj.efforts_uom as accrued,
+    ba.status as accruedStatus
+    FROM projects as prj
+    INNER JOIN project_team_allocations as pta ON (pta.project_id = prj.id AND  pta.deleted = 0
+        <dynamic>
+            <isNotEmpty prepend="AND" property="monthFilter">
+                <isNotEmpty property="yearFilter">
+                CONCAT_WS('',#yearFilter#,#monthFilter#) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM pta.end_date)
+                </isNotEmpty>
+            </isNotEmpty>
+        </dynamic>
+        )
+        LEFT JOIN employees as emp1 ON (prj.project_manager = emp1.id)
+        LEFT JOIN customers AS cst ON (prj.customer_id = cst.id)
+        Left JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu)
+        LEFT JOIN company_structures As cstructs ON (cstructs.id = prj.project_sbu_subgroup)
+        LEFT JOIN accrual_consolidations AS ba ON (ba.project_id = prj.id AND ba.employee_id = pta.employee_id
+        AND CONCAT(ba.billing_year,ba.billing_month) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM   pta.end_date)
+        <dynamic>
+            <isNotEmpty prepend="AND" property="monthFilter">
+                ba.billing_month = #monthFilter#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="yearFilter">
+                ba.billing_year = #yearFilter#
+            </isNotEmpty>
+        </dynamic>
+        AND ba.status IN ('m','a'))
+        LEFT JOIN timesheet_entries as tse ON (tse.employee_id = pta.employee_id
+        <dynamic>
+            <isNotEmpty prepend="AND" property="monthFilter">
+                (MONTH(tse.timesheet_date) = #monthFilter# OR tse.timesheet_month = #monthFilter#)
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="yearFilter">
+                (YEAR(tse.timesheet_date) = #yearFilter# OR tse.timesheet_year = #yearFilter#)
+            </isNotEmpty>
+        </dynamic>
+        AND MONTH(tse.timesheet_date) = ba.billing_month  AND YEAR(tse.timesheet_date) = ba.billing_year )
+        LEFT JOIN  timesheet_entry_projects as tsp ON (tse.id = tsp.timesheet_entry_id AND tsp.project_id = pta.project_id)
+        LEFT JOIN employees as emp ON (pta.employee_id = emp.id)
+        WHERE pta.deleted = 0
+        <dynamic>
+            <isNotEmpty prepend="AND" property="sbuFilter">
+             prj.project_sbu=#sbuFilter#
+            </isNotEmpty>
+        </dynamic>    
+        <dynamic>
+            <isNotEqual property="subSbu" compareValue="All">
+                <isNotEmpty prepend="AND" property="subSbu">
+                    prj.project_sbu_subgroup=#subSbu#
+                </isNotEmpty>
+            </isNotEqual>
+        </dynamic> 
+        <dynamic>
+            <isNotEmpty prepend="AND" property="monthFilter">
+                <isNotEmpty property="yearFilter">
+                    CONCAT_WS('',#yearFilter#,#monthFilter#) BETWEEN EXTRACT(YEAR_MONTH FROM prj.planned_start_date) AND EXTRACT(YEAR_MONTH FROM prj.planned_end_date)
+                </isNotEmpty>
+            </isNotEmpty>
+        </dynamic>
+
+        AND prj.project_status IN ('e','d','c')
+        AND prj.billable IN ('e','x','i')
+        AND prj.project_model = 'wpo'
+        AND emp.employment_status not in ('r','t','b','q','o')
+        <dynamic prepend="AND">
+            <isEqual property="conditionFilter" compareValue="1">
+                (ba.id IS NULL or ba.billable_effort = #billableFilter# )
+            </isEqual>
+            <isEqual property="conditionFilter" compareValue="2">
+                COALESCE(ba.billable_effort,0) <![CDATA[ > ]]> #billableFilter#
+            </isEqual>
+            <isEqual property="conditionFilter" compareValue="3">
+                (COALESCE(ba.billable_effort,0))<![CDATA[ < ]]> (#billableFilter#)
+            </isEqual>
+            <isEqual property="conditionFilter" compareValue="4">
+                (COALESCE(ba.billable_effort,0))<![CDATA[ >= ]]> (#billableFilter#)
+            </isEqual>
+            <isEqual property="conditionFilter" compareValue="5">
+                (COALESCE(ba.billable_effort,0))<![CDATA[ <= ]]> (#billableFilter#)
+            </isEqual>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="sbuFilter">
+                cstruct.id = #sbuFilter#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="custFilter">
+                 prj.customer_id = #custFilter#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="pricingFilter">
+                prj.pricing = #pricingFilter#
+            </isNotEmpty>
+            <isNotEqual prepend="AND" property="nameFilter" compareValue="0">
+                prj.id = #nameFilter#
+            </isNotEqual>
+        </dynamic>
+GROUP BY pta.project_id,pta.employee_id,ba.billing_month,ba.billing_year
+
+    </select>
+</sqlMap>
+
+

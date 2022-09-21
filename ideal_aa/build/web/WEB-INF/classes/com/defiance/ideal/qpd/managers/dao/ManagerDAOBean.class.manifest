@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+
+Name: com/defiance/ideal/qpd/managers/dao/ManagerDAOBean.class
+Java-Bean: true
+Beehive-Control: true

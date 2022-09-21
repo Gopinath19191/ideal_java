@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="MonthlyLeaveMap">
+
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.MonthlyLeaveFilterDTO">
+        SELECT id as sbuId, name as sbuName
+        FROM company_structures
+        WHERE parent_id = #employeeId#
+    </select>
+
+    <select id="getStructureList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.MonthlyLeaveFilterDTO">
+        SELECT id as sbuId, name as sbuName
+        FROM company_structures
+        WHERE parent_id IN ($structure$);  <!-- Instead of passing (8,1)-->
+    </select>
+    <select id="getLeaveRecords" parameterClass="com.defiance.ideal.reports.dto.MonthlyLeaveFilterDTO" resultClass="com.defiance.ideal.reports.dto.MonthlyLeaveDataDTO">
+        SELECT emp.employee_number AS empNumber,
+           emp.first_name AS firstName,
+           emp.last_name AS lastName,
+           compstruct.name AS compStruct,
+           compStructs.name AS compStructSubgroup,
+           leavecat.leave_type AS leaveType,
+           empLeave.leave_reason AS leaveReason,
+           DATE_FORMAT(empLeave.date_applied, '%d-%b-%Y') AS dateApplied,
+           DATE_FORMAT(empLeave.from_date, '%d-%b-%Y') AS fromDate,
+           DATE_FORMAT(empLeave.to_date, '%d-%b-%Y') AS toDate,
+<!--           empLeave.length_days AS length,-->
+         LeaveLengthData(#startDate#,#endDate#,#startYear#,#startMonth#, emp.id) as leaveLength,
+           empLeave.canceled_dates AS canceledLeaves,
+           CASE empLeave.leave_status
+              WHEN "a" THEN "Approved"
+              WHEN "o" THEN "Opened"
+              WHEN "t" THEN "Taken"
+           END
+              AS leaveStatus
+        FROM `employee_leave_requests` AS empLeave
+           JOIN employees AS emp
+              ON empLeave.employee_id = emp.id
+           JOIN leave_categories AS leavecat
+              ON empLeave.leave_category_id = leavecat.id
+           JOIN company_structures AS compstruct
+              ON emp.structure_name = compstruct.id
+              JOIN company_structures AS compstructs 
+              ON emp.structure_name_subgroup = compstructs.id
+        WHERE
+            leave_status IN ("a", "o", "t")
+        <dynamic>
+            <isNotEmpty prepend="AND" property="sbuFilter">
+                   compstruct.id=#sbuFilter#
+            </isNotEmpty>
+ 
+            <isNotEmpty prepend="AND" property="employee_id">
+                   emp.id = #employee_id#
+            </isNotEmpty>
+<!--           <isNotEmpty prepend="AND" property="from_date">
+                   empLeave.from_date BETWEEN DATE_FORMAT(#from_date#, '%Y-%m-%d') AND DATE_FORMAT(#to_date#, '%Y-%m-%d')
+            </isNotEmpty>-->
+            AND
+ CONCAT( #startYear#,#startMonth# ) BETWEEN EXTRACT(YEAR_MONTH FROM empLeave.from_date )  AND EXTRACT(YEAR_MONTH FROM empLeave.to_date )
+ 
+        </dynamic>
+        ORDER BY empLeave.from_date DESC
+
+    </select>
+    
+    <select id = "getEmployeeName" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        SELECT CONCAT( employee_number, ' - ', first_name, ' ', last_name ) AS empName
+        FROM employees WHERE id = #employee_id#
+    </select>
+
+</sqlMap>

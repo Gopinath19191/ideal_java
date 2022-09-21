@@ -1,0 +1,175 @@
+/*            #datadisplay table tr td {
+                vertical-align: middle;
+            }*/
+            #listIcon{
+                font-weight: bold;
+                float: right;
+                margin: -32px 65px 0px 0px;
+                width: 12px;
+            }
+            #listName{
+                font-weight: bold;
+                float: right;
+                margin: -30px 7px 0px 0px;
+                text-decoration: none;
+                color: #666666;
+                cursor: pointer;
+            }
+            #infoIcon{
+                width: 20px;
+                padding: 7px 0px 0px 0px;
+                vertical-align: bottom;
+            }
+            #tickIcon{
+                width: 10px;
+                padding: 6px 0px 0px 0px;
+            }
+            .InfoText{
+                margin: 5px;
+            }
+            #momtable tbody tr td label {
+                width: 190px;
+                padding: 5px;
+            }
+            form label {
+                float: none;
+                display: inline-block;
+            }
+            div .formContenet_new {
+                background: none repeat scroll 0 0 #FFFFFF;
+                border: 1px solid #CADFF2;
+                float: left;
+/*                margin: 0px 0px 30px 18px;*/
+                outline: 1px none;
+                padding-bottom: 0;
+                width: 950px;
+            }
+            .momDetails{
+                margin:0px auto;
+                width: 95%;
+                background-color: #F0F8FF;
+                border: 1px solid #ccc;
+            }
+            .momDescriptionFieldset {
+                margin: 12px 0px 0px 0px;
+                padding: 0px;
+                border: 0px;
+            }
+            .momAgendaFieldset{
+                margin: 12px 0px 0px 0px;
+                padding: 0px;
+                border: 0px;
+            }
+            .momDiscussionFieldset{
+                margin: 12px 0px 0px 0px;
+                padding: 0px;
+                border: 0px;
+            }
+            .momActionPointFieldset{
+                margin: 12px 0px 0px 0px;
+                padding: 0px;
+                border: 0px;
+            }
+            fieldset{
+                border-radius: 5px;
+            }
+            fieldset legend {
+                background: #fff;
+                color: #555555;
+                font-size: 14px;
+                margin: 0px 0px 4px 0px;
+            }
+/*            .discussionFieldSet{
+                margin: 12px 0px 0px 0px;
+                padding: 0px;
+                border: 0px;
+            }*/
+/*            table.actionPoint {
+                width: 90%;
+            }*/
+/*            .actionPoint tbody tr td:last-child {
+                width: 3%;
+            }*/
+/*            .actionPoint td input[type='text'] {
+                height: 20px;
+                width: auto;
+            }*/
+            .actionPoint tr {
+                padding: 0px;
+                width: auto;
+            }
+            #momPresent label, #momAbsent label {
+                margin-left: 5px;
+            }
+            #momPresent img, #momAbsent img {
+                cursor: pointer;
+                vertical-align: middle;
+            }
+            .textArea {
+                width: 690px;
+                height: 20px;
+            }
+            #momAgendatable img, #momDiscussiontable img {
+                cursor: pointer;
+                margin-top: 5px;
+            }
+            #momActionPointtable img{
+                cursor: pointer;
+                margin-top: 3px;
+            }
+            div#btnGroup {
+                text-align: center;
+                width: 100%;
+                margin: 10px 0px 5px 0px;
+            }
+            .buttonAlignment {
+                color: #FFFFFF;
+                font-family: arial;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            .qualityback {
+                background: url(css/images/back.png) no-repeat scroll 8px 8px #316CA8;
+                color: #FFFFFF;
+                border: 1px solid #44928F;
+                font-weight: bold;
+                height: 30px;
+                margin: 0 0 0 15px;
+                padding: 0 10px 0 30px;
+                width: 90px;
+                cursor: pointer;
+            }
+            .qualitysave {
+                background: url(css/images/save-button-icon.png) no-repeat scroll 8px 8px #316CA8;
+                color: #FFFFFF;
+                border: 1px solid #44928F;
+                font-weight: bold;
+                height: 30px;
+                margin: 0 0 0 15px;
+                padding: 0 10px 0 30px;
+                width: 90px;
+                cursor: pointer;
+            }
+            .qualitysubmit {
+                background: url(css/images/icon_btn_submit.png) no-repeat scroll 8px 8px #316CA8;
+                color: #FFFFFF;
+                border: 1px solid #44928F;
+                font-weight: bold;
+                height: 30px;
+                margin: 0 0 0 15px;
+                padding: 0 10px 0 30px;
+                width: 90px;
+                cursor: pointer;
+            }
+            #momtable tr td {
+                width:25%;
+            }
+            #momPresent tr td,#momAbsent tr td{
+                width:25.5%;
+            }
+            #momPresent, #momAbsent{
+                border:none;
+            }
+            form label{
+                width:90%;
+            }

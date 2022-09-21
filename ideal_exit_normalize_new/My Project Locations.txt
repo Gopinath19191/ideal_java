@@ -1,0 +1,2842 @@
+Project Location ::::
+
+Helpdesk ---->E:\Struts Projects\ideal_helpdesk
+OJF---->E:\ideal_jf
+Healthcare----->E:\NetBeans\health
+StrutsCrude--->E:\Training Projects\StrutsCoding\StrutsCrude
+BuildApp--->E:\Training Projects\Struts2
+ideal_qpd ---> E:\ideal_projects\ideal_qpd
+ExitManagement ---> E:\ideal_projects\ExitManagement
+ideal_rm ---> E:\ideal_projects\ideal_rm
+ims --> E:\ideal_projects\ims
+ideal_helpdesk ---> E:\Struts Projects\ideal_helpdesk
+helpdesk --- >E:\ideal_projects\Helpdesk\src
+
+
+
+
+SVN Location ::
+RRF -->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_resource_management
+RRF CR-- >https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_rrf_cr/ideal_rrf_final
+OJF -->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_jf
+New OJF --> https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_ojf_new
+CA-->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/confirmation_appraisal
+IMS-->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal2_ims/src
+AA-->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_aa
+QPD-->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_qpd
+Helpdesk ---->https://10.18.1.180/svn/Defiance/ideal_helpdesk
+Exit--->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_exit
+rrf_new_version-->https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_rrf_new
+
+Rewap --> https://10.18.1.180/svn/Defiance/trunk/Intranet/src/ideal_rrf_new
+
+Healthcare PHR --->  https://10.18.1.180/svn/Defiance/trunk/Intranet/src/healthcare_phr
+
+
+
+// QUery for dump from remote machine
+mysqldump -h 10.18.1.65 -u root ideal2_aa | mysql -u root -padmin ideal2_aa
+
+
+First source machine details next one local machine
+
+
+// To take the live dump use the below query
+
+mysqldump -u panch -h 192.168.1.7 -ppanch ideal2 | mysql -u root -padmin ideal2_sync
+
+mysqldump -u ideal2 -h 192.168.1.7 -ppassw0rd@123 ideal2 | mysql -u root -padmin ideal2_sync
+
+mysqldump -u root -h 10.18.1.147 -padmin ideal2_exitmgmt_new | mysql -u root -padmin ideal2_exitmgmt_test
+
+mysqldump -u ideal2 -h 220.226.3.80 -ppassw0rd@123 ideal2 | mysql -u root -padmin ideal2_sync
+
+mysqldump -u root 10.18.1.147 -padmin ideal2_ojf | mysql -u ideal2 -ppassw0rd@123 ideal2_rm_kfg
+
+mysqldump -u root 10.18.1.147 -padmin ideal2_ojf | mysql -u root -p ideal2_resource
+
+mysqldump -u root -h 10.18.1.147 -padmin ideal2_ojf | mysql -u root -h 10.18.1.180 ideal2_resource -ppassw0rd@123
+
+mysqldump -u ideal2 -ppassw0rd@123 ideal2 | mysql -u root -padmin ideal2_demo
+
+mysqldump -u ideal2 -h 192.168.1.7 -ppassw0rd@123 ideal2_reviewed | mysql -u root -padmin ideal2_rrf_rewamp
+
+Update users set password = md5('admin');
+Update employees set work_email_address = 'Karthikeyan.Karunamoorthy@defiance-tech.com';
+
+
+CREATE TABLE IF NOT EXISTS `employee_lop_details` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `employee_id` int(11) NOT NULL,
+  `employee_leave_request_id` int(11) NOT NULL,
+  `lop_days` decimal(6,2) NOT NULL,
+  `year` year(4) NOT NULL,
+  `month` varchar(2) NOT NULL,
+  `status` enum('Opened','Closed') NOT NULL DEFAULT 'Opened',
+  PRIMARY KEY (`id`)
+ ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
+
+Update employees set work_email_address = 'prakash.sasha@defiance-tech.com';
+                                                                                      
+Project Status in iDeal ::
+Active --> e
+Yet to start --> y
+On-Hold --> h
+Project-Delivered --> d
+Closed --> c
+
+
+SELECT `Project`.project_code,
+       `Project`.project_name,
+       `Customer`.customer_name,
+       `RBU`.name AS 'RBU',
+       `SBU`.name AS 'SBU',
+       `Employee`.`employee_number`,
+       concat(`Employee`.`first_name`, " ", `Employee`.`last_name`)
+          AS 'employee_name',
+       CASE ProjectTeamAllocation.working_place
+          WHEN "s" THEN "Onsite"
+          WHEN "o" THEN "Offshore"
+       END
+          AS "work_location",
+       Role.role_description AS 'Role',
+       concat(`emp2`.`first_name`, " ", `emp2`.`last_name`) AS 'pm_name',
+       concat(`emp3`.`first_name`, " ", `emp3`.`last_name`) AS 'sales_person',
+       CASE `Project`.`pricing`
+          WHEN "fb" THEN "FB"
+          WHEN "tm" THEN "T&M"
+       END
+          AS "Project Status",
+       `BillingAdvice`.billing_month,
+       `BillingAdvice`.billing_year,
+       `BillingAdvice`.billable_effort,
+       CASE `Project`.efforts_uom
+          WHEN "h" THEN "Hour"
+          WHEN "d" THEN "Day"
+          WHEN "w" THEN "Week"
+          WHEN "m" THEN "month"
+       END
+          AS "UOM",
+       `ProjectTeamAllocation`.billing_rate,
+       `Currency`.currency,
+       `BillingAdvice`.billable_amount
+  FROM `billing_advices` AS `BillingAdvice`
+       LEFT JOIN `projects` AS `Project`
+          ON (`BillingAdvice`.`project_id` = `Project`.`id`)
+       LEFT JOIN `employees` AS `Employee`
+          ON (`BillingAdvice`.`employee_id` = `Employee`.`id`)
+       LEFT JOIN `employees` AS emp2
+          ON (emp2.id = Project.project_manager)
+       LEFT JOIN `employees` AS emp3
+          ON (emp3.id = Project.sales_person)
+       LEFT JOIN `project_team_allocations` AS `ProjectTeamAllocation`
+          ON (`ProjectTeamAllocation`.`project_id` =
+                 `BillingAdvice`.`project_id`
+              AND `ProjectTeamAllocation`.`employee_id` =
+                     `BillingAdvice`.`employee_id`)
+       LEFT JOIN `roles` AS `Role`
+          ON (`Role`.`id` = ProjectTeamAllocation.role_id)
+       LEFT JOIN `currencies` AS `Currency`
+          ON (`Currency`.`id` = `Project`.`currency_id`)
+       LEFT JOIN `customers` AS `Customer`
+          ON (`Customer`.`id` = `Project`.`customer_id`)
+       LEFT JOIN `company_structures` AS `RBU`
+          ON (`Project`.`project_rbu` = `RBU`.`id`)
+       LEFT JOIN `company_structures` AS `SBU`
+          ON (`Project`.`project_sbu` = `SBU`.`id`)
+ WHERE     `BillingAdvice`.`deleted` = '0'
+       AND `ProjectTeamAllocation`.`deleted` = '0'
+       AND BillingAdvice.billing_year = 2011
+       AND BillingAdvice.billing_month = 06
+       AND `BillingAdvice`.`status` IN ('a', 'm')
+       AND `Project`.project_status IN ('e') 
+       AND CONCAT(BillingAdvice.billing_year, BillingAdvice.billing_month) BETWEEN EXTRACT(
+                                                                                      YEAR_MONTH FROM ProjectTeamAllocation.
+                                                                                                      start_date)
+                                                                               AND EXTRACT(
+                                                                                      YEAR_MONTH FROM ProjectTeamAllocation.
+                                                                                                      end_date)
+GROUP BY `Project`.`id`,
+         `Employee`.`id`,
+         `BillingAdvice`.`billing_month`,
+         `BillingAdvice`.`billing_year`
+         
+         
+         
+// Query given by adiakalam on 7-july-2011 for accural
+SELECT `Project`.project_code,
+       `Project`.project_name,
+       `Customer`.customer_name,
+       `RBU`.name AS 'RBU',
+       `SBU`.name AS 'SBU',
+       `Employee`.`employee_number`,
+       concat(`Employee`.`first_name`, " ", `Employee`.`last_name`)
+          AS 'employee_name',
+       CASE ProjectTeamAllocation.working_place
+          WHEN "o" THEN "Onsite"
+          WHEN "s" THEN "Offshore"
+       END
+          AS "work_location",
+       Role.role_description AS 'Role',
+       concat(`emp2`.`first_name`, " ", `emp2`.`last_name`) AS 'pm_name',
+       concat(`emp3`.`first_name`, " ", `emp3`.`last_name`) AS 'sales_person',
+       CASE `Project`.`pricing`
+          WHEN "fb" THEN "FB"
+          WHEN "tm" THEN "T&M"
+       END
+          AS "Project Status",
+       `BillingAdvice`.billing_month,
+       `BillingAdvice`.billing_year,
+       BillingAdvice.`billable_effort` as Billable_EffortInHours,
+       CASE LOCATE(':',BillingAdvice.`billable_effort`) WHEN "0" THEN `BillingAdvice`.billable_effort ELSE ROUND((SUBSTRING_INDEX(BillingAdvice.`billable_effort`, ':', 1) + SUBSTRING(BillingAdvice.`billable_effort`, -2)/60 ),3) END as Billable_Effort,
+       CASE `Project`.efforts_uom
+          WHEN "h" THEN "Hour"
+          WHEN "d" THEN "Day"
+          WHEN "w" THEN "Week"
+          WHEN "m" THEN "month"
+       END
+          AS "UOM",
+       `ProjectTeamAllocation`.billing_rate,
+       `Currency`.currency,
+       `BillingAdvice`.billable_amount       
+  FROM `billing_advices` AS `BillingAdvice`
+       LEFT JOIN `projects` AS `Project`
+          ON (`BillingAdvice`.`project_id` = `Project`.`id`)
+       LEFT JOIN `employees` AS `Employee`
+          ON (`BillingAdvice`.`employee_id` = `Employee`.`id`)
+       LEFT JOIN `employees` AS emp2
+          ON (emp2.id = Project.project_manager)
+       LEFT JOIN `employees` AS emp3
+          ON (emp3.id = Project.sales_person)
+       LEFT JOIN `project_team_allocations` AS `ProjectTeamAllocation`
+          ON (`ProjectTeamAllocation`.`project_id` =
+                 `BillingAdvice`.`project_id`
+              AND `ProjectTeamAllocation`.`employee_id` =
+                     `BillingAdvice`.`employee_id`)
+       LEFT JOIN `roles` AS `Role`
+          ON (`Role`.`id` = ProjectTeamAllocation.role_id)
+       LEFT JOIN `currencies` AS `Currency`
+          ON (`Currency`.`id` = `Project`.`currency_id`)
+       LEFT JOIN `customers` AS `Customer`
+          ON (`Customer`.`id` = `Project`.`customer_id`)
+       LEFT JOIN `company_structures` AS `RBU`
+          ON (`Project`.`project_rbu` = `RBU`.`id`)
+       LEFT JOIN `company_structures` AS `SBU`
+          ON (`Project`.`project_sbu` = `SBU`.`id`)
+ WHERE     `BillingAdvice`.`deleted` = '0'
+       AND `ProjectTeamAllocation`.`deleted` = '0'
+       AND BillingAdvice.billing_year = 2011
+       AND BillingAdvice.billing_month = 06
+       AND `BillingAdvice`.`status` IN ('a', 'm')
+       AND `Project`.project_status IN ('e','c') 
+       AND `ProjectTeamAllocation`.`working_place` = `BillingAdvice`.`working_place`
+       AND CONCAT(BillingAdvice.billing_year, BillingAdvice.billing_month) BETWEEN EXTRACT( YEAR_MONTH FROM ProjectTeamAllocation.start_date) AND EXTRACT( YEAR_MONTH FROM ProjectTeamAllocation.end_date)
+GROUP BY Project.id, Employee.id, BillingAdvice.billing_month, BillingAdvice.billing_year
+
+// To take the projects list in IT Services
+SELECT prj.project_code AS 'Project Code',prj.project_name AS 'Project Name',CONCAT(emp.first_name,'',emp.last_name) AS 'Project Manager',CASE prj.pricing WHEN 'fb' THEN 'Fixed bid' WHEN 'tm' THEN 'T&M' ELSE 'Not Applicable' END AS 'Pricing' FROM projects AS prj LEFT JOIN employees AS emp ON(emp.id=prj.project_manager) WHERE prj.project_status LIKE 'e'
+AND prj.project_sbu =10 AND prj.billable LIKE 'e'
+
+// 05-Sept-2011 Kumar work
+UPDATE projects SET project_status='y' WHERE id=582;
+UPDATE projects SET project_status='y' WHERE id=610;
+UPDATE projects SET project_status='y' WHERE id=622;
+UPDATE projects SET project_status='y' WHERE id=650;
+UPDATE projects SET project_status='d' WHERE id=607
+
+
+// Query in live db
+UPDATE projects SET project_status='d' WHERE id=582;
+UPDATE projects SET project_status='y' WHERE id=610;
+
+UPDATE projects SET project_status='c' WHERE id=565;
+UPDATE projects SET project_status='c' WHERE id=580;
+UPDATE projects SET project_status='c' WHERE id=621;
+
+
+UPDATE projects SET project_status='c' WHERE id=226;
+UPDATE projects SET project_status='c' WHERE id=227;
+UPDATE projects SET project_status='c' WHERE id=228;
+
+UPDATE projects SET project_status='y' WHERE id=524;
+UPDATE projects SET project_status='y' WHERE id=534;
+UPDATE projects SET project_status='y' WHERE id=535;
+UPDATE projects SET project_status='y' WHERE id=536;
+UPDATE projects SET project_status='y' WHERE id=615;
+
+UPDATE projects SET project_status='y' WHERE id=651;
+
+UPDATE projects SET project_status='c',project_remarks='Mr. KNM Rao has resigned and left the company long back'  WHERE id=118;
+
+UPDATE projects SET project_status='c',project_remarks='Project completed'  WHERE id=177;
+UPDATE projects SET project_status='c',project_remarks='Project completed'  WHERE id=155;
+UPDATE projects SET project_status='c',project_remarks='Project completed'  WHERE id=167;
+
+UPDATE projects SET project_status='c' WHERE id=546;
+
+
+// Kumar report on Sept-08-2011
+SELECT id AS 'Project Id', project_name AS 'Project Name', project_code AS 'Project Code'
+FROM projects
+WHERE billable = 'e'
+AND planned_start_date
+BETWEEN '2011-08-01'
+AND '2011-08-31';
+
+
+SELECT prj.project_name AS 'Project Name', prj.project_code AS 'Project Code', emp.employee_number AS 'Emp Number', CONCAT( emp.first_name, '', emp.last_name ) AS 'Emp Name', cs.name AS 'Practice Group'
+FROM project_team_allocations AS pta
+LEFT JOIN employees AS emp ON ( emp.id = pta.employee_id )
+LEFT JOIN company_structures AS cs ON ( cs.id = emp.structure_name )
+LEFT JOIN projects AS prj ON ( prj.id = pta.project_id )
+WHERE pta.project_id
+IN (
+
+SELECT id
+FROM projects
+WHERE billable = 'e'
+AND planned_start_date
+BETWEEN '2011-08-01'
+AND '2011-08-31'
+)
+
+//Sample 
+SELECT prj.id AS projectId, emp.id AS empid, prj.project_name AS 'Project Name', prj.project_code AS 'Project Code', emp.employee_number AS 'Emp Number', CONCAT( emp.first_name, '', emp.last_name ) AS 'Emp Name', cs.name AS 'Practice Group'
+FROM project_team_allocations AS pta
+LEFT JOIN employees AS emp ON ( emp.id = pta.employee_id )
+LEFT JOIN company_structures AS cs ON ( cs.id = emp.structure_name )
+LEFT JOIN projects AS prj ON ( prj.id = pta.project_id )
+WHERE pta.project_id
+IN (
+
+SELECT id
+FROM projects
+WHERE billable = 'e'
+AND planned_start_date
+BETWEEN '2011-08-01'
+AND '2011-08-31'
+)
+
+
+UPDATE project_roles SET billing_rate=0.00 WHERE id=1035;
+UPDATE project_roles SET billing_rate=0.00 WHERE id=1036;
+
+// For Vinil Kumar 14548 as suggested by varun
+
+SELECT aes_decrypt( reviewerRating, appraiseeId )
+FROM aa_eligible_associates
+WHERE appraiseeId =223
+AND year =2011
+LIMIT 0 , 30 
+UPDATE aa_eligible_associates SET reviewerRating = aes_encrypt(4,appraiseeId) WHERE appraiseeId=223 AND year=2011
+
+UPDATE aa_eligible_associates SET reviewerRating = aes_encrypt(4,appraiseeId),reviewerComments='resigned' WHERE appraiseeId=223 AND year=2011;
+
+
+
+//RRF Forward to HR Head by RMG for engg services query (Before status=1)
+UPDATE masterrequestdetails SET status=1 WHERE requestId=20 AND splitRequestId=17;
+//After status=5
+UPDATE masterrequestdetails SET status=5 WHERE requestId=20 AND splitRequestId=17;
+UPDATE resourcetype SET status=5 WHERE requestId=17;
+
+//Unknown before status = 5
+UPDATE `ideal_sync_rm`.`masterrequestdetails` SET `status` = '11' WHERE `masterrequestdetails`.`requestId` =17 LIMIT 1 ;
+UPDATE masterrequestdetails SET status = 11 WHERE requestId =17 LIMIT 1
+
+//Password reset for 15013 
+UPDATE users SET password=MD5('Welcome123') WHERE id =1314; 
+
+
+// Report for employee education and certification
+SELECT emp.employee_number AS 'Employee Number', CONCAT( emp.first_name, ' ', emp.last_name ) AS 'Employee Name', pg.name As 'Business Unit', cs.name AS 'Practice Group',band.name AS 'Band', subBand.name AS 'Sub Band', inst.institute_name AS 'Institute Name', univ.university_name AS 'University Name', course.course_name AS 'Course Name',
+CASE edu.percentage
+WHEN edu.percentage
+THEN edu.percentage
+ELSE 'Not Entered'
+END AS 'Percentage',
+CASE edu.month_year
+WHEN edu.month_year
+THEN edu.month_year
+ELSE 'Not Entered'
+END AS 'Year Of Passing'
+FROM employee_educations AS edu
+LEFT JOIN employees AS emp ON ( emp.id = edu.employee_id )
+LEFT JOIN bands AS subBand ON ( emp.band_id = subBand.id )
+LEFT JOIN bands AS band ON ( subBand.parent_id = band.id )
+LEFT JOIN company_structures AS cs ON ( emp.structure_name = cs.id )
+LEFT JOIN company_structures AS pg ON ( cs.parent_id = pg.id )
+LEFT JOIN institutes AS inst ON ( inst.id = edu.institute_id )
+LEFT JOIN universities AS univ ON ( univ.id = edu.university_id )
+LEFT JOIN courses AS course ON ( course.id = edu.course_id ) 
+WHERE emp.employment_status NOT
+IN (
+'r', 'b', 't'
+)
+ORDER BY emp.employee_number ASC;
+
+
+SELECT emp.employee_number AS 'Employee Number', CONCAT( emp.first_name, ' ', emp.last_name ) AS 'Employee Name', pg.name AS 'Business Unit', cs.name AS 'Practice Group', band.name AS 'Band', subBand.name AS 'Sub Band',
+CASE certi.certification_number
+WHEN certi.certification_number
+THEN certi.certification_number
+ELSE 'Not Entered'
+END AS 'Certification Number', certi.certification_name AS 'Certification Name', certi.institute AS 'Insititute',
+CASE certi.weightage
+WHEN certi.weightage
+THEN certi.weightage
+ELSE 'Not Entered'
+END AS 'Weightage'
+FROM employee_certifications AS certi
+LEFT JOIN employees AS emp ON ( emp.id = certi.employee_id )
+LEFT JOIN bands AS subBand ON ( emp.band_id = subBand.id )
+LEFT JOIN bands AS band ON ( subBand.parent_id = band.id )
+LEFT JOIN company_structures AS cs ON ( emp.structure_name = cs.id )
+LEFT JOIN company_structures AS pg ON ( cs.parent_id = pg.id )
+WHERE emp.employment_status NOT
+IN (
+'r', 'b', 't'
+)
+ORDER BY emp.employee_number ASC 
+
+
+
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 45 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 46 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 47 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 48 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 49 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 50 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 51 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 52 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 53 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 54 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 55 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 56 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 57 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 58 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 59 LIMIT 1;
+
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 29 LIMIT 1;
+
+
+//CA Name
+SELECT appraisee.employee_number AS 'Apprasiee Number',CONCAT(appraisee.first_name,'',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Apprasier Number',CONCAT(appraiser.first_name,'',appraiser.last_name) AS 'Appraiser Name',CONCAT(reviewer.first_name,'',reviewer.last_name) AS 'Reviwer Name',CONCAT(hr.first_name,'',hr.last_name) AS 'Hr Name'  FROM ca_eligible_associates as ca 
+LEFT JOIN employees AS appraisee ON (appraisee.id=ca.appraiseeId)
+LEFT JOIN employees AS appraiser ON (appraiser.id=ca.appraiserId)
+LEFT JOIN employees AS reviewer ON (reviewer.id=ca.reviewerId)
+LEFT JOIN employees AS hr ON (hr.id=ca.hrId)
+WHERE ca.bandId=12 AND ca.departmentId=10 AND ca.submitStatus<8 AND ca.appraisalTriggered=1;
+
+//Ilayaraja team duplicate time sheet
+SELECT * FROM `timesheet_entries` WHERE employee_id=947 AND timesheet_date BETWEEN '2011-09-01' AND '2011-09-30'
+
+DELETE FROM `ideal2`.`timesheet_entry_projects` WHERE `timesheet_entry_projects`.`id` = 101549 LIMIT 1;
+DELETE FROM `ideal2`.`timesheet_entry_projects` WHERE `timesheet_entry_projects`.`id` = 101551 LIMIT 1;
+DELETE FROM `ideal2`.`timesheet_entry_projects` WHERE `timesheet_entry_projects`.`id` = 101552 LIMIT 1;
+
+//Panch delete team member for MIS
+DELETE FROM `ideal2`.`project_team_allocations` WHERE `project_team_allocations`.`id` = 4456 LIMIT 1;
+
+// SVN Documents Location
+https://10.18.1.180/svn/Defiance/trunk/Intranet
+
+
+
+E9000034 
+pwd: admin
+
+put timesheet entry fro him
+
+//Adiakallam
+UPDATE timesheet_entry_projects SET project_id=514
+WHERE id
+IN ( 103970, 105702, 105709, 105710 );
+
+
+INSERT INTO `ideal2`.`project_team_allocations` (
+`id` ,
+`project_id` ,
+`employee_id` ,
+`role_id` ,
+`working_place` ,
+`start_date` ,
+`end_date` ,
+`billing_hours` ,
+`billing_rate` ,
+`billing_currency` ,
+`uom` ,
+`remarks` ,
+`status` ,
+`deleted` ,
+`weekend_days` ,
+`empStatus`
+)
+VALUES (
+NULL , '514', '595', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0'
+),(NULL , '514', '674', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0');
+
+INSERT INTO `ideal2`.`project_team_allocations` (
+`id` ,
+`project_id` ,
+`employee_id` ,
+`role_id` ,
+`working_place` ,
+`start_date` ,
+`end_date` ,
+`billing_hours` ,
+`billing_rate` ,
+`billing_currency` ,
+`uom` ,
+`remarks` ,
+`status` ,
+`deleted` ,
+`weekend_days` ,
+`empStatus`
+)
+VALUES (NULL , '514', '865', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0'), (
+NULL , '514', '324', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0'
+),(NULL , '514', '351', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0'),
+(NULL , '514', '697', '1', 's', '2011-05-01', '2011-12-31', '220.00', '21.000', NULL , NULL , NULL , 'a', '0', NULL , '0');
+
+
+//QPD Q2-2011 Apprasiee Not Submitted
+SELECT *
+FROM qpd_eligible_associates
+WHERE submitStatus <2
+AND quarter =2
+AND year =2011
+
+
+java -jar "E:\ideal_projects\ideal_qpd\QPD Submit Trigger\dist\QPD Submit Trigger.jar"
+
+//Enable QPD form for sheik
+SELECT *
+FROM `qpd_eligible_associates`
+WHERE `quarter` =2
+AND `year` = '2011'
+AND `appraiseeId` =519
+
+UPDATE qpd_eligible_associates SET submitStatus=0 WHERE quarter =2
+AND year= '2011' AND appraiseeId =519;
+
+//Billing advice
+SELECT *
+FROM `projects`
+WHERE `project_code` LIKE '09000202';
+
+SELECT *
+FROM `employees`
+WHERE `employee_number` LIKE '14650'
+
+SELECT *
+FROM `billing_advices`
+WHERE `project_id` LIKE '400'
+AND `employee_id` =525
+AND `billing_month` LIKE '09'
+AND `billing_year` LIKE '2011'
+
+//Query Needs to be run in live
+
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '67200.00' WHERE `billing_advices`.`id` =5431 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '30400.00' WHERE `billing_advices`.`id` =4610 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '68400.00' WHERE `billing_advices`.`id` =5435 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '33570.00' WHERE `billing_advices`.`id` =4649 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '2880.00' WHERE `billing_advices`.`id` =5070 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '2618.00' WHERE `billing_advices`.`id` =5212 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '3161.80' WHERE `billing_advices`.`id` =5213 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '540.00' WHERE `billing_advices`.`id` =4889 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '3375.00' WHERE `billing_advices`.`id` =4635 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '10125.00' WHERE `billing_advices`.`id` =4634 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '17024.00' WHERE `billing_advices`.`id` =5377 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '55500.00' WHERE `billing_advices`.`id` =4827 LIMIT 1 ;
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '56700.00' WHERE `billing_advices`.`id` =4821 LIMIT 1 ;
+
+
+
+
+// Problem Query
+ 	billable_effort =8.45 in db
+ 	billable_effort =8.75 in excel
+UPDATE `ideal2`.`billing_advices` SET `billable_amount` = '5320.00' WHERE `billing_advices`.`id` =5396 LIMIT 1 ;
+
+
+//QPD Appraiser Change
+
+SELECT *
+FROM `qpd_eligible_associates`
+WHERE `quarter` =2
+AND `year` = '2011'
+AND `appraiseeId` =384
+
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '291' WHERE `qpd_eligible_associates`.`qpdId` =2272 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '291' WHERE `qpd_eligible_associates`.`qpdId` =2278 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '291' WHERE `qpd_eligible_associates`.`qpdId` =2307 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '294' WHERE `qpd_eligible_associates`.`qpdId` =2358 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '286' WHERE `qpd_eligible_associates`.`qpdId` =2259 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '286' WHERE `qpd_eligible_associates`.`qpdId` =2243 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '519' WHERE `qpd_eligible_associates`.`qpdId` =2261 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '519' WHERE `qpd_eligible_associates`.`qpdId` =2265 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '519' WHERE `qpd_eligible_associates`.`qpdId` =2316 LIMIT 1 ;
+
+// Enable QPD for 14042 Praburam
+2253
+UPDATE `ideal2`.`qpd_eligible_associates` SET `submitStatus` = '0' WHERE `qpd_eligible_associates`.`qpdId` =2253 LIMIT 1 ;
+
+
+// Update data for appraisee after auot submit (14388-Vishnujith 	C. P.)
+UPDATE `ideal2`.`qpd_associate_kra_map` SET `selfComments` = '1.Compared ENOVIA CAD BOM with EBOM and confirmed the correctness and completeness of 307T Stage 3 data.' WHERE `qpd_associate_kra_map`.`qpdKraId` =10716 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_associate_kra_map` SET `selfComments` = '1. Data for DELMIA was delivered within the specified timeperiod 2.Attribute updation for stage 3 parts were completed in ENOVIA within specified time limits 3.Given tasks were completed on time as per the schedule by customer and supported them for timely development without rework. 4.Installation drawing creation except for electrical parts were completed within the specified time periods 5. Electrical wiring harness data was recreated in ENOVIA within specified time period ' WHERE `qpd_associate_kra_map`.`qpdKraId` =10717 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_associate_kra_map` SET `selfComments` = 'Understood customer requirements correctly. Supported for creation of 1.307T Installation drawing Recreation, 2.307T attribute creation and updation in ENOVIA 3.307T CAD correctness check in ENOVIA 4.CAD migration to ENOVIA. ' WHERE `qpd_associate_kra_map`.`qpdKraId` =10718 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_associate_kra_map` SET `selfComments` = 'Learned the process of data export and management in DELMIA, had handson experience in SBOM & MBOM creation in DELMIA, learned how to use various tools related with it, had experience using software tool CATIA ' WHERE `qpd_associate_kra_map`.`qpdKraId` =10719 LIMIT 1 ;
+
+
+9831
+9832
+9833
+9834
+
+
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9831 LIMIT 1
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9832 LIMIT 1
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9833 LIMIT 1
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9834 LIMIT 1
+
+///
+SELECT *
+FROM employees
+WHERE band_id =12
+AND joined_date
+BETWEEN '2010-10-01'
+AND '2010-10-01'
+AND employment_status NOT
+IN (
+'r', 'a', 'b'
+)
+LIMIT 0 , 30
+
+
+SELECT appraisee.employee_number AS 'Apprasiee Number',CONCAT(appraisee.first_name,'',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Apprasier Number',CONCAT(appraiser.first_name,'',appraiser.last_name) AS 'Appraiser Name',CONCAT(reviewer.first_name,'',reviewer.last_name) AS 'Reviwer Name',CONCAT(hr.first_name,'',hr.last_name) AS 'Final Reviwer Name','Varun' AS 'Hr Name'
+ FROM employees AS appraisee
+ LEFT JOIN employees AS appraiser ON (appraiser.id=appraisee.manager)
+LEFT JOIN employees AS reviewer ON (reviewer.id=appraiser.manager)
+LEFT JOIN employees AS hr ON (hr.id=reviewer.manager)
+ WHERE appraisee.band_id=12 AND appraisee.joined_date BETWEEN '2010-10-01' AND '2010-10-01' AND appraisee.employment_status NOT IN ('r','a','b')
+ 
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+WHERE quarter =2
+AND year =2011
+AND submitStatus <4
+GROUP BY appraiserId
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =2
+AND year =2011
+AND submitStatus <4;
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =2
+AND year =2011
+AND submitStatus <6
+
+
+//Sathish Kumar NRB
+UPDATE qpd_eligible_associates SET submitStatus=4 WHERE quarter =2 AND year = 2011 AND reviewerId =274 AND submitStatus =6
+
+// For Neela double entry
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9949 LIMIT 1;
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9950 LIMIT 1;
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9951 LIMIT 1;
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9952 LIMIT 1;
+DELETE FROM qpd_associate_kra_map WHERE qpdKraId = 9953 LIMIT 1;
+
+
+// Change Appraiser for vikash by Kumar
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '546' WHERE `qpd_eligible_associates`.`qpdId` =2314 LIMIT 1 ;
+
+//Change Appraiser and reviewer for 14834 (Harisha 	Shringari 	Mahadevaiah) by Kumar
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '838',
+`reviewerId` = '298' WHERE `qpd_eligible_associates`.`qpdId` =2349 LIMIT 1 ;
+
+//Change Appriaser and reviewer for Suresh and sasy
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '546',
+`reviewerId` = '258' WHERE `qpd_eligible_associates`.`qpdId` =2249 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '546',
+`reviewerId` = '258' WHERE `qpd_eligible_associates`.`qpdId` =2288 LIMIT 1 ;
+
+
+14443
+http://220.226.3.80:9000/ideal_rrf_test_demo/com/defiance/ideal/resourcemgmt/
+
+//CA query update
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=24 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Outstanding in FM',submitStatus=8 WHERE qpdId=25 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Extremely good technically',submitStatus=8 WHERE qpdId=26 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very creative',submitStatus=8 WHERE qpdId=27 LIMIT 1
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Great attitude',submitStatus=8 WHERE qpdId=28 LIMIT 1
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Needs to improve technically',submitStatus=8 WHERE qpdId=29 LIMIT 1
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=30 LIMIT 1
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Very good technically in .NET',submitStatus=8 WHERE qpdId=31 LIMIT 1
+
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE qpdId=23 LIMIT 1;
+
+	Start Date	End Date
+Self Assessment Phase	6-Sep-11	11-Sep-11
+Assessor Phase	12-Sep-11	16-Sep-11
+Reviewer Phase	17-Sep-11	21-Sep-11
+
+
+SELECT appraisee.id AS appraiseeId,appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =2
+AND year =2011
+AND submitStatus <4 AND appraiserId=736
+
+
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =2
+AND year =2011 AND appraiserId =736 AND appraiseeId IN (921,935)
+
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =2
+AND year =2011 AND appraiserId =736 AND appraiseeId IN (965,968)
+
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =2
+AND year =2011 AND appraiserId =736 AND appraiseeId IN (981,988,1018,1030,1033,1038,1040,1046,1054,1058,1060,1080,1147,1154,1237,1238,1239,1245,1250,1276,1285,1300,1306,1312,1319,1324,1331,1332,1333,1338,1341,1351,1352,1376,1378,1380,1405,1410,1415)
+
+//RRF issue
+UPDATE `ideal2`.`resourcetype` SET `requesterId` = '294' WHERE `resourcetype`.`requestId` =28 LIMIT 1 ;
+UPDATE `ideal2`.`resourcetype` SET `requesterName` = 'Praburam' WHERE `resourcetype`.`requestId` =28 LIMIT 1 ;
+
+//Engg AA Data for Ashok Kumar T 14159
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',aes_decrypt(qea.appraiserRating,appraiseeId) AS 'Appraiser Rating',CASE qea.appraiserPromotionRec WHEN 1 THEN 'Yes' WHEN 0 THEN 'No' ELSE 'Not Applicable' END AS 'Appraiser Promotion',reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',cs.name AS 'Practice Group'
+FROM aa_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE qea.appraiserId =30
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',aes_decrypt(qea.appraiserRating,appraiseeId) AS 'Appraiser Rating',reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE qea.appraiserId =383 AND quarter=3 AND year=2011
+
+//QPD For Prashant Nirmale
+UPDATE `ideal2`.`qpd_eligible_associates` SET `submitStatus` = '2' WHERE `qpd_eligible_associates`.`qpdId` =2511 LIMIT 1 ;
+
+//
+UPDATE `ideal2_sync`.`qpd_eligible_associates` SET `appraiserComments` = 'sample' WHERE `qpd_eligible_associates`.`qpdId` =2242 LIMIT 1 ;
+
+
+//QPD Final Rating Query
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',aes_decrypt(qea.appraiserRating,appraiseeId) AS 'Appraiser Rating',qea.appraiserComments AS 'Appraiser Comments', reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',
+aes_decrypt(qea.reviewerRating,appraiseeId) AS 'Reviewer Rating',qea.reviewerComments AS 'Reviewer Comments',aes_decrypt(qea.normalisedReviewerRating,appraiseeId) AS 'Final Reviewer Rating',qea.normalizerComments AS 'Final Reviewer Comments',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE qea.quarter = 2 AND qea.year = '2011' AND qea.normalizerId = 258
+
+//Steps to upload the qpd rating
+1.Employee 
+
+SELECT appraisee.employee_number AS 'Appraisee Number', appraisee.id AS 'Primary Key', CONCAT( appraisee.first_name, ' ', appraisee.last_name ) AS 'Appraisee Name'
+FROM qpd_eligible_associates qea
+LEFT JOIN employees AS appraisee ON ( appraisee.id = qea.appraiseeId )
+WHERE `quarter` =2
+AND `year` = '2011'
+AND `normalizerId` =287 ORDER BY appraisee.employee_number
+
+1. Take the excel in the below order
+
+Appraisee Number || Primary Key || Appraisee Name
+
+
+
+//For Kumar 14002
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments="good" WHERE appraiseeId=1429 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments="good" WHERE appraiseeId=1433 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments="good" WHERE appraiseeId=1435 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments="good" WHERE appraiseeId=1437 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(1,appraiseeId),normalizerComments="On LOP" WHERE appraiseeId=967 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+//For Varun 14320
+// For ROW
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=66 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=69 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=842 AND quarter =2 AND YEAR =2011 LIMIT 1;
+// For N&S
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=320 AND quarter =2 AND YEAR =2011 LIMIT 1;
+// For Mythili
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=523 AND quarter =2 AND YEAR =2011 LIMIT 1;
+// For TAV
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=513 AND quarter =2 AND YEAR =2011 LIMIT 1;
+// For HR Team
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=154 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=299 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=347 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=517 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=543 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1092 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1286 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1308 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1340 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1388 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+
+SELECT *  FROM `employees` WHERE employee_number IN ('14301','14003','14068','14864','14663','14686','14747','14809','14877','14939')
+
+// By Hr Team
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=169 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=259 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=317 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=626 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=912 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=944 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1002 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1089 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1220 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1303 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+// Varun
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=33 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),submitStatus=8 WHERE appraiseeId=313 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1363 AND quarter =2 AND YEAR =2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=" ",submitStatus=8 WHERE appraiseeId=1421 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),submitStatus=8 WHERE appraiseeId=830 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),submitStatus=8 WHERE appraiseeId=924 AND quarter =2 AND YEAR =2011 LIMIT 1;
+
+//OJF
+ALTER TABLE `joining_formalities` ADD UNIQUE (
+`personal_email_id`
+)
+Update users set employee_id  =   90000 WHERE id = 1376 LIMIT 1;
+Update users set employee_id  =   90001 WHERE id = 1378 LIMIT 1;
+Update users set employee_id  =   90002 WHERE id = 1377 LIMIT 1; 
+Update users set employee_id  =   90003 WHERE id = 1398 LIMIT 1;
+
+UPDATE `ideal2`.`joining_formalities` SET `id` = '90000' WHERE `joining_formalities`.`id` =1 LIMIT 1 ;
+UPDATE `ideal2`.`joining_formalities` SET `id` = '90001' WHERE `joining_formalities`.`id` =2 LIMIT 1 ;
+UPDATE `ideal2`.`joining_formalities` SET `id` = '90002' WHERE `joining_formalities`.`id` =3 LIMIT 1 ;
+UPDATE `ideal2`.`joining_formalities` SET `id` = '90003' WHERE `joining_formalities`.`id` =4 LIMIT 1 ;
+
+
+//
+UPDATE `ideal2`.`users` SET `password` = MD5( 'Admin123' ) WHERE `users`.`id` =943 LIMIT 1 ;
+
+for E9000002 ---> be2c266b257cf7ee77f44add0bc18098
+for E9000034 --> 91fa0fb74a45a55bdf1d2300b66d4fb5
+
+UPDATE `ideal2`.`employees` SET `employment_status` = 'r' WHERE `employees`.`id` =1079 LIMIT 1 ;
+
+//Insurance Details
+SELECT emp.employee_number AS 'Employee Number',CONCAT(emp.first_name,' ',emp.last_name) AS 'Employee Name',DATE_FORMAT(emp.birth_date,'%d-%m-%Y') AS 'DOB',ed.name AS 'Name',CASE ed.gender WHEN 'm' THEN 'Male' WHEN 'f' THEN 'Female' ELSE 'No Data' END AS 'Gender' ,ed.relationShip AS 'Relation ship',DATE_FORMAT(ed.birth_date,'%d-%m-%Y') AS 'Relation DOB',ed.age AS 'Age',CASE ed.status WHEN 's' THEN 'Saved' WHEN 'm' THEN 'Submitted' ELSE 'No Data' END AS Status FROM employee_dependents AS ed LEFT JOIN employees AS emp ON(emp.id=ed.employee_id)
+
+SELECT emp.employee_number AS 'Employee Number',
+CONCAT(emp.first_name,' ',emp.last_name) AS 'Employee Name',
+CASE emp.gender WHEN 'm' THEN 'Male' WHEN 'f' THEN 'Female' ELSE 'No Data' END AS 'Gender' ,
+DATE_FORMAT(emp.birth_date,'%d-%m-%Y') AS 'DOB',"--" as "Dependent name",
+"--" As "Gender",
+"Self" as "Relationship",
+DATE_FORMAT(emp.birth_date,'%d-%m-%Y') AS 'Relation DOB',
+"--" as Age,
+"Status" 
+FROM employees as emp 
+UNION
+SELECT emp.employee_number AS 'Employee Number',
+CONCAT(emp.first_name,' ',emp.last_name) AS 'Employee Name',
+CASE emp.gender WHEN 'm' THEN 'Male' WHEN 'f' THEN 'Female' ELSE 'No Data' END AS 'Gender' ,
+DATE_FORMAT(emp.birth_date,'%d-%m-%Y') AS 'DOB',ed.name AS 'Name',
+CASE ed.gender WHEN 'm' THEN 'Male' WHEN 'f' THEN 'Female' ELSE 'No Data' END AS 'Gender' ,
+ed.relationShip AS 'Relationship',
+DATE_FORMAT(ed.birth_date,'%d-%m-%Y') AS 'Relation DOB',
+ed.age AS 'Age',CASE ed.status WHEN 's' THEN 'Saved' WHEN 'm' THEN 'Submitted' ELSE 'No Data' END AS Status 
+FROM employee_dependents AS ed,employees as emp WHERE emp.id=ed.employee_id 
+
+
+//RRF for 14949 -- Sharana Basava 	Mathad ERP Team
+INSERT INTO `ideal2`.`rrf_roles` (`id`, `employee_id`, `rrf_role_id`, `rrf_role_name`) VALUES (NULL, '1313', '4', 'Requestor');
+
+UPDATE employees SET manager=1374	WHERE id=1249	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1104	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=148	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=985	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1015	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1106	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1061	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1097	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1062	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1045	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=586	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=57	LIMIT 1;
+UPDATE employees SET manager=1249	WHERE id=1320	LIMIT 1;
+UPDATE employees SET manager=1249	WHERE id=1157	LIMIT 1;
+UPDATE employees SET manager=148	WHERE id=22	LIMIT 1;
+UPDATE employees SET manager=148	WHERE id=1228	LIMIT 1;
+UPDATE employees SET manager=22	WHERE id=1455	LIMIT 1;
+UPDATE employees SET manager=985	WHERE id=1031	LIMIT 1;
+UPDATE employees SET manager=985	WHERE id=1163	LIMIT 1;
+UPDATE employees SET manager=985	WHERE id=1419	LIMIT 1;
+UPDATE employees SET manager=985	WHERE id=1299	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=355	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=67	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=582	LIMIT 1;
+UPDATE employees SET manager=1106	WHERE id=1174	LIMIT 1;
+UPDATE employees SET manager=1106	WHERE id=1145	LIMIT 1;
+UPDATE employees SET manager=1145	WHERE id=1165	LIMIT 1;
+UPDATE employees SET manager=1174	WHERE id=1178	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1440	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1279	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1127	LIMIT 1;
+UPDATE employees SET manager=57	WHERE id=1460	LIMIT 1;
+UPDATE employees SET manager=1104	WHERE id=870	LIMIT 1;
+UPDATE employees SET manager=1104	WHERE id=70	LIMIT 1;
+UPDATE employees SET manager=1104	WHERE id=1193	LIMIT 1;
+UPDATE employees SET manager=1104	WHERE id=866	LIMIT 1;
+UPDATE employees SET manager=1104	WHERE id=1224	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1070	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=58	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1287	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1473	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1472	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1357	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1360	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1359	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1474	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1384	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1369	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=1358	LIMIT 1;
+UPDATE employees SET manager=870	WHERE id=112	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=1146	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=121	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=589	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=1162	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=1207	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=1469	LIMIT 1;
+UPDATE employees SET manager=70	WHERE id=1527	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1197	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1449	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1363	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1421	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1412	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1458	LIMIT 1;
+UPDATE employees SET manager=1193	WHERE id=1504	LIMIT 1;
+UPDATE employees SET manager=866	WHERE id=1411	LIMIT 1;
+UPDATE employees SET manager=866	WHERE id=1293	LIMIT 1;
+UPDATE employees SET manager=866	WHERE id=815	LIMIT 1;
+UPDATE employees SET manager=866	WHERE id=96	LIMIT 1;
+UPDATE employees SET manager=866	WHERE id=1234	LIMIT 1;
+UPDATE employees SET manager=1224	WHERE id=1123	LIMIT 1;
+UPDATE employees SET manager=1224	WHERE id=1509	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1334	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1367	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1053	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1252	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1420	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1426	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1083	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1442	LIMIT 1;
+UPDATE employees SET manager=1070	WHERE id=1443	LIMIT 1;
+UPDATE employees SET manager=58	WHERE id=1110	LIMIT 1;
+UPDATE employees SET manager=58	WHERE id=816	LIMIT 1;
+UPDATE employees SET manager=58	WHERE id=1337	LIMIT 1;
+UPDATE employees SET manager=58	WHERE id=1231	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1190	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1344	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1406	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1432	LIMIT 1;
+UPDATE employees SET manager=1287	WHERE id=1459	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=44	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1301	LIMIT 1;
+UPDATE employees SET manager=1198	WHERE id=85	LIMIT 1;
+UPDATE employees SET manager=1198	WHERE id=89	LIMIT 1;
+UPDATE employees SET manager=89	WHERE id=1206	LIMIT 1;
+UPDATE employees SET manager=1374	WHERE id=1198	LIMIT 1;
+UPDATE employees SET manager=89	WHERE id=1278	LIMIT 1;
+UPDATE employees SET manager=1198	WHERE id=36	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1073	LIMIT 1;
+UPDATE employees SET manager=1073	WHERE id=1477	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1075	LIMIT 1;
+UPDATE employees SET manager=1075	WHERE id=1139	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1074	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1100	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1175	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1241	LIMIT 1;
+UPDATE employees SET manager=1241	WHERE id=1222	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1280	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1158	LIMIT 1;
+UPDATE employees SET manager=1015	WHERE id=1223	LIMIT 1;
+
+// RRF Access
+INSERT INTO `ideal2`.`rrf_roles` (`id`, `employee_id`, `rrf_role_id`, `rrf_role_name`) VALUES (NULL, '975', '4', 'Requestor');
+
+
+UPDATE qpd_eligible_associates SET appraiserRating=aes_encrypt(3,appraiseeId) WHERE qpdId=2526
+
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId) WHERE qpdId=2526
+
+INSERT INTO `ideal2`.`rrf_roles` (`id`, `employee_id`, `rrf_role_id`, `rrf_role_name`) VALUES (NULL, '1295', '4', 'Requestor');
+
+UPDATE `ideal2_sync`.`resourcetype` SET `companyStructure` = '2',
+`practiceGroup` = '7' WHERE `resourcetype`.`requestId` =40 LIMIT 1 ;
+
+//iDeal OJF
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/employee_tab_primary_key/user_tab_primary_key
+
+For OJF
+REF NUM : DTL/Nov11/SBU-Engineering/90039
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1545/1511
+DTL/Nov11/SBU-Engineering/90030
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1546/1485
+DTL/Nov11/SBU-ERP/90016
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1548/1472
+DTL/Nov11/SBU-Engineering/90035
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1549/1498
+DTL/Nov11/SBU-ERP/90042
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1567/1514
+DTL/Nov11/SBU-ERP/90048
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1568/1524
+DTL/Nov11/SBU-Engineering/90004
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1570/1454
+DTL/Nov11/SBU-Engineering/90074
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1577/1583
+DTL/Nov11/SBU-Engineering/90076
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1576/1582
+DTL/Nov11/SBU-Engineering/90082
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1574/1585
+DTL/Nov11/SBU-Engineering/90074
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1577/1602
+DTL/Nov11/Corporate-Administration/90014
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1580/1496
+DTL/Nov11/SBU-ERP/90029
+http://ideal.defiance-tech.com/employees/joining_formality_account_creation/1581/1491
+
+SELECT appraisee.employee_number AS 'Apprasiee Number',CONCAT(appraisee.first_name,'',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Apprasier Number',CONCAT(appraiser.first_name,'',appraiser.last_name) AS 'Appraiser Name',aes_decrypt(appraiserRating,appraiseeId) AS 'Appriaser Rating',appraiserComments AS 'Appraiser Comments',CONCAT(reviewer.first_name,'',reviewer.last_name) AS 'Reviwer Name',CONCAT(hr.first_name,'',hr.last_name) AS 'Hr Name'  FROM ca_eligible_associates as ca 
+LEFT JOIN employees AS appraisee ON (appraisee.id=ca.appraiseeId)
+LEFT JOIN employees AS appraiser ON (appraiser.id=ca.appraiserId)
+LEFT JOIN employees AS reviewer ON (reviewer.id=ca.reviewerId)
+LEFT JOIN employees AS hr ON (hr.id=ca.hrId)
+WHERE ca.bandId=12 AND ca.departmentId=10 AND ca.submitStatus<8 AND ca.appraisalTriggered=1
+
+
+For my batch...
+14583
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=32 LIMIT 1;
+14568
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=37 LIMIT 1;
+14570
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=39 LIMIT 1;
+14573
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=40 LIMIT 1;
+14578
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=42 LIMIT 1;
+14582
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=45 LIMIT 1;
+14614
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=50 LIMIT 1;
+14615
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(2,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=51 LIMIT 1;
+14617
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=52 LIMIT 1;
+14618
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=53 LIMIT 1;
+14619
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=54 LIMIT 1;
+14620
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=55 LIMIT 1;
+14621
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Very dedicated',submitStatus=8 WHERE qpdId=56 LIMIT 1;
+
+
+Final Query
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Excellent resource',submitStatus=8 WHERE qpdId=32 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Learning very fast.good resource',submitStatus=8 WHERE qpdId=37 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=39 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very Good and dedicated',submitStatus=8 WHERE qpdId=40 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=42 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Excellent',submitStatus=8 WHERE qpdId=45 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=50 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very Good',submitStatus=8 WHERE qpdId=51 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='Very Good',submitStatus=8 WHERE qpdId=52 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=53 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=54 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments='Excellent',submitStatus=8 WHERE qpdId=55 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments='Good',submitStatus=8 WHERE qpdId=56 LIMIT 1;
+For Engg Services...
+UPDATE ca_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments=' ',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE qpdId=47 LIMIT 1;
+UPDATE ca_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments=' ',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE qpdId=48 LIMIT 1;
+UPDATE ca_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments=' ',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE qpdId=49 LIMIT 1;
+
+
+ALTER TABLE `resourcetype` CHANGE `margin` `margin` DOUBLE NOT NULL DEFAULT '0.0'
+ALTER TABLE `resourcetype` CHANGE `experienceInMonths` `experienceInMonths` INT( 2 ) NULL DEFAULT '0'
+ALTER TABLE `resourcetype` CHANGE `experienceInMonths` `experienceInMonths` INT( 2 ) NOT NULL DEFAULT '0'
+
+INSERT INTO `ideal2`.`rrf_roles` (`id`, `employee_id`, `rrf_role_id`, `rrf_role_name`) VALUES (NULL, '1558', '4', 'Requestor');
+
+
+
+http://10.18.1.57/ideal2/
+http://10.18.1.57/phpmyadmin/index.php?db=ideal2_live
+
+//Male
+For AT2 Band : Replace 21.00 by 15.00
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1', '3.00', '0.00', '0.00', '0.00');
+
+//Female
+For AT2 Band : Replace 21.00 by 15.00
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '7', '1', '90.00', '0.00', '0.00', '0.00');
+
+
+For 15102 	Payal 	Saxena -- female -- AT2
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1548', '15.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1548', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '7', '1548', '90.00', '0.00', '0.00', '0.00');
+For 15101 Sunil 	Pandilurao -- Male - A1
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1546', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1546', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1546', '3.00', '0.00', '0.00', '0.00');
+For 15103 	Mallikarjun 	A B N --Male -- A1
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1549', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1549', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1549', '3.00', '0.00', '0.00', '0.00');
+For 15098 	Ananthanarayanan 	NV -- Male --L2
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1543', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1543', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1543', '3.00', '0.00', '0.00', '0.00');
+For 15100 	Gajendran 	Arumugam -- Male -- A2
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1545', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1545', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1545', '3.00', '0.00', '0.00', '0.00');
+For 15113 	Vikram Kumar 	Pitchaimani -- Male -- L1
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1567', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1567', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1567', '3.00', '0.00', '0.00', '0.00');
+For 15114 	Vishal 	Vallur 	-- Male -- L1
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1568', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1568', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1568', '3.00', '0.00', '0.00', '0.00');
+For 15116 	PRAVESH 	PRASAD -- Male -- L1
+INSERT INTO `ideal2`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1570', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1570', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1570', '3.00', '0.00', '0.00', '0.00');
+For 15122 	Bhosale 	T Kishor -- Male -- A1
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1577', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1577', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1577', '3.00', '0.00', '0.00', '0.00');
+For 15121 	Vishal 	Vernekar -- Male -- A1
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1576', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1576', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1576', '3.00', '0.00', '0.00', '0.00');
+For 1574 	15120 	Navaneetha 	P R -- Male -- A1
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1574', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1574', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1574', '3.00', '0.00', '0.00', '0.00');
+1580 	15124 	Shoban 	Babu --Male -- A1
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1580', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1580', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1580', '3.00', '0.00', '0.00', '0.00');
+1581 	15125 	V Krishna 	Puppala 	Mohan -- Male -- L1
+INSERT INTO `ideal2_live`.`employee_leave_details` (`id`, `year`, `start_date`, `end_date`, `leave_category_id`, `employee_id`, `total_no_of_days_allotted`, `no_of_days_allotted`, `leave_taken`, `leave_brought_forward`) VALUES 
+(NULL, '2011', '2011-04-01', '2012-03-31', '4', '1581', '21.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '9', '1581', '5.00', '0.00', '0.00', '0.00'), 
+(NULL, '2011', '2011-04-01', '2012-03-31', '8', '1581', '3.00', '0.00', '0.00', '0.00');
+
+
+// Engg Services on Nov-29-2011
+UPDATE aa_eligible_associates SET reviewerRating = aes_encrypt(5,appraiseeId),reviewerComments=' ',normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=22 AND year=2011;
+
+// For 1113 E9000002 	Rudi 	Michel -- > 	be2c266b257cf7ee77f44add0bc18098 
+// For 1427 	E9000034 	Hack 	Sascha ---> 91fa0fb74a45a55bdf1d2300b66d4fb5
+
+//For 1564 	E9000051 	Ajay 	Raj --->      7dc5bd71c1c63105999f0429ab3daa08
+//For 1365 E9000029 -->fe94e11bcf6a26e75c607a79149724b2
+For 1540 	E9000048 	Naresh 	Vasala --> f9a03e10610001bbf6200068b1a3cd7b
+For 1462 	E9000039 	Robert 	Duprey -->    59a49dd2d784944ab87d779cd5253cea
+For 1454 	E9000037 	Sasikala 	Reddy --> e2b7c9f341891bdc6dc322c394a38444
+1296 	E9000023 	Suketu 	Mehta -->  b9942aba41e63fba6d77b08c0ab24a7b
+For 581 	14417 	Arvind 	Saxena 	Kumar --> 7185c9fcd85130d676a250a34d70a412
+For 1049 	14778 	Senthilkumar 	Patchai --> 9d127ff383d595262c67036f50493133
+For 1247 	E9000019 	Tobias 	Hochgesandt 	-->      e3afed0047b08059d0fada10f400c1e5
+For 988 	14738 	Suresh 	Sriram --> 072947607d71069fa5d47629caca06de
+
+
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',
+CASE qea.managerSurvey WHEN 1 THEN "Yes" WHEN 0 THEN "No" ELSE "Not Applicable" END AS "Manager Discussion",
+cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =1
+AND year =2011
+AND submitStatus >=8
+
+SELECT emp.id,emp.employee_number,emp.first_name,empTypeCfg.configuration_value,empBillCfg.configuration_value,cmpLoc.address_line1,empCurrLoc.address_line1
+FROM employees AS emp
+LEFT JOIN configuration_values AS empTypeCfg ON (empTypeCfg.configuration_key=emp.employee_type AND empTypeCfg.parent_id=140)
+LEFT JOIN configuration_values AS empBillCfg ON (empBillCfg.configuration_key=emp.billable AND empBillCfg.parent_id=52)
+LEFT JOIN company_locations AS cmpLoc ON (cmpLoc.id=emp.company_location_id)
+LEFT JOIN company_locations AS empCurrLoc ON (empCurrLoc.id=emp.current_location_id)
+WHERE emp.id=1584
+
+
+15122--->612--->461(uid))
+
+
+UPDATE `ideal2`.`employees` SET `employee_number` = '15121',
+`employment_status` = 'p' WHERE `employees`.`id` =625 LIMIT 1 ;
+UPDATE `ideal2`.`users` SET `username` = '15121' WHERE `users`.`id` =474 LIMIT 1 ;
+UPDATE `ideal2`.`joining_formalities` SET `joinerEmpId` = '625' WHERE `joining_formalities`.`id` =90076 LIMIT 1 ;
+
+
+For Naveenth
+UPDATE `ideal2`.`employees` SET `employee_number` = '15120',
+`employment_status` = 'p' WHERE `employees`.`id` =1139 LIMIT 1 ;
+UPDATE `ideal2`.`joining_formalities` SET `joinerEmpId` = '1139' WHERE `joining_formalities`.`id` =90082 LIMIT 1 ;
+UPDATE `ideal2`.`users` SET `username` = '15120' WHERE `users`.`id` =1004 LIMIT 1 ;
+
+
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2011-12-06',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2011-12-06' WHERE `joining_formalities`.`id` =90086 LIMIT 1 ;
+
+AND employment_status NOT IN('r','b','t')
+
+
+
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId) WHERE qpdId=56 LIMIT 1;
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '5',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2011-12-19' WHERE `joining_formalities`.`id` =90123 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15140' WHERE `users`.`id` =812 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2011-12-19',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '956' WHERE `joining_formalities`.`id` =90123 LIMIT 1 ;
+
+
+kumar.muthusamy@defiance-tech.com
+
+
+UPDATE `ideal2`.`users` SET `username` = '15148' WHERE `users`.`id` =848 LIMIT 1 ;
+
+
+
+//Travel Issue for 14635
+UPDATE `ideal2`.`employee_travel` SET `status` = '4' WHERE `employee_travel`.`travel_requestid` =469 LIMIT 1 ;
+UPDATE `ideal2`.`employee_travel_history` SET `status` = '4' WHERE `employee_travel_history`.`id` =635 LIMIT 1 ;
+9840558119--Bavana HDFC Bank loan
+9094313140- guna Rep
+
+
+http://localhost:8080/travelSettlement/travelSettlement/authenticateUser.htm?token=14024&req=478&sortCode=asc
+
+https://10.18.1.180/svn/Defiance/trunk/Intranet/src/tp_travelsettlement/travelPlan
+
+below are the fields added in db...
+company_spent_ticket
+company_spent_lodging
+company_spent_conveyance
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-06',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-06',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '989' WHERE `joining_formalities`.`id` =90170 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-06',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-06',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '991' WHERE `joining_formalities`.`id` =90169 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`qpd_eligible_associates` SET `submitStatus` = '0' WHERE `qpd_eligible_associates`.`qpdId` =3213 LIMIT 1 ;
+
+Employee Report Query
+SELECT emp.employee_number as empNumber, CONCAT(emp.first_name,' ', emp.last_name) AS empName, CONCAT(mgr.first_name,' ', mgr.last_name) AS pmName, emp.billable as empBilable, emp.employment_status as eStat, CASE emp.employment_status WHEN 'd' THEN 'Direct Contract' WHEN 'p' THEN 'Permanent' WHEN 't' THEN 'Terminated' WHEN 'r' THEN 'Resigned' WHEN 'v' THEN 'Vendor Contract' WHEN 'a' THEN 'AL Employees' WHEN 'g' THEN 'Permanent GmbH' WHEN 'c' THEN 'Contract GmbH' WHEN 'e' THEN 'Transferred' WHEN 'l' THEN 'Long Leave' WHEN 'b' THEN 'Absconding' ELSE '' END AS empStatus, DATE_FORMAT(emp.joined_date, '%d-%m-%Y') as joinedDate, CASE emp.employment_status WHEN 't' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y') WHEN 'r' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y') WHEN 'b' THEN DATE_FORMAT(emp.released_date, '%d-%m-%Y') ELSE '' END AS releasedDate, cs1.name AS sbuName, cs2.name AS subSbu, prj.project_code as projectCode, prj.project_name as projectName, cst.customer_name as custName, CASE prj.billable WHEN 'i' THEN 'Internal Billable' WHEN 'n' THEN 'Internal Non Billable' WHEN 'e' THEN 'External Billable' WHEN 'x' THEN 'External Non Billable' ELSE 'Non Billable' END AS billStatus FROM employees AS emp LEFT JOIN (project_team_allocations as pta, projects AS prj) ON (pta.employee_id = emp.id AND pta.deleted = 0 AND pta.start_date  <=  current_date() AND pta.end_date  >=  current_date() AND prj.project_status IN ("e") AND prj.id = pta.project_id) LEFT JOIN company_structures AS cs1 ON (emp.structure_name = cs1.id) LEFT JOIN company_structures AS cs2 ON (emp.structure_name_subgroup = cs2.id) LEFT JOIN employees AS mgr ON (prj.project_manager = mgr.id) LEFT JOIN customers AS cst ON (prj.customer_id = cst.id) WHERE emp.billable="b"      AND         emp.structure_name = '10'           AND          DATE_FORMAT(emp.joined_date,'%m') IN('10','11','12')            AND          DATE_FORMAT(emp.joined_date, '%Y') = '2011'        ORDER BY emp.employee_number ASC
+
+
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` =13776 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` =13777 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` =13778 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` =13779 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-09',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1162' WHERE `joining_formalities`.`id` =90172 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6', `checkJoinerWorkEmail` = '1', `joinerDoj` = '2012-01-09', `dataApprovedBy` = '347', `joinerEmpId` = '1207' WHERE `joining_formalities`.`id` = 90174 LIMIT 1;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-10',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-10',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1123' WHERE `joining_formalities`.`id` =90171 LIMIT 1 ;
+
+SELECT appraisee.employee_number AS 'Appraisee Number', CONCAT( appraisee.first_name, ' ', appraisee.last_name ) AS 'Appraisee Name', appraiser.employee_number AS 'Appriaser Number', CONCAT( appraiser.first_name, ' ', appraiser.last_name ) AS 'Appraiser Name', cs.name AS 'Pratice Group'
+FROM qpd_eligible_associates qea
+LEFT JOIN employees AS appraisee ON ( appraisee.id = qea.appraiseeId )
+LEFT JOIN employees AS appraiser ON ( appraiser.id = qea.appraiserId )
+LEFT JOIN company_structures AS cs ON ( appraisee.structure_name = cs.id )
+WHERE quarter =3
+AND year =2011
+AND submitStatus <4
+ORDER BY appraisee.employee_number ASC
+
+
+14534
+
+
+INSERT INTO `ideal2_sync`.`exit_rmclr` (`rmClrId`, `exitEmpId`, `compDoc`, `projDoc`, `custApproval`, `empQpd`, `rmOthers`, `compDocRemarks`, `projDocRemarks`, `custApprovalRemarks`, `empQpdRemarks`, `rmOthersRemarks`, `rmClrOverAllComments`, `rmId`) VALUES (NULL, '9', '1', '1', '1', '1', '3', NULL, NULL, NULL, NULL, NULL, '.', '318');
+UPDATE `ideal2_sync`.`exit_employee` SET `rmClrDate` = '2012-01-11' WHERE `exit_employee`.`exitEmpId` =9 AND `exit_employee`.`empId` =745 LIMIT 1 ;
+
+14500
+
+INSERT INTO `exit_survey_answer` (`questionId`,`answerKey`,`answerValue`) VALUES 
+ (1,1,'0-12 months '),
+ (1,2,'12-24 months '),
+ (1,3,'24-48 months '),
+ (1,4,'>48 months'),
+ (2,1,'Very unsatisfactory'),
+ (2,5,'Satisfactory'),
+ (3,1,'Very uninteresting '),
+ (3,5,'Interesting'),
+ (4,1,'Did not live up to my expectations'),
+ (4,5,'Fully lived up to my expectations'),
+ (5,1,'Very unsatisfactory'),
+ (5,5,'Very Satisfactory'),
+ (6,1,'Very unsatisfactory'),
+ (6,5,'Very Satisfactory'),
+ (7,1,'not clearly enough at all'),
+ (7,5,'clearly enough indeed'),
+ (8,1,'very dissatisfied'),
+ (8,5,'very satisfied'),
+ (9,1,'very dissatisfied'),
+ (9,5,'very satisfied'),
+ (10,1,'very dissatisfied'),
+ (10,5,'very satisfied'),
+ (11,1,'not at all sufficient'),
+ (11,5,'very sufficient'),
+ (12,1,'very dissatisfied'),
+ (12,5,'very satisfied'),
+ (13,1,'	Not At All Important'),
+ (13,5,'Very Important'),
+ (25,1,'Totally Disagree'),
+ (25,5,'Totally Agree'),
+ (2,2,'2'),
+ (2,3,'3'),
+ (2,4,'4'),
+ (3,2,'2'),
+ (3,3,'3'),
+ (3,4,'4'),
+ (4,2,'2'),
+ (4,3,'3'),
+ (4,4,'4'),
+ (5,2,'2'),
+ (5,3,'3'),
+ (5,4,'4'),
+ (6,2,'2'),
+ (6,3,'3'),
+ (6,4,'4'),
+ (7,2,'2'),
+ (7,3,'3'),
+ (7,4,'4'),
+ (8,2,'2'),
+ (8,3,'3'),
+ (8,4,'4'),
+ (9,2,'2'),
+ (9,3,'3'),
+ (9,4,'4'),
+ (10,2,'2'),
+ (10,3,'3'),
+ (10,4,'4'),
+ (11,2,'2'),
+ (11,3,'3'),
+ (11,4,'4'),
+ (12,2,'2'),
+ (12,3,'3'),
+ (12,4,'4');
+ 
+ 
+ UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '55',
+`balNoticePeriod` = '5',
+`exitTriggerDate` = '2011-11-17' WHERE `exit_rmapproval`.`rmApprovalId` =7 AND `exit_rmapproval`.`exitEmpId` =9 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_employee` SET `submitDate` = '2011-11-17' WHERE `exit_employee`.`exitEmpId` =9 AND `exit_employee`.`empId` =745 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-11-17' WHERE `exit_employee`.`exitEmpId` =9 AND `exit_employee`.`empId` =745 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-11-14',
+`submitDate` = '2011-11-14' WHERE `exit_employee`.`exitEmpId` =7 AND `exit_employee`.`empId` =153 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '58',
+`balNoticePeriod` = '2' WHERE `exit_rmapproval`.`rmApprovalId` =4 AND `exit_rmapproval`.`exitEmpId` =7 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `exitTriggerDate` = '2011-11-14' WHERE `exit_rmapproval`.`rmApprovalId` =4 AND `exit_rmapproval`.`exitEmpId` =7 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-11-14',
+`submitDate` = '2011-11-14' WHERE `exit_employee`.`exitEmpId` =6 AND `exit_employee`.`empId` =152 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `lastWorkingDate` = '2011-11-14',
+`daysServed` = '58',
+`balNoticePeriod` = '2' WHERE `exit_rmapproval`.`rmApprovalId` =5 AND `exit_rmapproval`.`exitEmpId` =6 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '58',
+`balNoticePeriod` = '2' WHERE `exit_rmapproval`.`rmApprovalId` =4 AND `exit_rmapproval`.`exitEmpId` =7 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `lastWorkingDate` = '2012-01-09',
+`exitTriggerDate` = '2011-11-14' WHERE `exit_rmapproval`.`rmApprovalId` =5 AND `exit_rmapproval`.`exitEmpId` =6 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `lastWorkingDate` = '2012-01-11',
+`exitTriggerDate` = '2011-11-14' WHERE `exit_rmapproval`.`rmApprovalId` =5 AND `exit_rmapproval`.`exitEmpId` =6 LIMIT 1 ;
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `exitTriggerDate` = '2011-11-11' WHERE `exit_rmapproval`.`rmApprovalId` =4 AND `exit_rmapproval`.`exitEmpId` =7 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-11-11',
+`submitDate` = '2011-11-11' WHERE `exit_employee`.`exitEmpId` =7 AND `exit_employee`.`empId` =153 LIMIT 1 ;
+
+
+
+021201569198 - B Srinivasan, santhome branch
+
+
+//Enable Appraiser Stage for 14048 -- 9 Appraisees
+SELECT *  FROM `qpd_eligible_associates` WHERE `quarter` = 3 AND `year` = '2011' AND `appraiserId` = 299;
+UPDATE qpd_eligible_associates SET submitStatus=2  WHERE quarter = 3 AND year = '2011' AND appraiserId = 299;
+
+update qpd_eligible_associates q set submitStatus=2 where appraiserId=736 and quarter=3 and year=2011;
+
+
+ //Exit for 14500 	Prabhakaran 	K -- Manager-->14726 	Venkateswaran 	Balabaskaran
+INSERT INTO `ideal2_sync`.`exit_rmapproval` (
+`rmApprovalId` ,
+`exitEmpId` ,
+`rmId` ,
+`lastWorkingDate` ,
+`daysServed` ,
+`balNoticePeriod` ,
+`noticeWaiverValue` ,
+`exitTriggerDate`
+)
+VALUES (
+NULL , '10', '975', '2012-01-12', '57', '3', '2', '2011-11-16'
+);
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-11-16',
+`submitDate` = '2011-11-16',
+`rmApprovedDate` = '2012-01-12',
+`rmClrDate` = '2012-01-12',
+`submitStatus` = '15' WHERE `exit_employee`.`exitEmpId` =10 AND `exit_employee`.`empId` =707 LIMIT 1 ;
+
+
+INSERT INTO `ideal2_sync`.`exit_rmclr` (
+`rmClrId` ,
+`exitEmpId` ,
+`compDoc` ,
+`projDoc` ,
+`custApproval` ,
+`empQpd` ,
+`rmOthers` ,
+`compDocRemarks` ,
+`projDocRemarks` ,
+`custApprovalRemarks` ,
+`empQpdRemarks` ,
+`rmOthersRemarks` ,
+`rmClrOverAllComments` ,
+`rmId`
+)
+VALUES (
+NULL , '10', '1', '1', '1', '1', '3', NULL , NULL , NULL , NULL , NULL , '.', '975'
+);
+
+
+
++91 9003033394
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',
+reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',
+CASE qea.managerSurvey WHEN 1 THEN "Yes" WHEN 0 THEN "No" ELSE "Not Applicable" END AS "Manager Discussion",
+CASE qea.submitStatus 
+WHEN 0 THEN "Appraisee Not Submitted" 
+WHEN 2 THEN "Appraiser Not Submitted" 
+WHEN 4 THEN "Reviewer Not Submitted"
+WHEN 6 THEN "Final Reviewer Not Submitted"
+WHEN 8 THEN "Hr Not Submitted"
+ELSE "Not Applicable" END AS "Status",
+cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =3
+AND year =2011 AND appraisalTriggered=1
+
+
+
+Delete 350 and one record in 351
+
+DELETE FROM `ideal2_sync`.`employee_travel_ticket` WHERE `employee_travel_ticket`.`id` = 816 LIMIT 1;
+DELETE FROM `ideal2_sync`.`employee_travel_ticket` WHERE `employee_travel_ticket`.`id` = 817 LIMIT 1;
+
+
+DELETE FROM `ideal2_sync`.`employee_travel_hotel` WHERE `employee_travel_hotel`.`id` = 302 LIMIT 1;
+
+DELETE FROM `ideal2_sync`.`employee_travel_conveyance` WHERE `employee_travel_conveyance`.`id` = 216 LIMIT 1;
+
+
+UPDATE `ideal2_sync`.`employee_travel` SET `travel_startdate` = '15-01-2012',
+`travel_enddate` = '19-01-2012',
+`request_date` = '12-01-2012' WHERE `employee_travel`.`travel_requestid` =597 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_history` SET `travel_startdate` = '15-01-2012',
+`travel_enddate` = '19-01-2012',
+`request_date` = '12-01-2012' WHERE `employee_travel_history`.`id` =815 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_ticket` SET `from_date` = '15-01-2012' WHERE `employee_travel_ticket`.`id` =814 LIMIT 1 ;
+UPDATE `ideal2_sync`.`employee_travel_ticket` SET `from_date` = '19-01-2012' WHERE `employee_travel_ticket`.`id` =815 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_ticket_history` SET `from_date` = '15-01-2012' WHERE `employee_travel_ticket_history`.`id` =1384 LIMIT 1 ;
+UPDATE `ideal2_sync`.`employee_travel_ticket_history` SET `from_date` = '19-01-2012' WHERE `employee_travel_ticket_history`.`id` =1385 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_hotel` SET `from_date` = '15-01-2012',
+`to_date` = '19-01-2012' WHERE `employee_travel_hotel`.`id` =301 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_hotel_history` SET `from_date` = '15-01-2012',
+`to_date` = '19-01-2012' WHERE `employee_travel_hotel_history`.`id` =533 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`employee_travel_conveyance` SET `date` = '19-01-2012',
+`end_date` = '19-01-2012' WHERE `employee_travel_conveyance`.`id` =215 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_conveyance_history` SET `date` = '19-01-2012',
+`end_date` = '19-01-2012' WHERE `employee_travel_conveyance_history`.`id` =241 LIMIT 1 ;
+
+
+
+D:\software\apache-beehive-1.0.1\apache-beehive-1.0.1
+
+%JAVA_HOME%\bin;%CATALINA_HOME%\bin;%ANT_HOME%\bin;E:\Spring Roo\spring-roo-1.1.1.RELEASE\bin;%M2%;E:\grails-1.3.7\grails-1.3.7\bin;
+%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\system32\WBEM;C:\oraclexe\app\oracle\product\10.2.0\server\bin;C:\Documents and Settings\Admin\Desktop\sotware\apache-ant-1.6.2-bin\apache-ant-1.6.2\bin;C:\Program Files\Java\jdk1.5.0_20\bin;C:\Program Files\Common Files\Adobe\AGL;C:\apache-ant-1.7.0\bin;C:\Program Files\MySQL\MySQL Server 5.0\bin;C:\Program Files\TortoiseSVN\bin;C:\Program Files\Java\jdk1.6.0_14\bin;E:\Spring Roo\spring-roo-1.1.1.RELEASE\bin
+
+
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',aes_decrypt(qea.appraiserRating,appraiseeId) AS 'Appraiser Rating',aes_decrypt(qea.reviewerRating,appraiseeId) AS 'Reviewer Rating',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =3
+AND year =2011 AND submitStatus <6
+
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =3
+AND year =2011
+AND submitStatus <6
+
+
+SELECT appraisee.employee_number AS 'Appraisee Number',
+CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',appraiser.employee_number AS 'Appriaser Number',
+CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',reviewer.employee_number AS 'Reviewer Number',
+CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',
+CONCAT(freviewer.first_name,' ',freviewer.last_name) AS 'Final Reviewer Name',
+aes_decrypt(appraiserRating, appraiseeId) AS 'Appraiser Rating',aes_decrypt(reviewerRating, appraiseeId) AS 'Reviewer Rating',
+aes_decrypt(normalisedReviewerRating, appraiseeId) AS 'Final Reviewer Rating',
+cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN employees AS freviewer ON(freviewer.id=qea.normalizerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =3
+AND year =2011
+AND submitStatus <8
+
+
+
+//For sreekanth
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(5,appraiseeId),normalisedReviewerRating=aes_encrypt(5,appraiseeId) WHERE appraiseeId=1049 AND quarter =3 AND YEAR =2011 LIMIT 1;
+
+//For Akbar as suggested by Varun
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(3,appraiseeId),submitStatus=6 WHERE appraiseeId=56 AND quarter =3 AND YEAR =2011 LIMIT 1;
+
+56--1193 
+
+
+
+UPDATE `ideal2`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =622 LIMIT 1 ;
+UPDATE `ideal2`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =621 LIMIT 1 ;
+UPDATE `ideal2`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =617 LIMIT 1 ;
+
+//QPD_Q3_2011
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=66 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=69 AND quarter=3 AND year=2011 LIMIT 1;
+
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=313 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=367 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=343 AND quarter=3 AND year=2011 LIMIT 1;
+
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=335 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=912 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(5,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=944 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(3,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1002 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(5,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1089 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(3,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(3,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1220 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1303 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1470 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1543 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(5,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=259 AND quarter=3 AND year=2011 LIMIT 1;
+//HR team
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=154 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=299 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=347 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=517 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=543 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1092 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1286 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(5,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(5,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1308 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1323 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1340 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1388 AND quarter=3 AND year=2011 LIMIT 1;
+//Admin Team
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=169 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=317 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=626 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1580 AND quarter=3 AND year=2011 LIMIT 1;
+//Management Support
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=284 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),submitStatus=8 WHERE appraiseeId=523 AND quarter=3 AND year=2011 LIMIT 1;
+//RMG
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=513 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET reviewerRating=aes_encrypt(4,appraiseeId),reviewerComments='',normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments=' ',submitStatus=8 WHERE appraiseeId=1597 AND quarter=3 AND year=2011 LIMIT 1;
+//Ns
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(5,appraiseeId),submitStatus=8 WHERE appraiseeId=320 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),submitStatus=8 WHERE appraiseeId=1463 AND quarter=3 AND year=2011 LIMIT 1;
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(3,appraiseeId),submitStatus=8 WHERE appraiseeId=1495 AND quarter=3 AND year=2011 LIMIT 1;
+//For Praveen Yess -- 14621
+UPDATE qpd_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),submitStatus=8 WHERE appraiseeId=856 AND quarter=3 AND year=2011 LIMIT 1;
+
+//TP
+UPDATE `ideal2_sync`.`employee_travel_history` SET `client_reimbursable` = '1' WHERE `employee_travel_history`.`id` =861 LIMIT 1 ;
+UPDATE `ideal2_sync`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =627 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =628 LIMIT 1 ;
+
+//OJF
+iD--90216
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1101' WHERE `joining_formalities`.`id` =90216 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15203',
+`employment_status` = 'p' WHERE `employees`.`id` =1101 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15203' WHERE `users`.`id` =966 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1849 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1878 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1879 LIMIT 1;
+
+iD--90217
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1005' WHERE `joining_formalities`.`id` =90217 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15204',
+`employment_status` = 'p' WHERE `employees`.`id` =1005 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15204' WHERE `users`.`id` =864 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1850 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1880 LIMIT 1;
+
+iD--90215
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1009' WHERE `joining_formalities`.`id` =90215 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15205',
+`employment_status` = 'p' WHERE `employees`.`id` =1009 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15205' WHERE `users`.`id` =868 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1848 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1877 LIMIT 1;
+
+iD--90218
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1164' WHERE `joining_formalities`.`id` =90218 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15206',
+`employment_status` = 'p' WHERE `employees`.`id` =1164 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15206' WHERE `users`.`id` =1030 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1851 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1881 LIMIT 1;
+
+
+iD--90218
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1205' WHERE `joining_formalities`.`id` =90223 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15207',
+`employment_status` = 'p' WHERE `employees`.`id` =1205 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15207' WHERE `users`.`id` =1073 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1856 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1886 LIMIT 1;
+
+iD--90220
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-23',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-23',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1170' WHERE `joining_formalities`.`id` =90220 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15208',
+`employment_status` = 'p' WHERE `employees`.`id` =1170 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15208' WHERE `users`.`id` =1036 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1853 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1883 LIMIT 1;
+
+
+
+
+/* 
+	   9 => Engineering , 10 => IT , 11 => ERP , 13 => Human Resource , 14 => Quality , 
+	   15 => Administration , 16 => Finance , 17 => Networking & Systems , 18 => Management , 
+	   19 => Management Support , 20 => Marketing & Communication , 21 => Resource Management Groups , 22 => Infrastructure Team
+	*/
+	$buh_list = array(
+					'9' => array('gajbir.Singh@defiance-tech.com'),
+					'10' => array('kumar.m@defiance-tech.com'),
+					'11' => array('ramesh.babu@defiance-tech.com'),
+					'13' => array('dastur.a@defiance-tech.com'),
+					'14' => array('mahendran.pa@defiance-tech.com'),
+					'15' => array('sv.Raman@defiance-tech.com'),
+					'16' => array('sv.Raman@defiance-tech.com'),
+					'17' => array('sampath.thirumalai@defiance-tech.com'),
+					'18' => array(''),
+					'19' => array(''),
+					'20' => array('asit.b@defiance-tech.com'),
+					'21' => array('venkat.ta@defiance-tech.com'),
+					'22' => array('')
+				);
+				
+				
+				
+Eliminate Zero in TP
+
+
+
+
+
+iD--90222
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-24',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '676' WHERE `joining_formalities`.`id` =90222 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15210',
+`employment_status` = 'p' WHERE `employees`.`id` =676 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15210' WHERE `users`.`id` =520 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1855 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1885 LIMIT 1;		
+
+id--90221
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-24',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-24',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1204' WHERE `joining_formalities`.`id` =90221 LIMIT 1 ;	
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15211',
+`employment_status` = 'p' WHERE `employees`.`id` =1204 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15211' WHERE `users`.`id` =1072 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1854 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1884 LIMIT 1;	
+
+id--90214
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6',
+`dataVerifiedBy` = '347',
+`dataVerifiedMailCC` = '347',
+`date_joining` = '2012-01-24',
+`checkJoinerWorkEmail` = '1',
+`joinerDoj` = '2012-01-24',
+`dataApprovedBy` = '347',
+`joinerEmpId` = '1125' WHERE `joining_formalities`.`id` =90214 LIMIT 1 ;	
+
+UPDATE `ideal2_sync`.`employees` SET `employee_number` = '15212',
+`employment_status` = 'p' WHERE `employees`.`id` =1125 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`users` SET `username` = '15212' WHERE `users`.`id` =990 LIMIT 1 ;
+
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1847 LIMIT 1;
+DELETE FROM `ideal2_sync`.`users` WHERE `users`.`id` = 1876 LIMIT 1;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '6' WHERE `joining_formalities`.`id` =90212 LIMIT 1 ;
+
+
+//TP Changes 
+RM Pending Status (Waiting for RM approval 
+Case 1: if status eq 0 and is_buh_rm_same eq n and is_requestor_buh_same eq n and is_rm_md_same eq n)
+Case 2: if status eq 0 and is_buh_rm_same eq y and is_requestor_buh_same eq n and is_rm_md_same eq n)
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?token=14312&req=481&rmApprove=pending&requestId=579&type=pending&travelType=D
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?
+token=14312&
+req=481&
+rmApprove=pending&
+requestId=579&
+type=pending&
+travelType=D
+BUH Pending Status (Waiting for buh approval if status eq 1 and is_buh_rm_same n)
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?token=14002&req=482&buhApprove=pending&requestId=683&type=pending&travelType=I
+MD Pending Status (Waiting for md approval 
+Case 1:if status eq 1 and is_buh_rm_same y)
+Case 2:if status eq 0 and is_buh_rm_same n and is_requestor_buh_same y and is_rm_md_same y)
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?token=14045&req=486&mdApprove=pending&requestId=341&type=pending&travelType=I
+CFO Approval (Waiting for CFO approval if status 3 and cfo_approval_required 1)
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?token=14028&req=484&cfoApprove=pending&requestId=658&type=pending&travelType=I
+FIC Approval (Waiting for FIC approval if status 6)
+http://10.18.1.147:8092/travelPlan/domesticTravel/authenticateUser.htm?token=14045&req=486&mdApprove=pending&requestId=341&type=pending&travelType=I
+
+
+14312 ---> 8e659cb26b8556c79b12c5fd84709033
+14124---> 671c14807592b0d6df4251488d584e9e
+14058 --> 101d9fd14b31a93b06a10421f14dd023
+
+
+UPDATE `ideal2_sync`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =674 LIMIT 1 ;
+UPDATE `ideal2_sync`.`employee_travel` SET `client_reimbursable` = '1' WHERE `employee_travel`.`travel_requestid` =669 LIMIT 1 ;
+
+
+SELECT CONCAT(et.travel_type,'T1200',et.travel_specific_id) AS 'Travel Id',pjt.project_code AS 'Project Id',pjt.project_name AS 'Project Name',emp.employee_number AS 'Employee Number',CONCAT(emp.first_name,' ',emp.last_name) AS 'Employee Name',et.request_date AS 'Travel Rquest Date',et.travel_startdate AS 'Travel Start Date',et.travel_enddate AS 'Travel End Date',et.travel_purpose AS 'Travel Purpose',CASE et.status WHEN '0' THEN 'RM Pending' WHEN '2' THEN 'RM Rejected' WHEN '3' THEN 'Finance Approved' WHEN '5' THEN 'Employee Saved Status' ELSE 'NA' END AS 'Status'
+FROM employee_travel AS et 
+LEFT JOIN projects AS pjt ON(pjt.id=et.project_id)
+LEFT JOIN employees AS emp ON(emp.id=et.emp_id)
+WHERE et.project_id LIKE '926'
+
+
+UPDATE `ideal2`.`projects` SET `planned_end_date` = '2012-12-31' WHERE `projects`.`id` =641 LIMIT 1 ;
+UPDATE `ideal2`.`project_team_allocations` SET `end_date` = '2012-12-31' WHERE `project_team_allocations`.`id` =4896 LIMIT 1 ;
+
+
+14061--->1d10764a6a6635d9c6d19093e5cc697f
+
+
+UPDATE employees SET manager=125 WHERE id=2	LIMIT 1;
+UPDATE employees SET manager=125 WHERE id=17 LIMIT 1;
+UPDATE employees SET manager=12  WHERE id=88 LIMIT 1;
+UPDATE employees SET manager=23  WHERE id=165 LIMIT 1;
+UPDATE employees SET manager=165  WHERE id=198 LIMIT 1;
+UPDATE employees SET manager=165  WHERE id=199 LIMIT 1;
+UPDATE employees SET manager=126  WHERE id=563 LIMIT 1;
+UPDATE employees SET manager=165  WHERE id=612 LIMIT 1;
+UPDATE employees SET manager=165  WHERE id=625 LIMIT 1;
+UPDATE employees SET manager=11  WHERE id=1111 LIMIT 1;
+UPDATE employees SET manager=11  WHERE id=1121 LIMIT 1;
+UPDATE employees SET manager=1287  WHERE id=1200 LIMIT 1;
+UPDATE employees SET manager=125  WHERE id=1148 LIMIT 1;
+UPDATE employees SET manager=11  WHERE id=1150 LIMIT 1;
+UPDATE employees SET manager=12  WHERE id=1151 LIMIT 1;
+UPDATE employees SET manager=1193  WHERE id=1172 LIMIT 1;
+UPDATE employees SET manager=20  WHERE id=1194 LIMIT 1;
+UPDATE employees SET manager=126  WHERE id=1202 LIMIT 1;
+UPDATE employees SET manager=125  WHERE id=1413 LIMIT 1;
+UPDATE employees SET manager=11  WHERE id=1510 LIMIT 1;
+UPDATE employees SET manager=11  WHERE id=1545 LIMIT 1;
+
+
+    sheet.addMergedRegion(new Region(38, (short)0, 42, (short)0));
+//            sheet.addMergedRegion(new Region(38, (short)1, 42, (short)1));
+//            sheet.addMergedRegion(new Region(38, (short)5, 42, (short)5));
+
+
+
+UPDATE `ideal2_sync`.`employees` SET `manager` = '1407' WHERE `employees`.`id` =89 LIMIT 1 ;
+
+
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '59',
+`balNoticePeriod` = '1',
+`exitTriggerDate` = '2011-12-06' WHERE `exit_rmapproval`.`rmApprovalId` =18 AND `exit_rmapproval`.`exitEmpId` =16 LIMIT 1 ;
+
+
+E9000029--->fe94e11bcf6a26e75c607a79149724b2
+E9000048-->0192023a7bbd73250516f069df18b500
+E9000051-->7dc5bd71c1c63105999f0429ab3daa08
+E9000039 -->59a49dd2d784944ab87d779cd5253cea
+E9000037 --> e2b7c9f341891bdc6dc322c394a38444
+E9000023--> b9942aba41e63fba6d77b08c0ab24a7b
+E9000051-->7dc5bd71c1c63105999f0429ab3daa08
+
+
+
+14614-->98e77d01a202603c80e4486e48ef8911
+9000173-->6bb3de77e5bdbb74fe896c3bb71e9c08
+
+14032-->d81c3978140b196a7719093b4a26b0ab
+
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '53',
+`balNoticePeriod` = '7',
+`exitTriggerDate` = '2011-12-12' WHERE `exit_rmapproval`.`rmApprovalId` =19 AND `exit_rmapproval`.`exitEmpId` =28 LIMIT 1 ;
+
+
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-05',
+`submitDate` = '2011-12-05' WHERE `exit_employee`.`exitEmpId` =8 AND `exit_employee`.`empId` =104 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-06',
+`submitDate` = '2011-12-06' WHERE `exit_employee`.`exitEmpId` =16 AND `exit_employee`.`empId` =1018 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2012-01-04',
+`submitDate` = '2012-01-04' WHERE `exit_employee`.`exitEmpId` =19 AND `exit_employee`.`empId` =1198 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-05',
+`submitDate` = '2011-12-05' WHERE `exit_employee`.`exitEmpId` =20 AND `exit_employee`.`empId` =215 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-12',
+`submitDate` = '2011-12-12' WHERE `exit_employee`.`exitEmpId` =28 AND `exit_employee`.`empId` =608 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-05',
+`submitDate` = '2011-12-05' WHERE `exit_employee`.`exitEmpId` =30 AND `exit_employee`.`empId` =844 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-07',
+`submitDate` = '2011-12-07' WHERE `exit_employee`.`exitEmpId` =25 AND `exit_employee`.`empId` =31 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `exitTriggerDate` = '2011-12-07' WHERE `exit_rmapproval`.`rmApprovalId` =22 AND `exit_rmapproval`.`exitEmpId` =25 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '60',
+`balNoticePeriod` = '0' WHERE `exit_rmapproval`.`rmApprovalId` =22 AND `exit_rmapproval`.`exitEmpId` =25 LIMIT 1 ;
+
+
+//TP
+UPDATE `ideal2_sync`.`employee_travel` SET `status` = '4' WHERE `employee_travel`.`travel_requestid` =714 LIMIT 1 ;
+UPDATE `ideal2_sync`.`employee_travel` SET `fm_remarks` = 'The selected project is not active. Please select correct PID and resubmit it' WHERE `employee_travel`.`travel_requestid` =714 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`employee_travel_history` SET `fm_remarks` = 'The selected project is not active. Please select correct PID and resubmit it',
+`status` = '4' WHERE `employee_travel_history`.`id` =982 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_remarks` SET `fm_remarks` = 'The selected project is not active. Please select correct PID and resubmit it' WHERE `employee_travel_remarks`.`id` =829 LIMIT 1 ;
+
+14615 --> f25dbbfd6f6be055ac4192d583ddee6a
+
+
+UPDATE `ideal2_sync`.`employee_travel_buh` SET `buh_id` = '1536' WHERE `employee_travel_buh`.`id` =4 LIMIT 1 ;
+
+
+14316 --> 578ed5a4eecf5a15803abdc49f6152d6
+
+UPDATE `ideal2_sync`.`employee_travel` SET `fm_remarks` = 'book tickets',
+`status` = '4' WHERE `employee_travel`.`travel_requestid` =754 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`employee_travel_remarks` SET `fm_remarks` = 'Please book tickets',
+`fm_processeddate` = '2012-02-07 00:00:00',
+`fm_processedby` = '912' WHERE `employee_travel_remarks`.`id` =854 LIMIT 1 ;
+
+
+INSERT INTO `ideal2_rrf_rewamp`.`dtl_rrf_master` (`id`, `requester_id`, `practice_group`, `sub_practice_group`, `billable_type`, `resource_type`, `proposed_band_id`, `country_id`, `region_id`, `city_id`, `location_id`, `total_experience_from`, `total_experience_to`, `relevant_experience_from`, `relevent_experience_to`, `requested_no_of_resources`, `qualification`, `certification`, `domain_id`, `skill_type`, `streams_id`, `skills_id`, `customer_id`, `client_interview`, `project_type`, `pricing_model`, `bill_type`, `on_board_date`, `bill_start_date`, `bill_end_date`, `currency_id`, `hourly_rate`, `job_title`, `job_description`, `requester_comments`, `requested_date`, `cancel_reason`, `margin_value_percentage`, `status`) VALUES (NULL, '383', '10', '33', 'b', 'd', '14', '113', '2191', '13147', 'df', '2', '6', '4', '5', '5', 'test', 'test', '67', 'f,t', '1,2,3', '62,14', '149', 'Y', 'd', 'tm', 'c', '2012-02-28', '2012-03-14', '2012-07-31', '67', '800', 'test', 'test', 'test', '2012-02-09', NULL, '89.14', '0');
+
+ALTER TABLE joining_formalities AUTO_INCREMENT = 90296
+
+
+
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90297 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90298 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90299 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90300 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90301 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90302 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90303 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90304 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90305 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90306 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90307 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90308 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90309 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90310 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90311 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90312 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90313 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90314 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90315 LIMIT 1;
+DELETE FROM `ideal2_sync`.`joining_formalities` WHERE `joining_formalities`.`id` = 90316 LIMIT 1;
+
+
+
+14286----> adf12f7d206cf2a9a0a1508fbda1f1d5
+
+
+UPDATE `ideal2_sync`.`exit_employee` SET `submitStatus` = '3' WHERE `exit_employee`.`exitEmpId` =4 AND `exit_employee`.`empId` =133 LIMIT 1 
+
+
+
+http://192.168.1.7/dbbackups/ideal2/
+Username : ideal
+Password : admin@iDeal
+
+14316 --> 578ed5a4eecf5a15803abdc49f6152d6
+
+
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-16',
+`submitDate` = '2011-12-16' WHERE `exit_employee`.`exitEmpId` =4 AND `exit_employee`.`empId` =133 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '56',
+`balNoticePeriod` = '4',
+`exitTriggerDate` = '2011-12-16' WHERE `exit_rmapproval`.`rmApprovalId` =6 AND `exit_rmapproval`.`exitEmpId` =4 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `current_status` = '0' WHERE `joining_formalities`.`id` =90189 LIMIT 1 ;
+
+
+UPDATE `ideal2_sync`.`joining_formalities` SET `joinerEmpId` = '1017' WHERE `joining_formalities`.`id` =90285 LIMIT 1 ;
+
+INSERT INTO `ideal2_sync`.`exit_rmclr` (`rmClrId`, `exitEmpId`, `compDoc`, `projDoc`, `custApproval`, `empQpd`, `rmOthers`, `compDocRemarks`, `projDocRemarks`, `custApprovalRemarks`, `empQpdRemarks`, `rmOthersRemarks`, `rmClrOverAllComments`, `rmId`) VALUES (NULL, '15', '1', '1', '1', '1', '3', NULL, NULL, NULL, NULL, NULL, 'ok', '975');
+
+UPDATE `ideal2_sync`.`exit_employee` SET `rmClrDate` = '2012-02-14',
+`rmStatus` = 'y' WHERE `exit_employee`.`exitEmpId` =15 AND `exit_employee`.`empId` =857 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-19',
+`submitDate` = '2011-12-19' WHERE `exit_employee`.`exitEmpId` =15 AND `exit_employee`.`empId` =857 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '57',
+`balNoticePeriod` = '3',
+`exitTriggerDate` = '2011-12-19' WHERE `exit_rmapproval`.`rmApprovalId` =26 AND `exit_rmapproval`.`exitEmpId` =15 LIMIT 1 ;
+
+
+14286 --> adf12f7d206cf2a9a0a1508fbda1f1d5
+
+
+E00003 -->0bcf12a1f90b333da9da6b988144feda
+
+ SELECT master.id AS masterReqId,CONCAT('RRF/',cs.name,'/',master.id) AS rrfId,emp.employee_number AS requestorNumber,     CONCAT(emp.first_name,' ',emp.last_name) AS requestorName,cust.customer_name AS customer,master.requested_date AS requestedDate,     master.status AS status,master.job_title as jobTitle,master.location_id as locationId,     child.status AS childStatus,COUNT(child_request_id) AS pendingCount,master.requested_no_of_resources AS requestedNoOfResources FROM dtl_rrf_master AS master     LEFT JOIN dtl_rrf_split_request_master AS child ON (child.request_id=master.id)     LEFT JOIN employees AS emp ON (emp.id=master.requester_id)     LEFT JOIN customers AS cust ON (cust.id=master.customer_id)     LEFT JOIN company_structures AS cs ON (cs.id=master.practice_group)     WHERE 1=1 AND                                                                                     child.status  >=  6 AND child.recruitment_type='e' GROUP BY child.request_id HAVING pendingCount = 0
+ 
+ 
+ DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 201 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 202 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 203 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 204 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 205 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 206 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 207 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 208 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 209 LIMIT 1;
+DELETE FROM `ideal2_sync`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 210 LIMIT 1;
+
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 218 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 219 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 220 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 221 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 222 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 223 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 224 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 225 LIMIT 1;
+
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 230 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 231 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 232 LIMIT 1;
+DELETE FROM `ideal2`.`masterrequestdetails` WHERE `masterrequestdetails`.`requestId` = 233 LIMIT 1;
+
+14368 --> 65a58c5bdb8d5a5b198267bf5f9e6f96
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =1),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =1),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =1),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =1),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =2),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =2),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =2),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =2),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =3),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =3),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =3),116,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=116 AND resourceNumberId =3),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =2),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =2),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =2),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =2),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =3),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =3),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =3),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =3),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =4),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =4),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =4),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =4),1323,8);
+
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =5),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =5),1286,8);
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =5),112,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=112 AND resourceNumberId =5),1323,8);
+
+
+UPDATE `ideal2_sync`.`exit_rmapproval` SET `daysServed` = '38',
+`balNoticePeriod` = '22',
+`exitTriggerDate` = '2012-01-10' WHERE `exit_rmapproval`.`rmApprovalId` =25 AND `exit_rmapproval`.`exitEmpId` =11 LIMIT 1 ;
+
+IT1200199
+
+
+14186--->226e8a2b370ec4e97ef37a1f6978812a
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-20',
+`submitDate` = '2011-12-20' WHERE `exit_employee`.`exitEmpId` =26 AND `exit_employee`.`empId` =231 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-19',
+`submitDate` = '2011-12-19' WHERE `exit_employee`.`exitEmpId` =35 AND `exit_employee`.`empId` =1152 LIMIT 1 ;
+
+UPDATE `ideal2_sync`.`exit_employee` SET `resignedDate` = '2011-12-22',
+`submitDate` = '2011-12-22' WHERE `exit_employee`.`exitEmpId` =36 AND `exit_employee`.`empId` =1026 LIMIT 1 ;
+
+SELECT pta.id,emp.first_name,emp.middle_name,emp.last_name,emp.employee_number,emp.id as empId FROM project_team_allocations as pta "
+    + "LEFT JOIN employees as emp ON(pta.employee_id = emp.id)  WHERE (emp.employment_status!='r' && emp.employment_status!='t') and pta.project_id={projectId} and pta.status='a' and pta.deleted=0 and pta.empStatus=0 and  pta.end_date>{sql: date}
+    
+     <th style="width:2%"><a href="#">Requestor Id</a></th>
+                                    <th style="width:6%"><a href="#">Requestor Name</a></th>
+                                    <th style="width:7%"><a href="#">Customer Name</a></th>
+                                    <th style="width:4%"><a href="#">Requested Date</a></th>
+                                    <th style="width:12%"><a href="#">Status</a></th>
+1200197                                    
+14045--->af0fe582f263bc886a3b799ef91c4054                                    
+                                    
+                                    
+                                    
+                                    
+                                    UPDATE `ideal2_sync`.`employee_travel` SET `status` = '10',`cancel_remarks` = 'not travelling – (trip is cancelled).', `cancelled_date` = '2012-02-20 00:00:00' WHERE `employee_travel`.`travel_requestid` =821 LIMIT 1 ;
+                                    UPDATE `ideal2_sync`.`employee_travel_history` SET `status` = '10',`cancel_remarks` = 'not travelling – (trip is cancelled).', `cancelled_date` = '2012-02-20 00:00:00' WHERE `employee_travel_history`.`id` =1120 LIMIT 1 ;
+                                    
+                                    
+                                    14864-->6cc7ef5fb6b11f7c301972276ebded9f
+                                    
+                                    
+                                    having requestedNoOfResources=totalCountInChild AND pmoPending!=0
+                                    
+                                    14009-->b5e5fedd23de4ab4bdeeab17711443c3
+                                    
+                                    E00017-->35f3a69c152f3965b629dd6576bcd783
+                                    
+// For TAV 
+UPDATE resourcetype SET status=8,rmgRemarks='Forwarded for VC recruitment' WHERE requestId=135 LIMIT 1;
+UPDATE masterrequestdetails SET status=8,rmgRemarks='Forwarded for VC recruitment' WHERE splitRequestId=135 LIMIT 1;
+INSERT INTO requestassignedtohr(requestId,masterRequestId,requesterId,hrId,status) VALUES((SELECT requestId  FROM masterrequestdetails WHERE splitRequestId=135 AND resourceNumberId=1),135,(SELECT requesterId FROM masterrequestdetails WHERE splitRequestId=135 AND resourceNumberId=1),543,8);
+
+
+14004-->54b93b2fc189d4660fac99a956af79de
+14003-->cdc285f298befe3cbea877effdbc1fdb
+
+
+14301-->06e24b0f9a175c4cbd13742b65fad62a14312
+
+14312-->8e659cb26b8556c79b12c5fd84709033
+
+14366-->b52ee06cc744095157cb2f1e535d0408
+
+<json:array name="items" var="item" items="${structureList}">
+    <json:object>
+      <json:property name="structureId" value="${item.structureId}"/>
+      <json:property name="structureName" value="${item.structureName}"/>
+    </json:object>
+  </json:array>
+  
+  14706-->661341d44cc3d4b63a077e8a5aef4d43
+  
+  
+  14366-->b52ee06cc744095157cb2f1e535d0408
+  
+  
+  E9000034-->91fa0fb74a45a55bdf1d2300b66d4fb5
+  
+  
+  UPDATE `ideal2_sync`.`exit_employee` SET `surveyStatus` = '1' WHERE `exit_employee`.`exitEmpId` =40 AND `exit_employee`.`empId` =819 LIMIT 1 ;
+  
+  15215--->a9c82488ea3729ba2331e2eb475e7b95
+  
+  
+   RRF/IT/151
+   
+   
+   hrRep counting has to fix in HrRep Page
+
+In HrReport set practice Group as Selected
+
+these are the two issues in my side
+
+
+9790187726
+
+
+14589-->fc842de9aed1347b93e386d102e0f007
+
+
+if (pmoActionData.getRequestedNoOfResources().intValue() != pmoActionData.getTotalCountInChild().intValue()) {
+                int forLoopCount1 = pmoActionData.getRequestedNoOfResources().intValue() - pmoActionData.getTotalCountInChild().intValue();
+                int forLooopCount2 = Integer.parseInt(pmoActionData.getInternalNumber());
+                int forLoopCount3 = forLooopCount2 - forLoopCount1;
+                 for (int i = 0; i < Integer.parseInt(pmoActionData.getInternalNumber()); i++) {
+                    pmoActionData.setChildReqId(childReqIdCount + 1);
+                    pmoActionData.setRecruitmentType(pmoActionData.getInternal());
+                    if (pmoActionData.getRequestedNoOfResources().intValue() != pmoActionData.getTotalCountInChild().intValue()) {
+                        getSqlMapClientTemplate().insert("RequestorDetails.insertPMOData", pmoActionData);
+                    } else {
+                        getSqlMapClientTemplate().insert("RequestorDetails.updatePMOData", pmoActionData);
+                    }
+                    childReqIdCount++;
+                }
+            }
+            
+            
+            
+            14147--->d2d39592875be872390e89cdf462a064
+            
+            15212-->876c9bc4442cd9172f4dd7c48192d09a
+            14312-->8e659cb26b8556c79b12c5fd84709033
+            
+            14417-->7185c9fcd85130d676a250a34d70a412
+            
+            14068-->c95774a3f31fb607bd026f29fdbdb863
+            
+            
+            14411-->97a60c41821f83435054d64ce2bca861
+            
+            TSD--> 04-03-2012
+            TED--> 04-03-2012
+            
+            14075-->06b48225e0c8ba9534e6284f8ebaafd1
+            14949-->e8e2d89f66f30f4a6599c6031b548acb
+            
+            Hi Karthik,
+
+sending you the queries for split_request_master for the request_id =150
+
+
+insert into dtl_rrf_split_request_master (id) values (317);
+insert into dtl_rrf_split_request_master (id) values (318);
+update dtl_rrf_split_request_master set request_id = 150 where id in(317,318);
+update dtl_rrf_split_request_master set child_request_id  = 1 where id = 317;
+update dtl_rrf_split_request_master set child_request_id  = 2 where id = 318;
+update dtl_rrf_split_request_master set status = 18 where id in(317,318);
+update dtl_rrf_split_request_master set recruitment_type = 'e' where id in(317,318);
+update dtl_rrf_split_request_master set pmo_remarks = 'Approved' where id in(317,318);
+update dtl_rrf_split_request_master set pmo_action_date = '2012-03-05' where id in(317,318);
+
+Hi Karthik,
+
+Sending you the queries for the request_id = 149
+
+insert into dtl_rrf_master(id,requester_id,practice_group,sub_practice_group)
+                    values(149,30,9,23);
+
+update dtl_rrf_master set billable_type = 'b',resource_type = 'v',proposed_band_id = 13,country_id = 113,region_id = 2191
+where id = 149;
+
+update dtl_rrf_master set city_id = 13147,location_id = 'cr',total_experience_from = 2,total_experience_to = 4,
+relevant_experience_from = 2, relevent_experience_to = 4,requested_no_of_resources = 2
+where id = 149;
+
+update dtl_rrf_master set qualification = 'BE or BTECH in Mechanical or Automobile Engineering' where id = 149;
+
+update dtl_rrf_master set domain_id = 1, skill_type = 't' where id = 149;
+
+update dtl_rrf_master set streams_id = 103, skills_id = 286, customer_id = 223, client_interview = 'y'
+project_type = 'g', pricing_model = 'tm'
+where id = 149;
+
+update dtl_rrf_master set bill_type = 'c', on_board_date = '2012-03-16',bill_start_date = '2012-03-19',
+bill_end_date = '2012-06-18' where id = 149;
+
+update dtl_rrf_master set currency_id = 67, hourly_rate = 288.00, job_title = 'Engineer',
+job_description = '1.Hands on Experiance in Pro E wilfire
+2.Hands on experinace Engine Casting Components
+3.Ability to understand Engine Components
+4.Expert in Part Modelling,Assembly &amp;and drafting
+5.Understand Casting Process' where id = 149;
+
+update dtl_rrf_master set requested_date = '2012-03-01', margin_value_percentage = 38.76, status = 18
+where id = 149;
+
+Hi Karthik,
+
+Sending you the queries to be executed for the split request master for the request_id = 149
+
+insert into dtl_rrf_split_request_master (id) values (315);
+insert into dtl_rrf_split_request_master (id) values (316);
+update dtl_rrf_split_request_master set request_id = 149 where id in(315,316);
+update dtl_rrf_split_request_master set child_request_id  = 1 where id = 315;
+update dtl_rrf_split_request_master set child_request_id  = 2 where id = 316;
+update dtl_rrf_split_request_master set status = 18 where id in(315,316);
+update dtl_rrf_split_request_master set recruitment_type = 'e' where id in(315,316);
+update dtl_rrf_split_request_master set pmo_remarks = 'Approved' where id in(315,316);
+update dtl_rrf_split_request_master set rmg_remarks = 'Approved' where id in(315,316);
+update dtl_rrf_split_request_master set pmo_action_date = '2012-03-01' where id in(315,316);
+
+With this i have sent you all the queries for rrf_master and split_request_master
+
+No other table will get affected because the request type is external in both the cases
+
+
+
+
+
+
+14312-->8e659cb26b8556c79b12c5fd84709033
+14316-->578ed5a4eecf5a15803abdc49f6152d6
+14038--->bfad7c52fcb55006d81c14acdd320fd8
+
+15252-->87c89aef250213ef946f747c6f0c93b7
+
+
+x12n837p
+
+X12837P
+
+10.19.1.201
+DB userName::root
+PW::Welcome123
+DBName::x12n837p
+
+14306-->2ac9cb7dc02b3c0083eb70898e549b63
+
+
+15170-->7324c1813263f01ced0832f1e60902e5
+
+15106 -->f2e23631e9d3e83cd99fca35fe05ec2f
+
+
+TP Start Date : 15-03-2012  to 30-03-2012
+
+Ticket : 15-03-2012
+
+Hotel : 15-03-2012 to 30-03-2012
+
+
+14045 --> af0fe582f263bc886a3b799ef91c4054
+
+
+UPDATE `ideal2_rrf_production_dump`.`file_uploads` SET `file_name` = '-123~~JD_stress_SAFRAN.pdf' WHERE `file_uploads`.`id` =779 LIMIT 1 ;
+
+This TP is raised for the Resource Mr. Mangesh Patankar CEO Veol Labs, whom we are hiring as consultant for the on-site work. His contact no 9892332477. His Travel Insurance ICICI 4030/w 4824934/00/00
+
+This TP is raised for the Resource Mr. Salman Kapadia, whom we are taking as direct contract for the on-site work. his contact no 9594516664
+
+
+15252-->87c89aef250213ef946f747c6f0c93b7
+
+f43a658696edbb5ddcfaf32219b02437
+
+
+Url=jdbc:mysql://10.18.1.54:3306/ideal2_test_pmp
+Username=ideal2
+Password=passw0rd@123
+
+class="menu">Urineproteinlevel</
+
+class="web">Urineproteinlevel<
+
+
+class="menu2">Urineproteinlevel Details</
+
+class="menu1" >Urineproteinlevel</
+
+<h2>Enter Urineproteinlevel details</h2>
+
+<h2>Urineproteinlevel details</h2>
+
+http://www.json.org/example.html
+http://jsonlint.com/
+
+INSERT INTO `customers` (`id`, `is_customer_group`, `customer_group`, `customer_name`, `customer_code`, `sales_person_reference`, `customer_category`, `about_customer`, `currency_id`, `remarks`, `customer_url`, `status`, `deleted`, `customer_address`, `city_id`, `region_id`, `country_id`, `customer_contact_phone`, `customer_email`, `customer_contact_person`, `terms_of_payment`, `business_leader_id`, `sales_person_contact_no`, `customer_rbu`, `bdm_id`, `sbu_id`, `stc_number`, `data_area_id`, `legal_entity_code`, `created_on`, `modified_on`, `approved_on`) VALUES
+
+(97, 'n', '91', 'TRW KFZ Ausrustung GmbH', 'CT003-G','775', '', 'TRW', '42', '', '', 'a', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+
+
+147f7f7ed49f5366b47d0020f786bf0c
+
+44995827424
+40363657154
+21-03-
+
+DATEDIFF(emp.released_date,exrm.exit_trigger_date) AS noOfDaysServed,60-DATEDIFF(emp.released_date,exrm.exit_trigger_date) AS balanceNoticeperiod, 
+
+
+>The following is the script present in the earlier ideal2_reviewed dump
+>
+>
+>
+>--
+>-- Definition of table `dtl_rrf_master`
+>--
+>
+>DROP TABLE IF EXISTS `dtl_rrf_master`;
+>CREATE TABLE `dtl_rrf_master` (
+>  `id` int(10) unsigned NOT NULL,
+>  `requester_id` int(11) unsigned default NULL,
+>  `practice_group` int(10) unsigned default NULL,
+>  `sub_practice_group` int(10) unsigned default NULL,
+>  `billable_type` char(1) default NULL,
+>  `resource_type` char(1) default NULL,
+>  `proposed_band_id` int(10) unsigned default NULL,
+>  `country_id` int(10) unsigned default NULL,
+>  `region_id` int(10) unsigned default NULL,
+>  `city_id` int(10) unsigned default NULL,
+>  `location_id` char(2) default NULL,
+>  `total_experience_from` int(2) unsigned default NULL,
+>  `total_experience_to` int(2) unsigned default NULL,
+>  `relevant_experience_from` int(2) unsigned default NULL,
+>  `relevent_experience_to` int(2) unsigned default NULL,
+>  `requested_no_of_resources` int(2) unsigned default NULL,
+>  `qualification` varchar(250) default NULL,
+>  `certification` varchar(250) default NULL,
+>  `domain_id` varchar(250) default NULL,
+>  `skill_type` varchar(10) default NULL,
+>  `streams_id` varchar(250) default NULL,
+>  `skills_id` varchar(250) default NULL,
+>  `customer_id` int(11) unsigned default NULL,
+>  `client_interview` enum('Y','N') default NULL,
+>  `project_type` char(1) default NULL,
+>  `pricing_model` char(2) default NULL,
+>  `bill_type` char(3) default NULL,
+>  `on_board_date` date default NULL,
+>  `bill_start_date` date default NULL,
+>  `bill_end_date` date default NULL,
+>  `currency_id` int(10) unsigned default NULL,
+>  `hourly_rate` decimal(10,2) default NULL,
+>  `job_title` varchar(500) default NULL,
+>  `job_description` text,
+>  `requester_comments` text,
+>  `requested_date` date default NULL,
+>  `cancel_reason` varchar(1000) default NULL,
+>  `margin_value_percentage` decimal(5,2) default NULL,
+>  `status` int(2) unsigned default NULL,
+>  PRIMARY KEY  (`id`),
+>  KEY `FK_dtl_rrf_master_requester_id` (`requester_id`),
+>  KEY `FK_dtl_rrf_master_band_id` (`proposed_band_id`),
+>  KEY `FK_dtl_rrf_master_country_id` (`country_id`),
+>  KEY `FK_dtl_rrf_master_region_id` (`region_id`),
+>  KEY `FK_dtl_rrf_master_city_id` (`city_id`),
+>  KEY `FK_dtl_rrf_master_customer_id` (`customer_id`),
+>  KEY `FK_dtl_rrf_master_currency_id` (`currency_id`),
+>  KEY `FK_dtl_rrf_master_domain_id` (`domain_id`),
+>  CONSTRAINT `FK_dtl_rrf_master_band_id` FOREIGN KEY (`proposed_band_id`) REFERENCES `bands` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_city_id` FOREIGN KEY (`city_id`) REFERENCES `cities` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_country_id` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_currency_id` FOREIGN KEY (`currency_id`) REFERENCES `currencies` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_region_id` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`),
+>  CONSTRAINT `FK_dtl_rrf_master_requester_id` FOREIGN KEY (`requester_id`) REFERENCES `employees` (`id`)
+>) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;
+
+
+14320 --> f43a658696edbb5ddcfaf32219b02437
+
+
+<fmt:formatDate value="${employeeDetails.empDoj}" pattern="dd-MM-yyyy" var="empDoj" />${empDoj}
+<fmt:formatDate value="${employeeDetails.resignedDate}" pattern="dd-MM-yyyy" var="resignedDate" />${resignedDate}
+<fmt:formatDate value="${lstExitEmployee.exitTriggerDate}" pattern="dd-MM-yyyy" var="exitTriggerDate" />${exitTriggerDate}
+<fmt:formatDate value="${lstExitEmployee.lastWorkingDate}" pattern="dd-MM-yyyy" var="lastWorkingDate" />${lastWorkingDate}
+s
+
+
+f43a658696edbb5ddcfaf32219b02437
+
+b79e2445facd4195b53f797ae18d6b53
+
+a1fc37ad0d4c37562ac7b85edf19cf75
+
+f9a13ac04dcbc72cc2abbd7a2e73922a
+
+c7ac76f5dedbad8546019b5234894a2e
+
+d10627f02020464bacf7930eda10e57b
+
+15054 --> 203a63234ceb777720d2f671b4c42d72
+
+
+UPDATE qpd_eligible_associates SET reviewerId=appraiserId,normalizerId=appraiserId 
+WHERE quarter =4
+AND year = '2011'
+AND reviewerId =290
+AND normalizerId =290
+AND departmentId !=9
+
+
+UPDATE qpd_eligible_associates SET reviewerId=1409,normalizerId=1409
+WHERE quarter =4
+AND year = '2011'
+AND reviewerId =290
+AND normalizerId =290
+AND departmentId =9
+
+UPDATE qpd_eligible_associates SET normalizerId=reviewerId
+WHERE `quarter` = 4 AND `year` = '2011' AND `normalizerId` = 290 AND departmentId!=9
+
+UPDATE qpd_eligible_associates SET normalizerId=1409
+WHERE `quarter` = 4 AND `year` = '2011' AND `normalizerId` = 290 AND departmentId=9
+
+e2b7c9f341891bdc6dc322c394a38444
+
+cdc285f298befe3cbea877effdbc1fdb
+
+
+update employees set released_date = '2012-04-21' where id = 216;
+update employees set released_date = '2012-03-30' where id = 866;
+update employees set released_date = '2012-03-30' where id = 1298;
+
+update employees set resigned_date = '2012-01-11' where id = 1413;
+update employees set resigned_date = '2012-02-01' where id = 216;
+update employees set resigned_date = '2012-02-02' where id = 1324;
+update employees set resigned_date = '2012-02-02' where id = 854;
+update employees set resigned_date = '2012-02-03' where id = 308;
+update employees set resigned_date = '2012-02-07' where id = 214;
+update employees set resigned_date = '2012-02-21' where id = 19;
+update employees set resigned_date = '2012-02-27' where id = 541;
+update employees set resigned_date = '2012-02-29' where id = 1517;
+update employees set resigned_date = '2012-03-06' where id = 866;
+update employees set resigned_date = '2012-03-06' where id = 1285;
+update employees set resigned_date = '2012-03-13' where id = 170;
+update employees set resigned_date = '2012-03-19' where id = 1020;
+update employees set resigned_date = '2012-03-20' where id = 124;
+update employees set resigned_date = '2012-03-24' where id = 1647;
+update employees set resigned_date = '2012-03-25' where id = 1298;
+
+a1409e855ff3dcf386e4227ecbb4eaf4
+
+15265 --> 016a1ed6c512c5e01a15ae3742cfbadc
+
+
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` = 15315 LIMIT 1;
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` = 15316 LIMIT 1;
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` = 15317 LIMIT 1;
+DELETE FROM `ideal2_sync`.`qpd_associate_kra_map` WHERE `qpd_associate_kra_map`.`qpdKraId` = 15318 LIMIT 1;
+
+//CA
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=57 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=58 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=59 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=60 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=61 LIMIT 1;
+UPDATE ca_eligible_associates SET normalisedReviewerRating=aes_encrypt(4,appraiseeId),normalizerComments='.',submitStatus=8 WHERE qpdId=62 LIMIT 1;
+
+68278d240907ff28d89cf121c74eac1c
+
+
+90370
+
+formTextArea required  minlength maxlength resizableTextArea ui-resizable
+
+782329bc0b569f00b02e1b78817d6578
+
+2012-04-03
+
+
+14780
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =7 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =635 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =858 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1196 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1204 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1205 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1240 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '120',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1645 LIMIT 1 ;
+
+
+3f8f6c7c33e74aaa429bc857c1253d12
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '30',`reviewerId` = '287',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =130 LIMIT 1 ;
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '13',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1244 LIMIT 1 ;
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '219',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =119 LIMIT 1 ;
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '10',`reviewerId` = '30',`normalizerId` = '287' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1136 LIMIT 1 ;
+
+
+
+d81c3978140b196a7719093b4a26b0ab
+
+SELECT appraisee.employee_number AS 'Appraisee Number', CONCAT( appraisee.first_name, ' ', appraisee.last_name ) AS 'Appraisee Name', appraiser.employee_number AS 'Appriaser Number', CONCAT( appraiser.first_name, ' ', appraiser.last_name ) AS 'Appraiser Name', cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea
+LEFT JOIN employees AS appraisee ON ( appraisee.id = qea.appraiseeId )
+LEFT JOIN employees AS appraiser ON ( appraiser.id = qea.appraiserId )
+LEFT JOIN company_structures AS cs ON ( cs.id = appraiser.structure_name )
+WHERE quarter =4
+AND year =2011
+AND submitStatus <2
+
+15308
+
+14526-->a1fc37ad0d4c37562ac7b85edf19cf75
+
+cdc285f298befe3cbea877effdbc1fdb
+
+100000000000000000000000000000000000000000
+
+
+QpdD6fianc6
+
+OjfD6fianc6
+
+CaD6fianc6
+
+AaD6fianc6
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '548',`reviewerId` = '1518',`normalizerId` = '258' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1802 LIMIT 1 ;
+
+8e57e2191711797128ac68351f65520f
+
+ideal.confirmation@defiance-tech.com
+
+
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '1104',`reviewerId` = '1374',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =96 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '1104',`reviewerId` = '1374',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =815 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '1104',`reviewerId` = '1374',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1293 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '548',`reviewerId` = '1374',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1411 LIMIT 1 ;
+UPDATE `ideal2`.`qpd_eligible_associates` SET `appraiserId` = '1569',`reviewerId` = '1374',`normalizerId` = '1409' WHERE `quarter` =4   AND `year` = '2011' AND `appraiseeId` =1145 LIMIT 1 ;
+
+4d7287adb88551665b23cb95ea083625
+
+
+65a58c5bdb8d5a5b198267bf5f9e6f96
+
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=304 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=342 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=537 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=967 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1056 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1489 AND appraiserId =876 AND submitStatus =4 LIMIT 1;
+
+
+14793 -- ok
+14324 --ok
+abjeet -- ok
+ramesh mani  -- ok
+sreeram   -- ok
+14073   -- ok
+15150 -- ok
+NRB -- 64
+
+For Sreeram
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=154 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=347 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1308 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1323 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=517 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=543 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1092 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1286 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1388 AND appraiserId =299 AND submitStatus =4 LIMIT 1;
+
+For Ramanan
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1414 AND appraiserId =521 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1478 AND appraiserId =521 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1624 AND appraiserId =521 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=514 AND appraiserId =521 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=636 AND appraiserId =521 AND submitStatus =4 LIMIT 1;
+
+
+For Srivatsa Sriperumbudur -- 15150
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=58 AND appraiserId =1608 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1070 AND appraiserId =1608 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1287 AND appraiserId =1608 AND submitStatus =4 LIMIT 1;
+
+For Abhijeet Laxman Kanade -- 14174
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=44 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1073 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1074 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1075 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1145 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1158 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1174 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1175 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1223 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1241 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1280 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=1301 AND appraiserId =1569 AND submitStatus =4 LIMIT 1;
+
+For Sathis Balasubramani -- 14073 (4)
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	918	AND appraiserId =	320	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	919	AND appraiserId =	320	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1463	AND appraiserId =	320	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1495	AND appraiserId =	320	AND submitStatus =4 LIMIT 1;
+
+For Venkateswaran Balabaskaran -- 14726 (10)
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	51	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	706	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	713	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	717	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	989	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	991	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1673	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1732	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1766	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+UPDATE qpd_eligible_associates SET submitStatus=2 WHERE quarter =4 AND year = 2011 AND appraiseeId=	1439	AND appraiserId =	975	AND submitStatus =4 LIMIT 1;
+
+3d7aec7acc9d02748ad6ac3c0269357b
+
+
+653
+304bb4d5401180d3180dd02d9c1d7866
+
+
+
+
+
+
+
+
+
+
+6db6af2801159effedf2ea9e14540be6
+
+
+AT2-->A1
+Final Reviewer --->?
+
+de57292def8e5dcc040d4f694134854c
+de57292def8e5dcc040d4f694134854c
+
+8940f6778a1da9ddf80131f02a0e20e1
+
+21232f297a57a5a743894a0e4a801fc3
+
+828e92b0e6d797d658e34de06d317325
+
+
+
+SELECT appraisee.employee_number AS 'Appraisee Number',CONCAT(appraisee.first_name,' ',appraisee.last_name) AS 'Appraisee Name',
+appraiser.employee_number AS 'Appriaser Number',CONCAT(appraiser.first_name,' ',appraiser.last_name) AS 'Appraiser Name',
+reviewer.employee_number AS 'Reviewer Number',CONCAT(reviewer.first_name,' ',reviewer.last_name) AS 'Reviewer Name',
+CASE qea.managerSurvey WHEN 1 THEN "Yes" WHEN 0 THEN "No" ELSE "Not Applicable" END AS "Manager Discussion",
+qea.appraiserComments AS 'Appraiser Comments',
+qea.areasOfImprovement AS 'Area of Improvement',
+qea.technologyTraining AS 'Technology Training',
+qea.softskillTraining AS 'Soft Skill Training',
+CASE qea.submitStatus 
+WHEN 0 THEN "Appraisee Not Submitted" 
+WHEN 2 THEN "Appraiser Not Submitted" 
+WHEN 4 THEN "Reviewer Not Submitted"
+WHEN 6 THEN "Final Reviewer Not Submitted"
+WHEN 8 THEN "Hr Not Submitted"
+ELSE "Not Applicable" END AS "Status",
+cs.name AS 'Practice Group'
+FROM qpd_eligible_associates qea 
+LEFT JOIN employees AS appraisee ON(appraisee.id=qea.appraiseeId)
+LEFT JOIN employees AS appraiser ON(appraiser.id=qea.appraiserId)
+LEFT JOIN employees AS reviewer ON(reviewer.id=qea.reviewerId)
+LEFT JOIN company_structures AS cs ON(cs.id=appraiser.structure_name)
+WHERE quarter =4
+AND year =2011 AND appraisalTriggered=1

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+    
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="index.htm">indexController</prop>
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="apply.htm">AuthenticationController</prop>
+                <prop key="approve.htm">AuthenticationController</prop>
+                <prop key="reports.htm">AuthenticationController</prop>
+                <prop key="index.htm">AuthenticationController</prop>
+                <prop key="ajaxsearch.htm">AuthenticationController</prop>
+                <prop key="getEmployeeList.htm">AuthenticationController</prop>
+                <prop key="approved.htm">AuthenticationController</prop>
+                <prop key="reject.htm">AuthenticationController</prop>
+                <prop key="searchValue.htm">AuthenticationController</prop>
+                <prop key="requestdetails.htm">AuthenticationController</prop>
+                <prop key="approveRequest.htm">AuthenticationController</prop>
+                
+                <prop key="applyAllowance.htm">AllowanceManagement</prop>
+                <prop key="getProject.htm">AllowanceManagement</prop>
+                <prop key="getCustomer.htm">AllowanceManagement</prop>
+                <prop key="getEmployeeDetails.htm">AllowanceManagement</prop>
+                <prop key="submit.htm">AllowanceManagement</prop>
+                <prop key="getExcel.htm">AllowanceManagement</prop>
+                <prop key="getSUB_SBU.htm">AllowanceManagement</prop>
+                <prop key="getMonth.htm">AllowanceManagement</prop>
+                
+                <prop key="applyFullAllowance.htm">FullAllowance</prop>
+                <prop key="getMonthList.htm">FullAllowance</prop>
+                <prop key="getProjectList.htm">FullAllowance</prop>
+                <prop key="getCustomerList.htm">FullAllowance</prop>
+                <prop key="getEligibleEmployeeList.htm">FullAllowance</prop>
+                <prop key="submitEmployeeAllowance.htm">FullAllowance</prop>
+                <prop key="getProcessedList.htm">FullAllowance</prop>
+                <prop key="processedAllowance.htm">FullAllowance</prop>
+                <prop key="getExcelReport.htm">FullAllowance</prop>
+                <prop key="getSubSbu.htm">FullAllowance</prop>
+                <prop key="employeeViewAllowance.htm">FullAllowance</prop>
+                
+                <prop key="indexPage.htm">AccrualReversal</prop>
+                <prop key="projectList.htm">AccrualReversal</prop>
+                <prop key="getAccrualNo.htm">AccrualReversal</prop>
+                <prop key="getEmployeeAccrualDetails.htm">AccrualReversal</prop>
+                <prop key="submitAccrualReversal.htm">AccrualReversal</prop>
+                <prop key="timesheetReversal.htm">AccrualReversal</prop>
+                <prop key="getEmployeeTimesheetDetails.htm">AccrualReversal</prop>
+                <prop key="getEmployeeRole.htm">AccrualReversal</prop>
+                <prop key="updateTimesheet.htm">AccrualReversal</prop>
+                <prop key="timesheetRejection.htm">AccrualReversal</prop>
+                <prop key="employeeList.htm">AccrualReversal</prop>
+                <prop key="getTimesheetDetails.htm">AccrualReversal</prop>
+                <prop key="rejectTimesheet.htm">AccrualReversal</prop>
+                <prop key="getOfficeTiming.htm">AccrualReversal</prop>
+                <prop key="updateOfficeTiming.htm">AccrualReversal</prop>
+                <prop key="getMangerList.htm">AccrualReversal</prop>
+                <prop key="approveOfficeTiming.htm">AccrualReversal</prop>
+                <prop key="accrualAccountingMonth.htm">AccrualReversal</prop>
+                <prop key="updateAccrualClose.htm">AccrualReversal</prop>
+                
+                <prop key="eCardPage.htm">ECard</prop>
+                <prop key="getEmployeeSearch.htm">ECard</prop>
+                <prop key="giveEcard.htm">ECard</prop>
+                <prop key="attachmentDownload.htm">ECard</prop>
+                <prop key="getPickMeCardList.htm">ECard</prop>
+                <prop key="getEcardDetails.htm">ECard</prop>
+                <prop key="excelDownload.htm">ECard</prop>
+                <prop key="eCardReport.htm">ECard</prop>
+                <prop key="employeeEngagement.htm">ECard</prop>
+                <prop key="submitEmployeeEngagement.htm">ECard</prop>
+                <prop key="employeeEngagementData.htm">ECard</prop>
+                
+                <prop key="downloadFile.htm">TimesheetUpload</prop>
+                <prop key="readExcelFile.htm">TimesheetUpload</prop>
+            </props>
+        </property>
+    </bean>
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="1000000"/>
+    </bean>
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+    
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController" class="org.springframework.web.servlet.mvc.ParameterizableViewController" p:viewName="index" />
+    <bean name="AuthenticationController" class="com.defiance.ideal.controller.AuthenticationController" />
+    <bean name="AllowanceManagement" class="com.defiance.ideal.controller.AllowanceManagement" />
+    <bean name="FullAllowance" class="com.defiance.ideal.controller.FullAllowance" />
+    <bean name="AccrualReversal" class="com.defiance.ideal.controller.AccrualReversal" />
+    <bean name="ECard" class="com.defiance.ideal.controller.ECard" />
+    <bean name="TimesheetUpload" class="com.defiance.ideal.controller.TimesheetUpload" />
+</beans>

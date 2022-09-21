@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="vendorContractTimesheet">
+ 
+    <select id="getTimesheetDetails" parameterClass="com.defiance.ideal.reports.dto.VendorContractExportDto" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        CALL PR_DELIQUENCY_REPORT_PROJECT_WISE(#from_date#,#to_date#,#employee_id#,NULL);
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.reports.dto.VendorContractExportDto" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        SELECT emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        CONCAT(rm.employee_number,' - ',rm.first_name,' ',rm.last_name) AS reporting_manager,
+        F_Current_EmpLocation(emp.id,#from_date#) AS location,
+        ven.name AS vendor_name,
+        ven.code AS vendor_code,
+        MONTHNAME(#from_date#) AS month,
+        YEAR(#from_date#) AS year,
+        CASE WHEN pta.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(compcal.location_id, #from_date#,#to_date#,0)
+        WHEN pta.location_table IS NULL AND ewl.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(ewl.work_location_id, #from_date#,#to_date#,0)
+        WHEN pta.location_table IS NULL AND ewl.location_table = 'customer_work_locations'
+        THEN F_Customer_Workingdays(ewl.work_location_id, #from_date#,#to_date#,1)
+        ELSE F_Customer_Workingdays(custcal.location_id, #from_date#,#to_date#,1)
+        END AS working_days,
+        (SELECT COUNT(DISTINCT(te.timesheet_date)) AS tedate FROM timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON (te.id = tep.timesheet_entry_id AND tep.deleted=0 AND tep.status IN('m','a'))
+        WHERE te.timesheet_date BETWEEN #from_date# AND #to_date# AND te.employee_id=#employee_id# AND te.status IN('m','a') AND te.deleted = 0) AS worked_days,
+        LeaveLengthData(#from_date#,#to_date#,#year#,#month#,emp.id) as leave_days
+        FROM employees AS emp
+        LEFT JOIN company_locations AS cmpl ON emp.current_location_id = cmpl.id
+        LEFT JOIN project_team_allocations AS pta ON(pta.employee_id = emp.id AND (pta.start_date <![CDATA[ <= ]]> #to_date#) and (pta.end_date <![CDATA[ >= ]]> #from_date#) and pta.deleted = 0)
+        LEFT JOIN projects AS prjt ON(prjt.id = pta.project_id)
+        LEFT JOIN customer_calendars AS custcal ON (custcal.location_id = pta.work_location_id AND custcal.is_customer=1)
+        LEFT JOIN customer_calendars AS compcal ON (compcal.location_id = pta.work_location_id AND compcal.is_customer=0)
+        LEFT JOIN employee_work_location AS ewl ON (ewl.employee_id = emp.id)
+        LEFT JOIN employees AS rm ON emp.manager = rm.id
+        LEFT JOIN employee_vendor_mappings AS evm ON evm.employee_id = emp.id
+        LEFT JOIN vendors AS ven ON evm.vendor_id = ven.id
+        WHERE emp.id = #employee_id#
+        GROUP BY emp.id;
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.reports.dto.VendorContractExportDto" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        SELECT emp.id AS employee_id,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        CONCAT(rm.employee_number,' - ',rm.first_name,' ',rm.last_name) AS reporting_manager,
+        sbu.name AS sbu_name,
+        subsbu.name AS sub_sbu_name,
+        CONCAT(ven.code,'-',ven.name) AS vendor_name
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON emp.manager = rm.id
+        LEFT JOIN employee_vendor_mappings AS evm ON emp.id = evm.employee_id
+        LEFT JOIN vendors AS ven ON evm.vendor_id = ven.id
+        LEFT JOIN company_locations AS cmpl ON emp.current_location_id = cmpl.id
+        LEFT JOIN company_structures AS sbu ON emp.structure_name = sbu.id
+        LEFT JOIN company_structures AS subsbu ON emp.structure_name_subgroup = subsbu.id
+        WHERE (emp.released_date IS NULL OR emp.released_date >= #from_date#)
+        AND emp.employee_number LIKE '9%' AND emp.designation_id = 33 AND cmpl.country_id = 113
+        <dynamic>
+            <isNotEmpty prepend="AND" property = "empId">
+                emp.id = #empId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property = "vendor_id">
+                ven.id = #vendor_id#
+            </isNotEmpty>
+        </dynamic>
+        LIMIT #start_page#,#end_page#;
+    </select>
+    
+    <select id="getConsolidateEmployeeList" parameterClass="com.defiance.ideal.reports.dto.VendorContractExportDto" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        CALL PR_VC_EMPLOYEE_TIMESHEET_REPORT(#from_date#,#to_date#,#vendor_id#);
+    </select>
+    
+    <select id="getEmployeeListCount" parameterClass="com.defiance.ideal.reports.dto.VendorContractExportDto" resultClass="String">
+        SELECT count(*) as record_count
+        FROM employees AS emp
+        LEFT JOIN employee_vendor_mappings AS evm ON emp.id = evm.employee_id
+        LEFT JOIN vendors AS ven ON evm.vendor_id = ven.id
+        LEFT JOIN company_locations AS cmpl ON emp.current_location_id = cmpl.id
+        LEFT JOIN company_structures AS sbu ON emp.structure_name = sbu.id
+        LEFT JOIN company_structures AS subsbu ON emp.structure_name_subgroup = subsbu.id
+        WHERE (emp.released_date IS NULL OR emp.released_date >= #from_date#)
+        AND emp.employee_number LIKE '9%' AND emp.designation_id = 33 AND cmpl.country_id = 113
+        <dynamic>
+            <isNotEmpty prepend="AND" property = "empId">
+                emp.id = #empId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property = "vendor_id">
+                ven.id = #vendor_id#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getVendorList" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        SELECT ven.id AS vendor_id,
+        CONCAT(ven.code,' - ',ven.name) AS vendor_name
+        FROM vendors AS ven
+        WHERE ven.category_id=2
+    </select>
+        
+    <select id="getSearchEmployeeList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.VendorContractExportDto">
+        SELECT emp.id AS empId,
+        CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName
+        FROM employees AS emp
+        WHERE (emp.employee_number LIKE #key# OR emp.first_name like #key# OR emp.last_name like #key# )
+        AND emp.employee_number LIKE '9%' AND emp.designation_id = 33
+    </select>
+</sqlMap>

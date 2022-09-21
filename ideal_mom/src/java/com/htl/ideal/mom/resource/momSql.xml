@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="MomMap">
+    
+    <select id="getAllDetails" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT mm.id AS id,       
+            mm.meeting_title AS mom_title,
+            DATE_FORMAT(mm.meeting_date, '%d-%b-%Y' )AS mom_date,
+            mm.status AS mom_status,  
+            action.id AS action_point_id,
+            action.action_points AS action_point,     
+            action.reference_id AS mom_id,
+            action.employee_id AS action_point_employee_id,
+            DATE_FORMAT(action.planned_close_date, '%d-%b-%Y' )AS planned_close_date,  
+            COUNT(CASE WHEN action.status ='o' THEN 'o' END) AS open_count,
+            COUNT(CASE WHEN action.status ='c' THEN 'c' END) AS closed_count,
+            COUNT(CASE WHEN action.status ='p' THEN 'p' END) AS progress_count,   
+            COUNT(CASE WHEN action.status ='h' THEN 'h' END) AS hold_count,
+            COUNT(CASE WHEN action.status ='d' THEN 'd' END) AS deferred_count, 
+            COUNT(action.status) - COUNT(CASE WHEN action.status ='c' THEN 'c' END)  AS total_count,     
+            action.tracking_comments AS tracking_comments,   
+            action.status AS action_point_status,     
+            action.deleted AS action_point_deleted ,
+            config.configuration_value AS mom_status_name
+            FROM mom_masters AS mm
+        LEFT JOIN action_points AS action ON action.reference_id=mm.id
+        LEFT JOIN configuration_values as config ON (config.configuration_key=mm.status and config.parent_id = 833)
+        WHERE mm.minuted_by=#id# 
+        
+        <dynamic>
+            <isNotNull property="mom_date">
+                <isNotEmpty prepend="AND" property="mom_date">
+                    mm.meeting_date=#mom_date#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull property="mom_title">
+                <isNotEmpty prepend="AND" property="mom_title">
+                    mm.meeting_title=#mom_title#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        GROUP BY mm.id
+        ORDER BY mm.id DESC
+        <dynamic>
+            <isNotNull property="end_page">
+                <isNotEmpty property="end_page">
+                    LIMIT #start_page#, #end_page#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+        <!--and mm.status='o' or mm.status='s'-->
+    </select>
+    
+    <select id="getMomRecordCount" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="java.lang.Integer">
+        SELECT COUNT(*) AS recordCount FROM mom_masters as mm WHERE mm.minuted_by=#id#
+        <dynamic>
+            <isNotNull property="mom_date">
+                <isNotEmpty prepend="AND" property="mom_date">
+                    mm.meeting_date=#mom_date#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+<!--                        <isNotNull property="mom_title">
+            <isNotEmpty prepend="AND" property="mom_title">
+                mm.meeting_title=#mom_title#
+            </isNotEmpty>
+            </isNotNull>-->
+       
+    </select>
+    <select id="getstatuscount" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="java.lang.Integer">
+        SELECT COUNT(CASE WHEN action.status ='o' THEN 'o' END) AS open_count,
+                COUNT(CASE WHEN action.status ='c' THEN 'c' END) AS closed_count,
+                mm.id as id,
+                mm.meeting_title AS mom_title,
+                action.status
+             FROM action_points AS ACTION 
+             LEFT JOIN mom_masters AS mm ON mm.id=action.reference_id
+             WHERE mm.id=#id#
+             GROUP BY mm.id,action.status
+    </select>
+    <select id="getMomStatus" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select config.configuration_key as configuration_key,
+        config.configuration_value as mom_status from configuration_values as config
+        where config.parent_id =833 and config.configuration_key NOT IN ('r','b') 
+    </select>
+    
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.htl.ideal.mom.dto.MomDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =10;
+    </select>
+    
+    <select id="getEmployeesPK" parameterClass="String" resultClass="String" >
+        SELECT group_concat(employee_id) from mom_members_attendance where mom_id=#id# and deleted=0
+    </select>
+    <select id="getActionEmployeesPK" parameterClass="String" resultClass="String" >
+        SELECT group_concat(employee_id) from action_points where reference_id=#mom_id# and deleted=0
+    </select>
+    <select id="getEmployeesMail" parameterClass="String" resultClass="String" >
+        SELECT group_concat(work_email_address) from employees where id in($empPrimaryKey$)
+    </select>
+ <select id="geteditemployees" parameterClass="java.lang.String"  resultClass="com.htl.ideal.mom.dto.MomDto">
+                SELECT 
+         emp.first_name AS employee_idd, 
+         emp.last_name  AS employee_name,
+         emp.employee_number AS employee_no,
+         atten.id AS attendance_id,  
+         atten.deleted AS attendance_deleted
+         FROM mom_members_attendance AS atten
+         LEFT JOIN employees AS emp ON atten.employee_id=emp.id
+         WHERE atten.mom_id=#mom_id#
+         AND atten.attendance_status='p' AND atten.deleted=0     
+  </select>
+ <select id="geteditemployees2" parameterClass="java.lang.String"  resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT CONCAT(emp.first_name," ",emp.last_name) AS employee_name,
+       emp.employee_number AS employee_no,
+        emp.id AS employee_idd 
+       FROM employees AS emp
+	LEFT JOIN mom_members_attendance AS atten ON emp.id=atten.employee_id
+       WHERE atten.mom_id=#mom_id# AND  atten.attendance_status='p' AND emp.employment_status NOT IN('r','b','t') 
+ </select>
+    <select id="getMomCreatorMail" parameterClass="String" resultClass="String" >
+        SELECT group_concat(work_email_address) from employees where id in($minuted_by$)
+    </select>
+    
+    <select id="getConfigurationKeys" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select config.configuration_key as configuration_key,
+        config.configuration_value as mom_status
+        from configuration_values as config
+        where config.parent_id =833
+    </select>
+    
+    <select id="getSearchList" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT 
+        Employee.id AS employee_no,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employee_name
+        FROM employees AS Employee
+        WHERE (Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key# ) AND Employee.employment_status IN ('p','v','g','d','e')    
+    </select>
+    
+    <select id="getSearchMomList" parameterClass="Map" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT 
+        mm.id AS id,
+        mm.meeting_title as mom_title
+        FROM mom_masters AS mm
+        WHERE (mm.meeting_title like #key#) and mm.minuted_by=#momid# 
+        <!--AND mm.status IN ('c','o','p','s')-->    
+    </select>
+    
+    <select id="getEmployeeId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id as employee_id from employees where work_email_address = #work_email_address#
+    </select>
+     <select id="getEmployeeId2" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id as employee_id from employees where employee_number = #employee_no#
+    </select>
+    <select id="getEmailId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id as employee_id from employees where employee_number = #action_point_employee_id#
+    </select>
+    <select id="getMinutedbyName" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT CONCAT(employee_number,' - ',first_name,' ',last_name) AS empName FROM employees WHERE id=#employee_id#
+    </select>
+    
+    <insert id="addMom" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into mom_masters(meeting_title,meeting_date,meeting_venue,planned_start_time,planned_end_time,actual_start_time,actual_end_time,status,minuted_by)
+        values(#mom_title#,#mom_date#,#mom_venue#,#planned_start_time#,#planned_end_time#,#actual_start_time#,#actual_end_time#,#mom_status#,#minuted_by#)
+        <selectKey resultClass="String" keyProperty="last_insertId">
+            select last_insert_id() as last_insertId
+        </selectKey>
+    </insert>
+ 
+    <insert id="insertMomMembers" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into mom_members_attendance (mom_id, employee_id, attendance_status)values(#mom_id#, #employee_id#, #attendance_status#)
+    </insert>
+    <insert id="insertMomMembers2" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into mom_members_attendance (mom_id, employee_id, attendance_status)values(#mom_id#, #employee_id#, #attendance_status#)
+    </insert>
+    <insert id="insertMomAgenda" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into mom_agenda (mom_id, agenda_point)values(#mom_id#, #agenda_point#)
+    </insert>
+    
+    <insert id="insertMomDiscussions" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into mom_discussions (mom_id, discussion_points)values(#mom_id#, #discussion_point#)
+    </insert>
+    
+    <insert id="insertActionPoints" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        insert into action_points (reference_id,action_reference_table, employee_id, action_points, tracking_comments, planned_close_date,actual_close_date,status,updated_by)values(#mom_id#, 'mom_masters', #action_point_employee_id#, #action_point#, #tracking_comments#, #planned_close_date#,#actual_close_date#, #action_point_status#,#minuted_by#)
+    </insert>
+    
+    <select id="editMom" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select mm.id as id,
+        mm.meeting_title as mom_title,
+        <!--mm.meeting_date as mom_date,-->
+        DATE_FORMAT(mm.meeting_date, '%d-%b-%Y' )AS mom_date,
+        mm.meeting_venue as mom_venue,
+        mm.planned_start_time as planned_start_time,
+        mm.planned_end_time as planned_end_time,
+        mm.actual_start_time as actual_start_time,
+        mm.actual_end_time as actual_end_time,
+        mm.minuted_by as minuted_by,
+        mm.status as mom_status,
+<!--        agenda.agenda_point as agenda_point,
+        dis.discussion_points as discussion_point,
+        left join mom_agenda on agenda.mom_id=mm.id
+        left join mom_discussions on dis.mom_id=mm.id-->
+        mm.deleted as deleted
+        from mom_masters as mm where mm.id=#id#
+    </select>
+    
+    <select id="getPresentMembers" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+<!--        SELECT CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) AS employee_id,-->
+        SELECT CONCAT(emp.first_name,' ',emp.last_name,' - ',emp.employee_number) AS employee_id,
+        atten.id as attendance_id,
+        atten.deleted as attendance_deleted
+        FROM mom_members_attendance AS atten
+        LEFT JOIN employees AS emp ON  atten.employee_id=emp.id
+        WHERE atten.mom_id=#id#
+        AND atten.attendance_status='p' and atten.deleted=0
+    </select>
+    
+    <select id="getAbsentMembers" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+<!--        SELECT  CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) AS employee_id,-->
+          SELECT CONCAT(emp.first_name,' ',emp.last_name,' - ',emp.employee_number) AS employee_id,
+        atten.id as attendance_id,
+        atten.deleted as attendance_deleted
+        FROM mom_members_attendance AS atten
+        LEFT JOIN employees AS emp ON atten.employee_id=emp.id
+        WHERE atten.mom_id=#id#
+        AND atten.attendance_status='a' and atten.deleted=0
+    </select>
+    
+    <select id="getAllAgenda" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select agenda.id as agenda_id,
+        agenda.mom_id as mom_id,
+        agenda.agenda_point as agenda_point,
+        agenda.deleted as agenda_deleted 
+        from mom_agenda as agenda 
+        where agenda.mom_id=#mom_id# and agenda.deleted=0
+    </select>
+    
+    <select id="getAllDiscussion" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select discuss.id as discussion_id,
+        discuss.mom_id as mom_id,
+        discuss.discussion_points as discussion_point,
+        discuss.deleted as discussion_deleted
+        from mom_discussions as discuss 
+        where discuss.mom_id=#mom_id# and discuss.deleted=0
+    </select>
+    
+    <select id="getAllActions" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select action.id as action_point_id,
+        action.action_points as action_point,
+        action.reference_id as mom_id, 
+        action.employee_id 
+        as action_point_employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name) AS employee_id, 
+         CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name, 
+        <!--action.planned_close_date as planned_close_date,-->
+        <!--action.actual_close_date as actual_close_date,-->
+        DATE_FORMAT(action.planned_close_date, '%d-%b-%Y' )AS planned_close_date,
+        DATE_FORMAT(action.actual_close_date, '%d-%b-%Y' )AS actual_close_date,
+        action.tracking_comments as tracking_comments,
+        action.status as action_point_status,
+        action.deleted as action_point_deleted 
+        from action_points as action 
+        LEFT JOIN employees AS emp ON action.employee_id=emp.id
+        where action.reference_id=#mom_id# and action.deleted=0
+    </select>
+
+    <update id="updateMom" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_masters as mm set
+        <!--        mm.meeting_venue=#mom_venue#,
+        mm.planned_start_time=#planned_start_time#,
+        mm.planned_end_time=#planned_end_time#,
+        mm.actual_start_time=#actual_start_time#,
+        mm.actual_end_time=#actual_end_time#,-->
+        mm.status=#mom_status#
+        where mm.id=#id#
+    </update>
+    
+    <update id="updateMomwithSave" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_masters as mm set
+        mm.meeting_venue=#mom_venue#,
+        mm.planned_start_time=#planned_start_time#,
+        mm.planned_end_time=#planned_end_time#,
+        mm.actual_start_time=#actual_start_time#,
+        mm.actual_end_time=#actual_end_time#,
+        mm.status=#mom_status#
+        where mm.id=#id#
+    </update>
+     <update id="updateMomwithDraft" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_masters as mm set
+        mm.meeting_venue=#mom_venue#,
+        mm.planned_start_time=#planned_start_time#,
+        mm.planned_end_time=#planned_end_time#,
+        mm.actual_start_time=#actual_start_time#,
+        mm.actual_end_time=#actual_end_time#,
+        mm.status=#mom_status#
+        where mm.id=#id#
+    </update>
+    <update id="updateMomMembers" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_members_attendance as atten set atten.employee_id=#employee_id#,atten.attendance_status=#attendance_status#,atten.deleted=#attendance_deleted#
+        where atten.id=#present_attendance_id#
+    </update>
+    
+    <update id="updateAgenda" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_agenda as agenda set agenda.agenda_point=#agenda_point#,agenda.deleted=#agenda_deleted#
+        where agenda.id=#agenda_id#
+    </update>
+    
+    <update id="updateDiscussion" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update mom_discussions as discuss set discuss.discussion_points=#discussion_point#,discuss.deleted=#discussion_deleted#
+        where discuss.id=#discussion_id#
+    </update>
+    
+    <update id="updateActionPoint" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        update action_points as action set action.action_reference_table='mom_masters',
+        action.employee_id=#action_point_employee_id#,
+        action.action_points=#action_point#,
+        action.tracking_comments=#tracking_comments#,
+        action.planned_close_date=#planned_close_date#,
+        action.status=#action_point_status#,
+        action.updated_by=#updated_by#,
+        action.actual_close_date=#actual_close_date#,
+        action.deleted=#action_point_deleted#
+        where action.id=#action_point_id#
+    </update>
+    <update id="updatesentback" parameterClass="java.lang.String" >
+        update mom_masters as master 
+        set master.status='r'
+        where master.id=#id#
+    
+    </update>
+    
+    <update id="updateActionPointItems" parameterClass="com.htl.ideal.mom.dto.MomDto" >
+        UPDATE action_points as action
+        SET action.actual_close_date=#actual_close_date#,
+        action.tracking_comments=#tracking_comments#,
+        action.status=#action_point_status#
+        <!--action.deleted=#action_point_deleted#-->
+        WHERE action.id= #action_point_id#
+    </update>
+    <!--    <select id="getMembers" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT( mom_members_attendance ) AS employeeCcEmail FROM 
+        employees WHERE id IN ($empIds$) AND attendance_status NOT IN('p','a')
+    </select>-->
+	
+    <select id="getActionListDetails" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+    
+        SELECT  master.id AS id,    
+        master.meeting_title AS mom_title, 
+        master.status as mom_status,
+        actionpoint.id AS action_point_id,       
+        actionpoint.reference_id AS mom_id,  
+        actionpoint.action_points AS action_point,  
+        actionpoint.employee_id AS employee_id, 
+        DATE_FORMAT(planned_close_date, '%d-%b-%Y' )AS planned_close_date,
+        DATE_FORMAT(actual_close_date, '%d-%b-%Y' )AS actual_close_date,
+        <!--            actionpoint.actual_close_date AS actual_close_date,-->
+        actionpoint.tracking_comments AS tracking_comments,
+        actionpoint.status AS action_point_status,
+        actionpoint.deleted AS action_point_deleted,
+        config.configuration_value AS ap_status_name,
+        config.configuration_key AS configuration_key
+        FROM mom_masters AS MASTER     
+        <!--LEFT JOIN mom_members_attendance AS atten ON atten.mom_id=master.id-->
+        LEFT JOIN action_points AS actionpoint ON actionpoint.reference_id=master.id 
+        LEFT JOIN configuration_values AS config ON (config.configuration_key=actionpoint.status AND config.parent_id = 833)
+        WHERE actionpoint.employee_id=#id#
+            
+        <dynamic>
+            <isNotNull property="action_point_status">
+                <isNotEmpty prepend="AND" property="action_point_status">
+                    actionpoint.status=#action_point_status# 
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+       
+        <dynamic>
+            <isNotNull property="action_mom_title">
+                <isNotEmpty prepend="AND" property="action_mom_title">
+                    master.meeting_title=#action_mom_title#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        ORDER BY master.meeting_title ASC
+        <dynamic>
+            <isNotNull property="end_page">
+                <isNotEmpty property="end_page"> 
+                    LIMIT #start_page#, #end_page#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+    </select>
+
+    <select id="getMeetingDetails" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT  meeting.id AS id,meeting.meeting_title AS mom_title,
+        DATE_FORMAT(meeting_date, '%d-%b-%Y' )AS mom_date,
+        meeting.meeting_venue AS mom_venue,
+        meeting.planned_start_time AS planned_start_time,
+        meeting.planned_end_time AS planned_end_time,
+        meeting.actual_start_time AS actual_start_time,
+        meeting.actual_end_time AS actual_end_time,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS minuted_by,
+        meeting.status AS mom_status,
+        meeting.created_date AS created_date,
+        meeting.deleted AS mom_deleted2
+        FROM mom_masters AS meeting 
+        LEFT JOIN employees AS emp ON meeting.minuted_by=emp.id
+        WHERE meeting.id=#id#
+    </select> 
+
+    <select id="getAgenda" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select  agenda.mom_id as mom_id,
+        agenda.agenda_point as agenda_point,
+        agenda.deleted as agenda_deleted
+        from mom_agenda as agenda
+        where agenda.mom_id=#mom_id#
+    </select>
+
+    <select id="getDiscussion" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select  discussion.mom_id as mom_id,
+        discussion.discussion_points as discussion_point,
+        discussion.deleted as discussion_deleted
+        from mom_discussions as discussion
+        where discussion.mom_id=#mom_id#
+    </select>
+
+    <select id="getActionPoint" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT  master.id AS id,
+        actionpoint.id AS action_point_id,
+        actionpoint.reference_id AS mom_id,
+        actionpoint.action_points AS action_point,
+        actionpoint.employee_id AS action_point_employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name) AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS  employee_name,
+        DATE_FORMAT(planned_close_date, '%d-%b-%Y' )AS planned_close_date,
+        DATE_FORMAT(actual_close_date, '%d-%b-%Y' )AS actual_close_date,
+        actionpoint.tracking_comments AS tracking_comments,
+        actionpoint.status AS action_point_status,
+        actionpoint.deleted AS action_point_deleted,
+        config.configuration_value AS ap_status_name
+        FROM action_points AS actionpoint
+        LEFT JOIN mom_masters AS MASTER ON master.id=actionpoint.reference_id
+        LEFT JOIN configuration_values AS config ON (config.configuration_key=actionpoint.status AND config.parent_id = 833)   
+        LEFT JOIN employees AS emp ON actionpoint.employee_id=emp.id
+        WHERE actionpoint.reference_id=#mom_id#
+    </select>
+
+    <select id="getPresentDetails" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT  GROUP_CONCAT(CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name),' ') as employee_id
+        FROM mom_members_attendance AS atten
+        LEFT JOIN employees AS emp ON  atten.employee_id=emp.id
+        WHERE atten.mom_id=#id#
+        AND atten.attendance_status='p'    
+    </select>
+
+    <select id="getAbsentDetails" parameterClass="java.lang.String" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT GROUP_CONCAT(CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name),' ') AS employee_id
+        FROM mom_members_attendance AS atten
+        LEFT JOIN employees AS emp ON  atten.employee_id=emp.id
+        WHERE atten.mom_id=#id# 
+        AND atten.attendance_status='a'    
+    </select>
+
+    <update id="updateActionPoints" parameterClass="com.htl.ideal.mom.dto.MomDto" >
+        UPDATE action_points as action SET 
+        action.actual_close_date=#actual_close_date#,
+        action.employee_id=#employee_id#,
+        action.tracking_comments=#tracking_comments#,
+        action.status=#action_point_status#,
+        action.updated_by=#updated_by#
+        WHERE action.id= #action_point_id#
+    </update>
+    
+    <select id="getActionRecordCount" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="java.lang.Integer">
+       SELECT  COUNT(*) AS actionrecordCount
+            FROM mom_masters AS master
+            LEFT JOIN action_points AS actionpoint ON actionpoint.reference_id=master.id
+            LEFT JOIN configuration_values AS config ON (config.configuration_key=actionpoint.status AND config.parent_id = 833)
+            WHERE actionpoint.employee_id=#id#
+        <dynamic>
+            <isNotNull property="action_point_status">
+                <isNotEmpty prepend="AND" property="action_point_status">
+                    actionpoint.status=#action_point_status# 
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <!--ORDER BY master.meeting_title ASC--> 
+    </select>
+  
+    <select id="getStatus" resultClass="com.htl.ideal.mom.dto.MomDto">
+        select config.configuration_key as configuration_key,
+        config.configuration_value as action_point_status from configuration_values as config
+        where config.parent_id =833 AND  config.configuration_key NOT IN ('s','dr') 
+    </select>
+
+    <insert id="updateHistory" parameterClass="com.htl.ideal.mom.dto.MomDto">
+        INSERT INTO action_point_histories (action_id,previous_planned_closed_date,remarks,status,created_date)
+        VALUES(#action_point_id#,#actual_close_date#,#tracking_comments#,#action_point_status#,CURDATE())
+    </insert> 
+   
+    <select id="getHistory" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT his.action_id AS action_id,
+        DATE_FORMAT(his.previous_planned_closed_date,'%d-%b-%Y' ) AS previous_planned_close_date,
+        his.remarks AS tracking_comments,
+        his.status as action_point_status
+        FROM action_point_histories AS his
+        LEFT JOIN action_points AS act ON his.action_id = act.id
+        WHERE act.employee_id =#id# AND act.action_reference_table='mom_masters'
+    </select>
+    
+    <select id="getSearchmom" parameterClass="Map" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT  mom.id AS id,
+        mom.meeting_title AS mom_title
+        FROM mom_masters AS mom
+        left join action_points as action on mom.id=action.reference_id
+        WHERE (mom.meeting_title LIKE #key#) and action.employee_id=#employee_id#
+        GROUP BY mom.id
+    </select>
+    <select id="getHistory1" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+        SELECT his.action_id AS action_id,
+        DATE_FORMAT(previous_planned_closed_date,'%d-%b-%Y' )AS previous_planned_close_date,
+        his.remarks AS tracking_comments,
+        his.status as action_point_status
+        FROM action_point_histories AS his
+        LEFT JOIN action_points AS act ON his.action_id = act.id
+        WHERE act.reference_id = #mom_id#
+        <!--AND act.employee_id = #employee_id#-->
+        AND act.action_reference_table='mom_masters'
+    </select>
+    
+    <select id="getempPK" parameterClass="String" resultClass="String" >
+        SELECT group_concat(employee_id) from mom_members_attendance where mom_id=#id# and deleted=0
+    </select>
+    <select id="getMomNames" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="String">
+        SELECT count(id) AS recordCount
+        FROM mom_masters WHERE meeting_title = #momTitleRefId#
+        <!--AND  employment_status NOT IN ('r','t','b','q','o')-->
+    </select>
+    <select id="editMomActionPoints" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+    
+        SELECT  master.id AS id,    
+        master.meeting_title AS mom_title, 
+        master.status as mom_status,
+        actionpoint.id AS action_point_id,       
+        actionpoint.reference_id AS mom_id,  
+        actionpoint.action_points AS action_point,  
+        actionpoint.employee_id AS employee_id, 
+        DATE_FORMAT(planned_close_date, '%d-%b-%Y' )AS planned_close_date,
+        DATE_FORMAT(actual_close_date, '%d-%b-%Y' )AS actual_close_date,
+        <!--            actionpoint.actual_close_date AS actual_close_date,-->
+        actionpoint.tracking_comments AS tracking_comments,
+        actionpoint.status AS action_point_status,
+        actionpoint.deleted AS action_point_deleted,
+        config.configuration_value AS ap_status_name,
+        config.configuration_key AS configuration_key
+        FROM mom_masters AS MASTER     
+        <!--LEFT JOIN mom_members_attendance AS atten ON atten.mom_id=master.id-->
+        LEFT JOIN action_points AS actionpoint ON actionpoint.reference_id=master.id 
+        LEFT JOIN configuration_values AS config ON (config.configuration_key=actionpoint.status AND config.parent_id = 833)
+        WHERE master.minuted_by=#id#
+            
+        <dynamic>
+            <isNotNull property="action_point_status">
+                <isNotEmpty prepend="AND" property="action_point_status">
+                    actionpoint.status=#action_point_status# 
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+       
+        <dynamic>
+            <isNotNull property="action_mom_title">
+                <isNotEmpty prepend="AND" property="action_mom_title">
+                    master.meeting_title=#action_mom_title#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        ORDER BY master.meeting_title ASC
+        <dynamic>
+            <isNotNull property="end_page">
+                <isNotEmpty property="end_page"> 
+                    LIMIT #start_page#, #end_page#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+    </select> 
+<!--    <select id="getemployeeName" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT CONCAT(employee_number,' - ',first_name,' ',last_name) AS empName FROM employees WHERE employee_number=#employee_no#
+    </select>
+    <select id="getempno" parameterClass="java.lang.String" resultClass="java.lang.String">
+    SELECT employee_number FROM employees
+   </select>-->
+    <select id = "getEmpIds" parameterClass = "java.lang.String" resultClass = "com.htl.ideal.mom.dto.MomDto">
+        SELECT  id as employee_idd,
+        work_email_address as mailId, 
+        concat(emp.first_name," ", emp.last_name ) AS requestorName, 
+        concat(emp.first_name," ",emp.last_name," - ",emp.employee_number) AS employee_name 
+        FROM Employees emp  
+        WHERE 
+        emp.employee_number LIKE $refVal$ 
+        OR emp.first_name LIKE $refVal$ 
+        OR concat( emp.employee_number, "-", emp.first_name," ", emp.last_name) LIKE $refVal$ AND emp.employment_status NOT IN('r','b','t','q','o','y');
+    </select> 
+    <select id="totalcount" parameterClass="com.htl.ideal.mom.dto.MomDto" resultClass="com.htl.ideal.mom.dto.MomDto">
+    select action.reference_id as mom_id,
+        COUNT(CASE WHEN action.status ='o' THEN 'o' END) AS open_count,
+        COUNT(CASE WHEN action.status ='c' THEN 'c' END) AS closed_count,
+        <!--COUNT(CASE WHEN action.status ='p' THEN 'p' END) AS saved_count,-->
+        COUNT(CASE WHEN action.status ='h' THEN 'h' END) AS progress_count,
+        COUNT(CASE WHEN action.status ='d' THEN 'd' END) AS hold_count,
+        COUNT(CASE WHEN action.status ='s' THEN 's' END) AS deferred_count,
+        COUNT(action.status) - COUNT(CASE WHEN action.status ='c' THEN 'c' END)  AS total_count
+        from action_points as action where action.reference_id=#mom_id#
+          </select> 
+</sqlMap>

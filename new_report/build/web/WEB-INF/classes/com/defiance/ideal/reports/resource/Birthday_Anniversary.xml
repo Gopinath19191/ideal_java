@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Birthday_Anniversary">
+    <select id="getBirthday" parameterClass="com.defiance.ideal.reports.dto.Birthday_AnniversaryFilterDTO" resultClass="com.defiance.ideal.reports.dto.Birthday_AnniversaryDTO">
+ SELECT emp.employee_number, CONCAT( emp.first_name, " ", emp.last_name ) AS employeeName, cs.name AS 'sbu', emp.work_Email_Address, DATE_FORMAT( emp.birth_date, '%d-%m-%Y' ) AS 'birthDate',
+ 'BIRTHDAY' as status
+           FROM employees AS emp
+            LEFT JOIN company_structures AS cs ON ( emp.structure_name = cs.id )
+          WHERE emp.employment_status
+         IN (
+         "p", "d", "g", "e"
+           )
+           AND
+            (DAY(emp.birth_date) BETWEEN #fromSelectedDateDate# AND #toSelectedDateDate#)
+AND MONTH(emp.birth_date) BETWEEN #fromSelectedDateMonth# AND #toSelectedDateMonth#
+    </select>
+    <select id="getAnniversary" parameterClass="com.defiance.ideal.reports.dto.Birthday_AnniversaryFilterDTO" resultClass="com.defiance.ideal.reports.dto.Birthday_AnniversaryDTO">
+        SELECT emp.employee_number, CONCAT( emp.first_name, " ", emp.last_name ) AS 'employeeName', cs.name AS 'sbu', emp.work_Email_Address,
+        (YEAR(CURDATE()) - YEAR(emp.joined_date)) AS 'anniversary', DATE_FORMAT( emp.joined_date, '%d-%m-%Y' ) AS 'doj','ANNIVERSARY' as status
+        FROM employees AS emp
+        LEFT JOIN company_structures AS cs ON ( emp.structure_name = cs.id )
+        WHERE emp.employment_status
+        IN (
+        "p", "d", "g", "e"
+        )
+        AND
+       (DAY(emp.joined_date) BETWEEN #fromSelectedDateDate# AND #toSelectedDateDate#)
+AND MONTH(emp.joined_date) BETWEEN #fromSelectedDateMonth# AND #toSelectedDateMonth#
+    </select>
+</sqlMap>

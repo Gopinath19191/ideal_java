@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="LeaveMap">
+    
+    <select id="getSbu" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.LeaveReportDTO">
+        SELECT id as id,name AS name FROM company_structures c WHERE parent_id IN(1,12,52)
+    </select>
+    
+    <select id="getSubSbu" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.LeaveReportDTO">
+        SELECT id as id,name AS name FROM company_structures c WHERE parent_id=#parentId#
+    </select>
+    
+    <select id="monthlyLeaveDetails" parameterClass="com.defiance.ideal.reports.dto.LeaveReportDTO" resultClass="com.defiance.ideal.reports.dto.LeaveReportDTO">
+        
+        SELECT emp.employee_number AS "employee_number",
+            CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS "employee_name",
+            lev.leave_brought_forward AS "opening_balence",
+            SUM(lop.lop_days) AS "lop_days",
+            lev.no_of_days_allotted AS "leave_accrued",
+            lev.leave_taken AS "leave_taken",
+            lev.leave_cancelled AS "leave_cancelled",
+            lev.leave_arrear AS "leave_arrear",
+            SUM(levenca.number_of_days) AS "leave_encashed",
+            (lev.leave_brought_forward+lev.no_of_days_allotted+CASE WHEN SUM(lop.lop_days) IS NOT NULL THEN SUM(lop.lop_days) ELSE 0.00 END -lev.leave_taken+lev.leave_cancelled
+            +lev.leave_arrear-CASE WHEN SUM(levenca.number_of_days) IS NOT NULL THEN SUM(levenca.number_of_days) ELSE 0.00 END) AS "closing_balence"
+            FROM employee_leave_details_monthly AS lev
+            LEFT JOIN employees AS emp ON lev.employee_id = emp.id
+            LEFT JOIN employee_leave_encashments AS levenca ON(lev.employee_id = levenca.employee_id AND EXTRACT(MONTH FROM levenca.date_applied) = #month# AND EXTRACT(YEAR FROM levenca.date_applied) = #year#)
+            LEFT JOIN employee_lop_details AS lop ON(lev.employee_id = lop.employee_id AND lop.month = #month# AND lop.year = #year#)
+            LEFT JOIN employee_leave_details_monthly AS levcl ON (lev.employee_id = levcl.employee_id AND levcl.month=#month#)
+            WHERE lev.month = #month# AND lev.year=#year#
+            <dynamic>
+                <isNotNull property="sbu">
+                    <isNotEmpty property="sbu" prepend="and">
+                        emp.structure_name=#sbu#
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic>
+            <dynamic>
+                <isNotNull property="subSbu">
+                    <isNotEmpty property="subSbu" prepend="and">
+                        emp.structure_name_subgroup=#subSbu#
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic>
+            GROUP BY emp.id
+            <dynamic>
+                <isNotNull property="end_page">
+             <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#
+             </isNotEqual>
+             </isNotNull>
+            </dynamic> 
+           
+    </select>
+    <select id="getReportCount" parameterClass="com.defiance.ideal.reports.dto.LeaveReportDTO" resultClass="java.lang.Integer">
+        SELECT COUNT(*) AS recordCount FROM  ( SELECT emp.employee_number AS "employee_number"
+            FROM employee_leave_details_monthly AS lev
+            LEFT JOIN employees AS emp ON lev.employee_id = emp.id
+            LEFT JOIN employee_leave_encashments AS levenca ON(lev.employee_id = levenca.employee_id AND EXTRACT(MONTH FROM levenca.date_applied) = #month# AND EXTRACT(YEAR FROM levenca.date_applied) = #year#)
+            LEFT JOIN employee_lop_details AS lop ON(lev.employee_id = lop.employee_id AND lop.month = #month# AND lop.year = #year#)
+            LEFT JOIN employee_leave_details_monthly AS levcl ON (lev.employee_id = levcl.employee_id AND levcl.month=#month#)
+            WHERE lev.month = #month# AND lev.year=#year#
+            <dynamic>
+                <isNotNull property="sbu">
+                    <isNotEmpty property="sbu" prepend="and">
+                        emp.structure_name=#sbu#
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic>
+            <dynamic>
+                <isNotNull property="subSbu">
+                    <isNotEmpty property="subSbu" prepend="and">
+                        emp.structure_name_subgroup=#subSbu#
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic>
+            GROUP BY emp.id  )  AS temp 
+    </select>
+
+</sqlMap>

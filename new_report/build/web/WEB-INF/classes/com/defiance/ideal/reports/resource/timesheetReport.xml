@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="timesheetNonCompliance">
+ 
+    <select id="gettimesheetDetails" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        CALL PR_DELIQUENCY_REPORT(#start_date#,#end_date#,#employee_id#,NULL)
+        <!--CALL PR_DELINQUENCY_REPORT_UNIT_WISE('2017-03-01','2017-03-31','ALL');-->
+    </select>
+    
+    <select id="getTimesheetReportUnitWise" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        CALL PR_DELINQUENCY_REPORT_UNIT_WISE(#start_date#,#end_date#,#unit_name#)
+    </select>
+    
+    <select id="getfileName" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="java.lang.String">
+        SELECT filename as dpath FROM delinquency_reports
+    </select>
+
+    <select id="getLeaveDetails" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="java.lang.Integer">
+        SELECT COUNT(elr.id) AS leave_count FROM employee_leave_requests as elr
+        WHERE ((elr.from_date <![CDATA[ <= ]]> #timesheet_date# AND elr.to_date <![CDATA[ >= ]]> #timesheet_date#) OR (elr.from_date <![CDATA[ >= ]]> #timesheet_date# AND elr.to_date <![CDATA[ <= ]]> #timesheet_date#) OR 
+        (elr.from_date BETWEEN #timesheet_date# AND #timesheet_date# OR elr.to_date BETWEEN #timesheet_date# AND #timesheet_date#)) AND 
+        elr.employee_id = #employee_id# AND 
+        elr.leave_status IN ('o','a','t')
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select emp.id as employee_id,
+        concat(emp.first_name, ' ', emp.last_name, '-', emp.employee_number) as employee_name
+        from employees as emp
+        where (emp.released_date is null or emp.released_date <![CDATA[ >= ]]> #start_date#)
+        <dynamic>
+            <isNotEmpty prepend="AND" property="company_structure_id">
+                emp.structure_name = #company_structure_id#
+            </isNotEmpty>
+
+            <isNotEmpty prepend="AND" property="reporting_manager_id">
+                emp.manager = #reporting_manager_id#
+            </isNotEmpty>
+            
+            <isNotEmpty prepend="AND" property="employee_id">
+                emp.id = #employee_id#
+            </isNotEmpty>
+
+        </dynamic>       
+        order by emp.employee_number
+    </select>
+
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select emp.id as employee_id,
+        emp.employee_number as employee_number,
+        concat(emp.first_name, ' ', emp.last_name) as employee_name,
+        emp.joined_date as joined_date,
+        emp.released_date as released_date,
+        concat(rm.employee_number, '-', rm.first_name, ' ', rm.last_name) as reporting_manager,
+        unit.name as unit_name,
+        billna.configuration_value as billable_non_billable
+        from employees as emp
+        left join company_structures as unit on(unit.id = emp.structure_name)
+        left join configuration_values as billna on(billna.configuration_key = emp.billable and billna.parent_id = 52)
+        left join employees as rm on(emp.manager = rm.id)
+        where emp.id = #employee_id#
+    </select>
+
+    <select id="getCalendarId" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="java.lang.Integer">
+        SELECT F_Current_EmpCalendar(#employee_id#, #timesheet_date#) AS calendar_id LIMIT 1
+    </select>
+
+    <select id="getHolidayDetails" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="java.lang.String">
+        SELECT holcal.holiday_description as holiday_date
+        FROM holiday_calendars As holcal 
+        WHERE holcal.customer_calendar_id = #calendar_id# AND holcal.holiday_date = #timesheet_date# LIMIT 1
+    </select>
+    
+    <select id="getWeekEndDetails" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select weekend from customer_calendars where calendar_id = #calendar_id#
+    </select>
+    
+    <select id="getCompanyStructure" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select id as company_structure_id, 
+        name as company_structure_name
+        from company_structures
+        where parent_id in(1,12)
+    </select>
+    
+    <select id="getRMId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id as reporting_manager_id 
+        from employees
+        where employee_number = #employeeNumber#
+    </select>
+    
+    <select id="getProjectList" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select prj.id as project_id,
+        concat(prj.project_name,' - ',prj.project_code) as project_name
+        from projects as prj
+        where prj.project_status in('e','d')
+        and prj.project_manager = #reporting_manager_id#
+    </select>
+    
+    <select id="getProjectEmployeeList" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select DISTINCT(pta.employee_id) as employee_id
+        from project_team_allocations as pta
+        left join company_locations as cmp on(cmp.id = pta.work_location_id)
+        left join customer_work_locations as cust on(cust.id = pta.work_location_id)
+        left join employees as emp on(emp.id = pta.employee_id)
+        where pta.end_date <![CDATA[ >= ]]> #start_date#
+        and (emp.released_date is null or emp.released_date <![CDATA[ >= ]]> #start_date#)
+        and pta.deleted = 0
+        and pta.project_id = #project_id#
+    </select>
+    <select id="getMultiProjectEmployeeList" parameterClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO" resultClass="com.defiance.ideal.reports.dto.RMNonComplianceDataDTO">
+        select DISTINCT(pta.employee_id) as employee_id
+        from project_team_allocations as pta
+        left join company_locations as cmp on(cmp.id = pta.work_location_id)
+        left join customer_work_locations as cust on(cust.id = pta.work_location_id)
+        left join employees as emp on(emp.id = pta.employee_id)
+        where pta.end_date <![CDATA[ >= ]]> #start_date#
+        and (emp.released_date is null or emp.released_date <![CDATA[ >= ]]> #start_date#)
+        and pta.deleted = 0
+        and pta.project_id in ($project_id$)
+    </select>
+    
+    <select id="getUnitWiseAccess" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT 
+        (SELECT alias from acos WHERE id=arcos.aco_id) AS unit_name
+        FROM aros_acos as arcos,aros as aro
+        LEFT JOIN users as user ON(user.id = aro.foreign_key)
+        WHERE arcos.aro_id = aro.id 
+        AND aro.model LIKE '%USER%' 
+        AND user.employee_id = #reporting_manager_id#
+        AND  arcos.aco_id = 717
+        AND _create = 1
+        AND _read = 1
+        AND _update = 1
+        AND _delete = 1
+<!--        SELECT CONCAT(emp.employee_number,' - ',emp.first_name, ' ',emp.last_name) AS employee_name  
+        FROM aros_acos AS arcos         
+        LEFT JOIN aros AS aroG ON (aroG.id=arcos.aro_id AND aroG.model ='Group')         
+        LEFT JOIN aros AS aroU ON (aroU.id=arcos.aro_id AND aroU.model ='User')         
+        LEFT JOIN users AS user ON (user.group_id=aroG.foreign_key OR user.id=aroU.foreign_key)         
+        LEFT JOIN employees AS emp ON (emp.id=user.employee_id)                  
+        WHERE arcos._create=1 AND arcos._read=1 AND arcos._update=1 AND arcos._delete=1 AND emp.employment_status NOT IN ('r','b','t','q','o')         
+        AND  arcos.aco_id IN(715)             
+        and emp.id = #reporting_manager_id#-->
+    </select>
+    
+</sqlMap>

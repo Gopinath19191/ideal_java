@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="SkillsDomainsMap">
+    
+    <select id="getSkillDomainDetails" parameterClass="com.defiance.ideal.reports.dto.SkillsDomainsDto" resultClass="com.defiance.ideal.reports.dto.SkillsDomainsDto">
+        call PR_Skills_Domains(#subsbu#);
+    </select> 
+
+    <select id="getSbu" parameterClass="com.defiance.ideal.reports.dto.SkillsDomainsDto" resultClass="com.defiance.ideal.reports.dto.SkillsDomainsDto">
+        SELECT id as id,name AS name FROM company_structures  WHERE parent_id=0
+    </select>
+    
+    <select id="getSkillDomainCount" parameterClass="com.defiance.ideal.reports.dto.SkillsDomainsDto" resultClass="java.lang.Integer">
+        SELECT COUNT(*) FROM employees as emp
+        LEFT JOIN company_structures AS cs ON emp.structure_name=cs.id
+        where emp.employment_status NOT IN('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull property="subsbu">
+                <isNotEmpty prepend="AND" property="subsbu">
+                    cs.id=#subsbu#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+    </select>
+    
+    <select id="getSubSbu" parameterClass="com.defiance.ideal.reports.dto.SkillsDomainsDto" resultClass="com.defiance.ideal.reports.dto.SkillsDomainsDto">
+        SELECT id as id,name AS name FROM company_structures  WHERE parent_id IN ($parentId$)
+    </select>
+    
+</sqlMap>

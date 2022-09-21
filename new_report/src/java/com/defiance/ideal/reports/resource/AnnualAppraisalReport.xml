@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AnnualAppraisalReport">
+    <select id="getAnnualAppraisalReport" parameterClass="com.defiance.ideal.reports.dto.AnnualAppraisalFilterDTO" resultClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO">
+
+        SELECT cs.name AS practiceGroup,
+        appraisee.employee_number AS appraiseeNumber, 
+        CONCAT( appraisee.first_name, ' ', appraisee.last_name ) AS appraiseeName, 
+        appraiser.employee_number AS appriaserNumber, 
+        CONCAT( appraiser.first_name, ' ', appraiser.last_name ) AS appraiserName,reviewer.employee_number AS reviewerNumber, 
+        CONCAT( reviewer.first_name, ' ', reviewer.last_name ) AS reviewerName,normalizer.employee_number AS normalizerNumber, 
+        CONCAT( normalizer.first_name, ' ', normalizer.last_name ) AS normalizerName,
+        CASE WHEN aes_decrypt(aaea.appraiserRating,aaea.appraiseeId) IS NULL THEN '-' ELSE aes_decrypt(aaea.appraiserRating,aaea.appraiseeId) 
+        END AS appraiserRating, CASE WHEN aes_decrypt(aaea.reviewerRating,aaea.appraiseeId) IS NULL THEN '-'
+        ELSE aes_decrypt(aaea.reviewerRating,aaea.appraiseeId) 
+        END AS reviewerRating,
+        CASE 
+        WHEN aes_decrypt(aaea.normalisedReviewerRating,aaea.appraiseeId) IS NULL THEN '-' 
+        ELSE aes_decrypt(aaea.normalisedReviewerRating,aaea.appraiseeId)
+        END AS normalisedReviewerRating,
+        CASE
+        WHEN aaea.submitStatus = 0 THEN 'Appraisal Initiated'
+        WHEN aaea.submitStatus = 1 THEN 'Appraiser Reverted Back'
+        WHEN aaea.submitStatus = 2 THEN 'Appraisee Submitted'
+        WHEN aaea.submitStatus = 3 THEN 'Reviewer Reverted Back'
+        WHEN aaea.submitStatus = 4 THEN 'Appraiser Submitted'
+        WHEN aaea.submitStatus = 5 THEN 'Final Reviewer Reverted Back'
+        WHEN aaea.submitStatus = 6 THEN 'Reviewer Submitted'
+        WHEN aaea.submitStatus = 7 THEN 'Final Reviewer Reverted Back'
+        WHEN aaea.submitStatus = 8 THEN 'Final Reviewer Submitted'
+        WHEN aaea.submitStatus = 9 THEN 'HR Submitted'
+        END As submittedStatus,
+        
+        subcs.name As subPracticeGroup,
+        
+        CASE
+        WHEN aaea.appraiserPromotionRec = 0 THEN 'No'
+        WHEN aaea.appraiserPromotionRec = 1 THEN 'YES'
+        WHEN aaea.appraiserPromotionRec IS NULL THEN  '--'
+        END AS appraiserPromotion,
+        CASE
+        WHEN aaea.reviewerPromotionRec = 0 THEN 'No' 
+        WHEN aaea.reviewerPromotionRec = 1 THEN 'YES'
+        WHEN aaea.reviewerPromotionRec IS NULL THEN '--'
+        END AS reviewerPromotion,
+        CASE
+        WHEN aaea.normalizerPromotionRec = 0 THEN 'No' 
+        WHEN aaea.normalizerPromotionRec = 1 THEN 'YES'
+        WHEN aaea.normalizerPromotionRec IS NULL THEN '--'
+        END AS normalizerPromotion
+
+        FROM aa_eligible_associates aaea
+        LEFT JOIN employees AS appraisee ON ( appraisee.id = aaea.appraiseeId )
+        LEFT JOIN employees AS appraiser ON ( appraiser.id = aaea.appraiserId )
+        LEFT JOIN employees AS reviewer ON ( reviewer.id = aaea.reviewerId )
+        LEFT JOIN employees AS normalizer ON ( normalizer.id = aaea.normalizerId )
+        LEFT JOIN company_structures AS cs ON ( cs.id = appraisee.structure_name )
+        LEFT JOIN company_structures AS subcs ON ( subcs.id = appraisee.structure_name_subgroup )
+        WHERE 1=1 AND appraisee.employment_status NOT IN ('r','t','b','q','o')
+        <dynamic>
+            <isNotEmpty prepend="AND" property="employee_id">
+                aaea.appraiserId = #employee_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="reviewer_id">
+                aaea.reviewerId = #reviewer_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="normalizer_id">
+                aaea.normalizerId = #normalizer_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="sbu">
+                appraisee.structure_name = #sbu#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="subSbu">
+                appraisee.structure_name_subgroup = #subSbu#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="appraisalYear">
+                aaea.year = #appraisalYear#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+
+    </select>
+
+    <select id="getAppraiser" parameterClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO" resultClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO">
+        SELECT Employee.id AS empId, CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM aa_eligible_associates AS aea
+        LEFT JOIN employees AS Employee ON (Employee.id = aea.appraiserId)
+        WHERE Employee.employee_number LIKE #key#
+        OR Employee.first_name LIKE #key#
+        OR Employee.last_name LIKE #key#
+        GROUP BY Employee.id
+
+    </select>
+
+    <select id="getReviewer" parameterClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO" resultClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO">
+        SELECT Employee.id AS empId, CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM aa_eligible_associates AS aea
+        LEFT JOIN employees AS Employee ON (Employee.id = aea.reviewerId)
+        WHERE Employee.employee_number LIKE #key#
+        OR Employee.first_name LIKE #key#
+        OR Employee.last_name LIKE #key#
+        GROUP BY Employee.id
+
+    </select>
+
+    <select id="getNormalizer" parameterClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO" resultClass="com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO">
+        SELECT Employee.id AS empId, CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM aa_eligible_associates AS aea
+        LEFT JOIN employees AS Employee ON (Employee.id = aea.normalizerId)
+        WHERE Employee.employee_number LIKE #key#
+        OR Employee.first_name LIKE #key#
+        OR Employee.last_name LIKE #key#
+        GROUP BY Employee.id
+
+    </select>
+
+    <select id="getAppraisalYearList" resultClass = "com.defiance.ideal.reports.dto.AnnualAppraisalDataDTO">
+            SELECT year AS appraisalYear FROM `aa_eligible_associates` group by year
+    </select>
+    <select id="getSubSbuList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.AnnualAppraisalFilterDTO">
+            SELECT id as id,name AS name FROM company_structures c WHERE parent_id IN ($sbuId$) 
+    </select>
+
+    <select id = "getAnnualAppraisalListCount" parameterClass = "com.defiance.ideal.reports.dto.AnnualAppraisalFilterDTO" resultClass = "java.lang.Integer">
+        SELECT count(*) as recordCount
+
+        FROM aa_eligible_associates aaea
+        LEFT JOIN employees AS appraisee ON ( appraisee.id = aaea.appraiseeId )
+        LEFT JOIN employees AS appraiser ON ( appraiser.id = aaea.appraiserId )
+        LEFT JOIN employees AS reviewer ON ( reviewer.id = aaea.reviewerId )
+        LEFT JOIN employees AS normalizer ON ( normalizer.id = aaea.normalizerId )
+        LEFT JOIN company_structures AS cs ON ( cs.id = appraisee.structure_name )
+        WHERE 1=1 AND appraisee.employment_status NOT IN ('r','t','b','q','o')
+        <dynamic>
+            <isNotEmpty prepend="AND" property="employee_id">
+                aaea.appraiserId = #employee_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="reviewer_id">
+                aaea.reviewerId = #reviewer_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="normalizer_id">
+                aaea.normalizerId = #normalizer_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="sbu">
+                appraisee.structure_name = #sbu#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="subSbu">
+                appraisee.structure_name_subgroup = #subSbu#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="appraisalYear">
+                aaea.year = #appraisalYear#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getSbuList" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.reports.dto.AnnualAppraisalFilterDTO">
+        SELECT id as id,name AS name FROM  company_structures WHERE parent_id IN ($sbuAndSsu$)
+    </select>
+   
+</sqlMap>

@@ -1,0 +1,9 @@
+ALTER TABLE `ca_eligible_associates` CHANGE `year` `year` INT( 1 ) NOT NULL ;
+UPDATE ca_eligible_associates SET year=1 WHERE appraisalTriggered=1;
+
+DELETE FROM `ideal2_sync`.`ca_eligible_associates` WHERE `ca_eligible_associates`.`qpdId` = 1 LIMIT 1;
+DELETE FROM `ideal2_sync`.`ca_eligible_associates` WHERE `ca_eligible_associates`.`qpdId` = 2 LIMIT 1;
+DELETE FROM `ideal2_sync`.`ca_eligible_associates` WHERE `ca_eligible_associates`.`qpdId` = 3 LIMIT 1;
+DELETE FROM `ideal2_sync`.`ca_eligible_associates` WHERE `ca_eligible_associates`.`qpdId` = 4 LIMIT 1;
+
+830093

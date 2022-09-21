@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : RollOutReport.xml
+    Created on : 21 January, 2013, 12:16 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="RollOutMap">
+    <select id="rollOutList" parameterClass="com.defiance.ideal.reports.dto.RollOutDTO" resultClass="com.defiance.ideal.reports.dto.RollOutDTO">
+       SELECT p.employee_id AS empId,p.project_id AS projectId,emp.id AS employeeId,
+        p.start_date AS prjStartDate,p.end_date AS prjEndDate,
+        CONCAT(emp.first_name,' ',emp.last_name) as employeeName,emp.employee_number AS empNumber,
+        emp.billable as empBilable,
+        CASE emp.employment_status
+        WHEN 'd' THEN 'Direct Contract'
+        WHEN 'p' THEN 'Permanent'
+        WHEN 't' THEN 'Terminated'
+        WHEN 'r' THEN 'Resigned'
+        WHEN 'v' THEN 'Vendor Contract'
+        WHEN 'a' THEN 'AL Employees'
+        WHEN 'g' THEN 'Permanent GmbH'
+        WHEN 'c' THEN 'Contract GmbH'
+        WHEN 'e' THEN 'Transferred'
+        WHEN 'l' THEN 'Long Leave'
+        WHEN 'b' THEN 'Absconding'
+         WHEN 'o' THEN 'Optimization'
+        ELSE ''
+        END AS empStatus,DATEDIFF(p.end_date, CURDATE()) AS datediff,
+        cst.customer_name as custName,
+        CASE prj.billable
+        WHEN 'i' THEN 'Internal Billable'
+        WHEN 'n' THEN 'Internal Non Billable'
+        WHEN 'e' THEN 'External Billable'
+        WHEN 'x' THEN 'External Non Billable'
+        ELSE 'Non Billable'
+        END AS billStatus,
+        CONCAT(empMgr.first_name,' ',empMgr.last_name) AS pmName,
+        cmp.name AS sbu,cmpStruct.name AS subSbu,
+        p.billing_hours AS billingHrs,p.billing_rate AS billingRate
+        FROM project_team_allocations p
+        LEFT JOIN employees emp ON(emp.id=p.employee_id)
+        LEFT JOIN projects prj ON(prj.id=p.project_id)
+        LEFT JOIN employees empMgr ON(empMgr.id=prj.project_manager)
+        LEFT JOIN company_structures cmp ON(cmp.id=emp.structure_name)
+        LEFT JOIN company_structures cmpStruct ON(cmpStruct.id=emp.structure_name_subgroup)
+        LEFT JOIN customers AS cst ON (prj.customer_id = cst.id)
+        Where p.deleted=0 AND prj.project_status IN ("e")
+        AND p.start_date <![CDATA[<=]]>  current_date() AND p.end_date >= current_date()
+        AND emp.billable='b' AND emp.employment_status NOT IN('r','t','b','q','o')
+        <dynamic>
+            <isNotEmpty property="projectName" >
+                AND p.project_id=#projectName#
+            </isNotEmpty>
+            <isNotEmpty property="sbu">
+               AND cmp.id=#sbu#
+            </isNotEmpty>
+            <isNotEmpty property="pmName">
+                AND prj.project_manager=#pmName#
+            </isNotEmpty>
+            <isNotEmpty property="subSbu">
+               AND cmpStruct.id=#subSbu#
+            </isNotEmpty>
+        </dynamic>
+            group by emp.id, p.End_date
+        <dynamic>
+            <isEqual property="operators" compareValue="1">
+                having (DATEDIFF(p.end_date, CURDATE()) <![CDATA[=]]> #datediff# )
+            </isEqual>
+            <isEqual property="operators" compareValue="2">
+                having (DATEDIFF(p.end_date, CURDATE()) <![CDATA[>]]> #datediff# )
+            </isEqual>
+            <isEqual property="operators" compareValue="3">
+                having (DATEDIFF(p.end_date, CURDATE()) <![CDATA[>=]]> #datediff# )
+            </isEqual>
+            <isEqual property="operators" compareValue="4">
+                having (DATEDIFF(p.end_date, CURDATE()) <![CDATA[<]]> #datediff# )
+            </isEqual>
+            <isEqual property="operators" compareValue="5">
+                having (DATEDIFF(p.end_date, CURDATE()) <![CDATA[<=]]> #datediff# )
+            </isEqual>
+        </dynamic>
+         order by employee_id ;
+    </select>
+
+    <select id="getprojectList" resultClass="com.defiance.ideal.reports.dto.RollOutDTO">
+        SELECT id as projectId,CONCAT(COALESCE(project_code,""),' - ',project_name) as prjName FROM projects p WHERE deleted =0;
+    </select>
+    <select id="getSbuList" resultClass="com.defiance.ideal.reports.dto.RollOutDTO">
+<!--        SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id= #SBU.ID#-->
+        SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id= #sbuId#
+    </select>
+    <select id="getPmNameList" resultClass="com.defiance.ideal.reports.dto.RollOutDTO">
+        SELECT DISTINCT(prj.project_manager) AS pmId,CONCAT(emp.first_name,' ',emp.last_name) AS pmName FROM projects prj
+        LEFT JOIN employees emp ON(emp.id=prj.project_manager)
+        WHERE deleted=0 AND emp.employment_status IN('e','p','v','g','q') order by emp.first_name;
+    </select>
+    <select id="getSubSbuList" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.RollOutDTO">
+         SELECT id AS sbuId,name AS sbu FROM company_structures c WHERE parent_id IN ($sbuId$)
+    </select>
+</sqlMap>

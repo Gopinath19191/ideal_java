@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+  An Ant build file for compiling a Beehive page flow web application.
+-->
+<project name="beehive_test" default="build" basedir=".">
+    <property environment="os"/>
+    <property file="${basedir}/build.properties"/>
+    <import file="${beehive.home}/beehive-imports.xml"/>
+    <import file="${beehive.home}/ant/beehive-tools.xml"/>
+    <property name="webapp.dir" location="${basedir}"/>
+    <property name="build.dir" location="build"/>
+    <property name="web.dir" location="web"/>
+    <property name="src.dir" location="src/java"/>
+    <mkdir dir="${build.dir}/web/WEB-INF/lib"/>
+    <mkdir dir="${build.dir}/web/WEB-INF/.tmpbeansrc"/>
+    <!-- controls src directory -->
+    
+    
+  
+    <!-- temp directory for compiler -->
+    <property name="tmp.sourcegen.dir" value=".tmpbeansrc"/>
+    
+    <!-- Define the classpath used to build the webapp -->
+    <path id="webapp.classpath">
+        
+        <pathelement location="${servlet-api.jar}"/>
+        <pathelement location="${jsp-api.jar}"/>
+        <pathelement location="${build.dir}/web/WEB-INF/classes"/>
+        <fileset dir="${beehive.home}/lib/common">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${build.dir}/web/WEB-INF/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${beehive.home}/lib/netui">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${beehive.home}/lib/controls">
+            <include name="*.jar"/>
+        </fileset>
+  
+    </path>
+    <path id="webapp.sourcepath">
+        <pathelement location="${web.dir}"/>
+        <pathelement location="${src.dir}"/>
+    </path>
+    
+    <target name="deploy-beehive" description="Copy the Beehive Page Flow rutime into the target webapp">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.dir}/web/WEB-INF/classes"/>
+        <deploy-netui webappDir="${build.dir}"/>
+    </target>
+    
+    <target name="build"  description="Build the webapp">
+        
+       <delete dir="${build.dir}/web/WEB-INF/classes" includeEmptyDirs="true"/>
+        <mkdir dir="${build.dir}/web/WEB-INF/classes"/>
+        
+        <!-- compile JPFs -->
+        <echo>Building Page Flows ${web.dir}</echo>
+        <!-- srcdir= where we have writtern JPF classes-->
+        <build-pageflows srcdir="${src.dir}"
+                         webcontentdir="${web.dir}"
+                         destdir="${build.dir}/web/WEB-INF/classes"
+                         tempdir="${build.dir}/web/WEB-INF/${tmp.sourcegen.dir}" 
+                         sourcepathref="webapp.sourcepath"
+                         classpathref="webapp.classpath"/>
+    </target>
+    <target name="clean" description="Clean the webapp">
+        <delete dir="${build.dir}" includeEmptyDirs="true"/>
+    </target>
+</project>

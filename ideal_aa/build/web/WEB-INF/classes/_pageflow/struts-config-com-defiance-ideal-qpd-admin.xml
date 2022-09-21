@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 1.1//EN" "http://jakarta.apache.org/struts/dtds/struts-config_1_1.dtd">
+<struts-config>
+  <!-- Generated from /com/defiance/ideal/qpd/admin/AdminController.java on Fri Jul 06 10:18:40 IST 2012 -->
+  <form-beans>
+    <form-bean className="org.apache.beehive.netui.pageflow.config.PageFlowActionFormBean" name="adminDTO" type="org.apache.beehive.netui.pageflow.internal.AnyBeanActionForm">
+      <set-property property="actualType" value="com.defiance.ideal.qpd.admin.dto.AdminDTO"/>
+    </form-bean>
+    <form-bean className="org.apache.beehive.netui.pageflow.config.PageFlowActionFormBean" name="adminFilterDTO" type="org.apache.beehive.netui.pageflow.internal.AnyBeanActionForm">
+      <set-property property="actualType" value="com.defiance.ideal.qpd.admin.dto.AdminFilterDTO"/>
+    </form-bean>
+  </form-beans>
+  <global-exceptions/>
+  <global-forwards>
+    <forward name="_auto" path=""/>
+  </global-forwards>
+  <action-mappings>
+    <action className="org.apache.beehive.netui.pageflow.config.PageFlowActionMapping" name="adminFilterDTO" parameter="com.defiance.ideal.qpd.admin.AdminController" path="/begin" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <set-property property="formClass" value="com.defiance.ideal.qpd.admin.dto.AdminFilterDTO"/>
+      <forward name="appraisaltrigger" path="/appraisaltrigger.jsp"/>
+    </action>
+    <action className="org.apache.beehive.netui.pageflow.config.PageFlowActionMapping" name="adminFilterDTO" parameter="com.defiance.ideal.qpd.admin.AdminController" path="/change" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <set-property property="formClass" value="com.defiance.ideal.qpd.admin.dto.AdminFilterDTO"/>
+      <forward name="changeappraisee" path="/changerequest.jsp"/>
+    </action>
+    <action parameter="com.defiance.ideal.qpd.admin.AdminController" path="/excelExport" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <forward name="excelExport" path="/begin.do?msg=scss"/>
+      <forward name="excelExportChange" path="/change.do"/>
+    </action>
+    <action parameter="com.defiance.ideal.qpd.admin.AdminController" path="/getEmployeeName" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <forward name="ajaxCall" path="/ajax.jsp"/>
+    </action>
+    <action className="org.apache.beehive.netui.pageflow.config.PageFlowActionMapping" name="adminDTO" parameter="com.defiance.ideal.qpd.admin.AdminController" path="/save" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <set-property property="formClass" value="com.defiance.ideal.qpd.admin.dto.AdminDTO"/>
+      <forward name="triggersuccess" path="/begin.do?msg=scss"/>
+      <forward name="filterpage" path="/begin.do?msg=sucss"/>
+      <forward name="excelexport" path="/excelExport.do"/>
+    </action>
+    <action className="org.apache.beehive.netui.pageflow.config.PageFlowActionMapping" name="adminDTO" parameter="com.defiance.ideal.qpd.admin.AdminController" path="/update" scope="request" type="org.apache.beehive.netui.pageflow.internal.FlowControllerAction" validate="false">
+      <set-property property="formClass" value="com.defiance.ideal.qpd.admin.dto.AdminDTO"/>
+      <forward name="updatesuccess" path="/change.do?msg=scss"/>
+      <forward name="excelexport" path="/excelExport.do?frm=update"/>
+    </action>
+  </action-mappings>
+  <controller className="org.apache.beehive.netui.pageflow.config.PageFlowControllerConfig" inputForward="true" processorClass="org.apache.beehive.netui.pageflow.PageFlowRequestProcessor">
+    <set-property property="isReturnToPageDisabled" value="true"/>
+    <set-property property="isReturnToActionDisabled" value="true"/>
+    <set-property property="sharedFlows" value=""/>
+    <set-property property="controllerClass" value="com.defiance.ideal.qpd.admin.AdminController"/>
+    <set-property property="isMissingDefaultMessages" value="true"/>
+  </controller>
+  <message-resources key="_defaultMsgs" null="true" parameter="org.apache.beehive.netui.pageflow.validation.defaultMessages"/>
+</struts-config>

@@ -1,0 +1,1147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="CustomerMap">
+       <insert id = "addFileDb" parameterClass = "Map">
+            INSERT into file_uploads(file_name,file_type,reference_name,ref_id,module_name)
+               values (#fileName#,#fileType#,#referenceName#,#referenceId#,#moduleName#);
+            <selectKey resultClass="String" keyProperty="lastInsertId">
+			select last_insert_id() as lastFileInsertId
+            </selectKey>
+        </insert>
+
+	<select id="fetchSelectedCustomer" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `Customer`.`id` as "custID",
+            `Customer`.`parent_id` AS "parentId",
+            `Customer`.`customer_name` as "customerName",
+            `Customer`.`customer_code` as "customerCode",
+            `Customer`.`about_customer` as "aboutCustomer",
+            `Customer`.`invoice_to` as "invoiceTo",
+             `cfg`.`configuration_value` AS "invoiceValue",
+            `Customer`.`remarks` as "remarks",
+            `Customer`.`sales_person_reference` as "salesPersonRefId",
+            concat(`Employee`.`employee_number`,'-',`Employee`.`first_name`, ' ',`Employee`.`last_name`) as "salesPerson",
+            `Customer`.`customer_url` as "customerURL",
+            Customer.status as "status",
+            Customer.tan_number as "tanNumber",
+            Customer.sales_person_contact_no  as "salesPersonContactNo",
+            Customer.about_customer as "aboutCustomer",
+            CASE WHEN Customer.status = 'a' THEN "Approved"
+            WHEN Customer.status = 'm' THEN "Submitted"
+            WHEN Customer.status = 'd' THEN "Amended"
+            WHEN Customer.status = 'r' THEN "Sent Back"
+            WHEN Customer.status = 's' THEN "Saved" END as "customerStatus",
+            `Customer`.`division` as "customerDivision",
+            `Customer`.`attachment_type` as "attachmentType",
+            `Customer`.`attachments` as "attchedFileName",
+            `FileUpload`.`file_type` as "fileType",
+            `FileUpload`.`file_name` as "fileName"
+            FROM `customers` AS `Customer` 
+            LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+             LEFT JOIN `configuration_values` AS `cfg` ON (`cfg`.`configuration_Key` = `Customer`.`invoice_to` AND `cfg`.`parent_id` ='771' )
+            LEFT JOIN `file_uploads` AS `FileUpload` ON(`FileUpload`.`id` = `Customer`.`attachments`  AND `FileUpload`.`module_name`='Customer Module' AND `Customer`.`attachments` IS NOT NULL)
+            WHERE Customer.id = #customerID#  
+<!--            AND Customer.parent_id = #parentId# -->
+        </select>
+        <select id="fetchSelectedParent" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `Customer`.`id` as "custID",
+            `Customer`.`parent_id` AS "parentId",
+            `Customer`.`is_customer_group` as "customerGroup",
+            CustomerGroups.group_name as "customerGroupName",
+            `Customer`.`customer_name` as "customerName",
+            `Customer`.`customer_code` as "customerCode",
+            `Customer`.`customer_category`,
+            `Customer`.`about_customer` as "aboutCustomer",
+            `Customer`.`remarks` as "remarks",
+            Customer.customer_group as 'customerGroupId',
+            `Customer`.`sales_person_reference` as "salesPersonRefId",
+            concat(`Employee`.`employee_number`,'-',`Employee`.`first_name`, ' ',`Employee`.`last_name`) as "salesPerson",
+            `Customer`.`customer_url` as "customerURL",
+            Customer.status as "status",
+            Customer.terms_of_payment as "termsOfPayment",
+            Customer.sales_person_contact_no  as "salesPersonContactNo",
+            Customer.business_leader_id as "businessLeaderName",
+            Customer.about_customer as "aboutCustomer",
+            Customer.legal_entity_code  as "customerInvoiceCode",
+            CASE WHEN Customer.status = 'a' THEN "Approved"
+            WHEN Customer.status = 'm' THEN "Submitted"
+            WHEN Customer.status = 'd' THEN "Amended"
+            WHEN Customer.status = 'r' THEN "Rejected"
+            WHEN Customer.status = 's' THEN "Saved" END as "customerStatus",
+            `Customer`.`division` as "customerDivision",
+            `Customer`.`attachment_type` as "attachmentType",
+            `Customer`.`attachments` as "attchedFileName",
+            `FileUpload`.`file_type` as "fileType",
+            `FileUpload`.`file_name` as "fileName"
+            FROM `customers` AS `Customer` 
+            LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+            LEFT JOIN `customer_groups` AS `CustomerGroups` ON (`Customer`.`customer_group` = `CustomerGroups`.`id`)
+            LEFT JOIN `file_uploads` AS `FileUpload` ON(`FileUpload`.`id` = `Customer`.`attachments`  AND `FileUpload`.`module_name`='Customer Module')
+            WHERE Customer.parent_id = #parentId#  
+        </select>
+	
+        
+        <select id="fetchSelectedCustomerDivisions"  parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `Customer`.`id` AS "customerID",
+            `Customer`.`parent_id` AS "parentId",
+            TRIM(`Customer`.`customer_name`) AS "customerName",
+            `Customer`.`customer_code` AS "customerCode",
+            CONCAT_WS(" ",`Employee`.`first_name`,`Employee`.last_name) AS "salesPerson",
+            `Customer`.`customer_url` AS "customerURL",
+            `Customer`.`division` AS "customerDivision",
+            CASE WHEN Customer.status = 'a' THEN "Approved"
+            WHEN Customer.status = 'm' THEN "Submitted"
+            WHEN Customer.status = 'd' THEN "Amended"
+            WHEN Customer.status = 'r' THEN "Rejected"
+            WHEN Customer.status = 's' THEN "Saved" END AS "customerStatus"
+            FROM `customers` AS `Customer` 
+            LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+            WHERE `Customer`.`parent_id` = #parentId#
+        </select>
+        
+        <select id="fetchBillingAddress"  parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT 
+            cba.id as "id",
+            cba.customer_id,
+            cba.address_line  as "customerAddress",
+            cba.address_shortcode as "addressShortCode",
+            cba.country_id as "countryID",
+            cntry.country as "country",
+            cba.region_id as "regionID",
+            rg.region as "region",
+            cba.city_id as "cityID",
+            cty.city as "city",
+            cba.zip_code as "pincode" ,
+            cba.state_code as "gstCode",
+            cba.gstin_number as "gstNumber"
+            FROM `customer_billing_addresses` AS `cba`
+            LEFT JOIN customers AS Customer ON (cba.customer_id = Customer.id) 
+            LEFT JOIN Countries AS cntry ON (cntry.id = cba.country_id) 
+            LEFT JOIN Regions AS rg ON (rg.id = cba.region_id) 
+            LEFT JOIN Cities AS cty ON (cty.id = cba.city_id) 
+            WHERE `Customer`.`id` = #customerID# and cba.deleted = 0
+        </select>
+        <select id="fetchCustomerWorkLocations"  parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT 
+            cwl.id as "id",
+            cwl.customer_id,
+            cwl.address_line as "customerAddress",
+            cwl.address_shortcode as "addressShortCode",
+            cwl.country_id as "countryID",
+            cntry.country as "country",
+            cwl.region_id as "regionID",
+            rg.region as "region",
+            cwl.city_id as "cityID",
+            cty.city as "city",
+            cwl.zip_code as "pincode" ,
+            cwl.customer_working_hrs as "workLocationWorkingHours",
+            cwl.is_company_location as "iscompanyLocationId",
+            case when cwl.is_company_location = 0 THEN "Customer Location"
+            when cwl.is_company_location = 1 THEN "Company Location"
+            end as "isCompanyLocation"
+            FROM customer_work_locations AS cwl 
+            LEFT JOIN customers AS Customer ON (cwl.customer_id = Customer.id) 
+            LEFT JOIN Countries AS cntry ON (cntry.id = cwl.country_id) 
+            LEFT JOIN Regions AS rg ON (rg.id = cwl.region_id) 
+            LEFT JOIN Cities AS cty ON (cty.id = cwl.city_id) 
+            WHERE `Customer`.`id` = #customerID# and cwl.deleted = 0
+        </select>
+        <select id="fetchBusinessContactDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `contacts`.`id` as "id",
+            `contacts`.`customer_contact_type` as "customercontactType",
+            `contacts`.`contact_person_name` as "contactPerson",
+            `contacts`.`contact_person_designation` as "contactDesignation",
+            `contacts`.`contact_person_mobile` as "contactPhone",
+            `contacts`.`contact_person_email` as "contactEmail" 
+            FROM `customer_contacts` AS `contacts`
+            LEFT JOIN `customers`  AS `Customer` ON(`contacts`.`customer_id` = `Customer`.`id`)
+            WHERE `Customer`.`id` = #customerID# AND `contacts`.`customer_contact_type` = 'bu' and `contacts`.`deleted` = 0
+        </select>
+        <select id="fetchFinanceContactDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `contacts`.`id` as "id",
+            `contacts`.`customer_contact_type` as "customercontactType",
+            `contacts`.`contact_person_name` as "contactPerson",
+            `contacts`.`contact_person_designation` as "contactDesignation",
+            `contacts`.`contact_person_mobile` as "contactPhone",
+            `contacts`.`contact_person_email` as "contactEmail" 
+            FROM `customer_contacts` AS `contacts`
+            LEFT JOIN `customers`  AS `Customer` ON(`contacts`.`customer_id` = `Customer`.`id`)
+            WHERE `Customer`.`id` = #customerID# AND `contacts`.`customer_contact_type` = 'f' and `contacts`.`deleted` = 0
+        </select>
+        <select id="fetchDunningContactDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `contacts`.`id` as "id",
+            `contacts`.`customer_contact_type` as "customercontactType",
+            `contacts`.`contact_person_name` as "contactPerson",
+            `contacts`.`contact_person_designation` as "contactDesignation",
+            `contacts`.`contact_person_mobile` as "contactPhone",
+            `contacts`.`contact_person_email` as "contactEmail" 
+            FROM `customer_contacts` AS `contacts`
+            LEFT JOIN `customers`  AS `Customer` ON(`contacts`.`customer_id` = `Customer`.`id`)
+            WHERE `Customer`.`id` = #customerID# AND `contacts`.`customer_contact_type` = 'd' and `contacts`.`deleted` = 0
+        </select>
+        
+        <select id="fetchWorkLocationShortCode" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT cusbl.address_shortcode as "addressShortCode" from customers as cus
+            LEFT JOIN customer_work_locations as cusbl on(cus.id= cusbl.customer_id)
+            where cus.parent_id IN (select id from customers where parent_id=(select parent_id from customers where id = #customerID#))
+        </select>
+        
+        <select id="fetchBillingShortCode" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT cusbl.address_shortcode as "addressShortCode" from customers as cus
+            LEFT JOIN customer_billing_addresses as cusbl on(cus.id= cusbl.customer_id)
+            where cus.parent_id IN (select id from customers where parent_id=(select parent_id from customers where id = #customerID#))
+        </select>
+        
+	<select id="getCustomerGroup" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+            SELECT cg.id as "customerID",
+            cg.group_name as "customerGroupName"
+            FROM customer_groups AS cg order by cg.group_name
+        </select>
+                
+        <select id="getCustomerGroupList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            select group_name as "customerGroupName",id as "customerGroup" FROM customer_groups order by group_name ASC ;
+	</select>
+
+	<select id="getCurrencyList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT `Currency`.`id` as "currencyId",
+            `Currency`.`currency_code` as "currencyCode"
+            FROM `currencies` AS `Currency`
+        </select>
+
+	<select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" >
+            SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+        </select>
+        
+        <select id="fetchCustomerActiveInactive" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO" >
+            SELECT configuration_key AS deleted, configuration_value AS deletedName FROM configuration_values  WHERE parent_id =652;
+        </select>
+        
+	<select id="getBusinessLeader" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+<!--		SELECT `Employee`.`id` as "salesManId",
+		`Employee`.`employee_number` as "employeeNumber",
+		concat_ws(" ",`Employee`.`first_name`, `Employee`.`last_name`) as "employeeName"
+		FROM `employees` AS `Employee` WHERE Employee.employment_status NOT IN ('r','t','b','q')
+		and Employee.band_id IN ($bandId$) ORDER BY `Employee`.`first_name`,last_name ASC   changed the hard code values -->
+                SELECT Employee.id as "salesManId",
+		Employee.employee_number as "employeeNumber",
+		concat_ws(" ",Employee.first_name, Employee.last_name) as "employeeName"
+		FROM employees AS Employee  
+                INNER JOIN configuration_values AS cv ON(cv.configuration_key='business_leader_id' AND cv.configuration_value= Employee.id)
+                WHERE Employee.employment_status NOT IN ('r','t','b','q','o')
+		and Employee.band_id IN ($bandId$)
+                ORDER BY `Employee`.`first_name`,last_name ASC
+        </select>
+
+	<select id="getsubRBUList" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            select id as "rbuId", name as "rbuName" from company_structures where parent_id in (#RBUFilter#)
+        </select>
+
+	<select id="getRBUList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            select id as "rbuId",
+            name as "rbuName" from company_structures where id = 23
+        </select>
+	<select id="getSBUList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            select id as "sbuId",
+            name as "sbuName" from company_structures where parent_id = #subId# <!-- changed the hard code values -->
+	</select>
+	<select id="getCityList" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT `City`.`id` as "cityID",
+		City.`city` as "cityName"
+		FROM cities AS `City`
+		WHERE 1=1
+		<dynamic>
+                    <isEmpty prepend="AND" property="countryFilter">
+                            1!=1
+                    </isEmpty>
+                    <isNotEmpty prepend="AND" property="countryFilter">
+                            City.country_id = #countryFilter#
+                    </isNotEmpty>
+                    <isNotEmpty prepend="AND" property="regionFilter">
+                            City.region_id = #regionFilter#
+                    </isNotEmpty>
+		</dynamic>
+		ORDER BY City.`city` asc
+        </select>
+	<select id="getRegionList" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT `Region`.`id` as "regionID",
+		`Region`.`region` as "regionName"
+		FROM `regions` AS `Region`
+		WHERE 1 = 1
+		<dynamic>
+                    <isEmpty prepend="AND" property="countryFilter">
+                            1!=1
+                    </isEmpty>
+                    <isNotEmpty prepend="AND" property="countryFilter">
+                            Region.country_id = #countryFilter#
+                    </isNotEmpty>
+		</dynamic>
+		ORDER BY `Region`.`region` asc
+        </select>
+        <select id="getGstCode" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="String">
+                SELECT state_code AS gstCode FROM state_code_masters WHERE region_id = #regionFilter#
+        </select>
+        <select id="getCountryList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT `Country`.`id`  as "countryID",
+		`Country`.`country`  as "countryName"
+		FROM `countries` AS `Country`
+		WHERE `Country`.`nationality` != "" ORDER BY `Country`.`country` asc
+        </select>
+        <select id="getSalesPersonName" parameterClass="String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+                SELECT CONCAT(employee_number,'-', first_name, ' ', last_name) AS salesPersonName
+                FROM employees WHERE id = #salesPerson#  AND  employment_status NOT IN ('r','t','b','q','o')
+        </select>
+        
+        <select id="getSalesPersonNameWithID" parameterClass="String" resultClass="String">
+                SELECT CONCAT(employee_number,'-', first_name, ' ', last_name) AS salesPersonName
+                FROM employees WHERE id = #salesPerson#  AND  employment_status NOT IN ('r','t','b','q','o')
+        </select>
+		
+        <select id="getSalesPersonPhoneNumber" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="String">
+                SELECT mobile_number AS salesPersonContactNo
+                FROM employees WHERE id = #salesPersonRefId#  AND  employment_status NOT IN ('r','t','b','q','o')
+        </select>
+        
+        <select id="getSalesPersonRef" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            SELECT DISTINCT emp.id AS "salesManId",emp.employee_number as "employeeNumber",
+            CONCAT_WS(" ",emp.first_name, emp.last_name) AS "employeeName"
+            FROM employees AS emp
+            LEFT JOIN projects AS project ON(project.sales_person= emp.id)
+            WHERE
+            emp.employment_status NOT IN ('r','t','b','q','o')
+            AND emp.id IN($salesPersonRefId$)                
+            UNION 
+            SELECT Emp.id as "salesManId",
+            Emp.employee_number as "employeeNumber",
+            concat_ws(" ",Emp.first_name, Emp.last_name) as "employeeName"
+            FROM employees AS Emp 
+            INNER JOIN customers AS cs ON(cs.bdm_id=Emp.id)
+            WHERE cs.id = #customerID#                   
+                
+        </select>
+        <select id="getSalesPersonRefId" parameterClass="java.lang.String" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+            SELECT
+            pt.configuration_value as salesPersonRef
+            FROM configuration_values AS pt
+            WHERE
+            pt.configuration_key = 'bdm_id'
+        </select>
+	<select id="fetchCustomerData" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+<!--		SELECT `Customer`.`id` as "custID",
+		CASE WHEN `Customer`.`is_customer_group` = 'y' THEN "Yes" ELSE "No" END as "customerGroup",
+		(select group_name from customer_groups where id = Customer.customer_group) as "customerGroupName",
+		trim(`Customer`.`customer_name`) as "customerName",
+		`Customer`.`customer_code` as "customerCode",
+		`Customer`.`customer_category`,
+		`Customer`.`about_customer`,
+		`Customer`.`remarks`,
+		concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+		`Customer`.`customer_url` as "customerURL",
+		Customer.status as "status",
+		Customer.terms_of_payment as "termsOfPayment",
+		Customer.stc_number as "stcNo",
+		Customer.data_area_id  as "dataAreaId",
+		Customer.customer_contact_person as "customerContactPerson",
+		Customer.sales_person_contact_no  as "salesPersonContactNo",
+		concat_ws(" ",`businessLeader`.`first_name`,`businessLeader`.last_name) as "businessLeaderName",
+		Customer.customer_address as "customerAddress",
+		Customer.about_customer as "aboutCustomer",
+		CASE WHEN Customer.status = 'a' THEN "Approved"
+		WHEN Customer.status = 'm' THEN "Submitted"
+		WHEN Customer.status = 'd' THEN "Amended"
+		WHEN Customer.status = 'r' THEN "Rejected"
+		WHEN Customer.status = 's' THEN "Saved" END as "customerStatus",
+		`Currency`.`currency_code` as "currency",
+		`Currency`.`currency_symbol`,
+		`Employee`.`employee_number`,
+		`Employee`.`first_name`,
+		`Employee`.`last_name`,
+		`Employee`.`middle_name`,
+		`sbu`.`name` as "SBU",
+		`rbu`.`name` as "RBU",
+		`subrbu`.`name` as "subRBU",
+		cty.country as "customerCountry"
+		FROM `customers` AS `Customer` LEFT JOIN `currencies` AS `Currency` ON (`Customer`.`currency_id` = `Currency`.`id`)
+		LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+		LEFT JOIN `employees` AS `businessLeader` ON (`Customer`.business_leader_id = `businessLeader`.`id`)
+		LEFT JOIN `company_structures` AS `sbu` ON (`Customer`.`sbu_id` = `sbu`.`id`)
+		LEFT JOIN `company_structures` AS `rbu` ON (`Customer`.customer_rbu = `rbu`.`id`)
+		LEFT JOIN `company_structures` AS `subrbu` ON (`Customer`.sub_rbu = `subrbu`.`id`)
+		LEFT JOIN `countries` AS `cty` ON (`Customer`.country_id = cty.`id`)-->
+        <!--COUNT(Customer.customer_name ON customer.parent_id =`Customer`.`id` ) AS `divisionCount`, -->
+<!--                SELECT `Customer`.`id` as "custID",
+                TRIM(Customer.customer_name) AS `customerName`,
+                 `Customer`.`division` as "divisionName",
+                 concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+                COUNT(Customer.customer_name) AS `divisionCount`, 
+                CASE WHEN Customer.status = 'a' THEN "Approved"
+                WHEN Customer.status = 'm' THEN "Submitted"
+                WHEN Customer.status = 'd' THEN "Amended"
+                WHEN Customer.status = 'r' THEN "Rejected"
+                WHEN Customer.status = 's' THEN "Saved" END AS "customerStatus"
+                FROM customers AS Customer
+                LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+                WHERE Customer.parent_id = 0 
+                GROUP BY Customer.parent_id 
+                ORDER BY Customer.id,Customer.parent_id DESC-->
+                
+                SELECT `Customer`.`id` as "custID",
+                `Customer`.`customer_code` as "customerCode",
+                TRIM(Customer.customer_name) AS `customerName`,
+                `Customer`.`division` as "divisionName",
+                concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+                Customer.status as "status",
+                cv.configuration_value AS "customerStatus"
+                FROM customers AS Customer
+                LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+                LEFT JOIN configuration_values cv on Customer.status = cv.configuration_key and cv.parent_id = 646
+                WHERE `Customer`.`deleted` = '0'
+                ORDER BY Customer.customer_code ASC
+        </select>
+        
+        <select id="getcustomerProjectMapping" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+<!--                SELECT CONCAT(`prjt`.`project_code`,'-',`prjt`.`project_name`) AS "projectName",
+                `cv`.`configuration_value` AS "projectStatus"
+                FROM projects AS prjt
+                LEFT JOIN configuration_values AS cv ON (`prjt`.`project_status` = `cv`.`configuration_key` AND `cv`.`parent_id` = 82)
+                WHERE `prjt`.`customer_id`=#custID# AND `prjt`.`project_status`!='c' ORDER BY projectStatus-->
+                SELECT CONCAT(CASE WHEN `prjt`.`project_code` IS NOT NULL THEN `prjt`.`project_code` WHEN `prjt`.`project_code` IS NULL THEN ' '  END,'-',`prjt`.`project_name`) AS "projectName",
+                `cv`.`configuration_value` AS "projectStatus"
+                FROM projects as prjt
+                LEFT JOIN configuration_values AS cv ON (`prjt`.`project_status` = `cv`.`configuration_key` AND `cv`.`parent_id` = 82)
+                WHERE `prjt`.`customer_id`=#custID# and `prjt`.`project_status`!='c'
+        </select>
+        
+        <select id="fetchActiveInactiveCustomerData" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+                SELECT `Customer`.`id` as "custID",
+                `Customer`.`customer_code` as "customerCode",
+                TRIM(Customer.customer_name) AS `customerName`,
+                `Customer`.`division` as "divisionName",
+                concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+                `Customer`.`status` as "status",
+                `cv`.`configuration_value` AS "customerStatus",
+                `Customer`.`deleted` as "deleted"
+                FROM customers AS Customer
+                LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+                LEFT JOIN configuration_values cv on Customer.status = cv.configuration_key and cv.parent_id = 646
+                WHERE `Customer`.`deleted` = #deleted#
+                ORDER BY Customer.customer_code ASC
+        </select>
+        
+	<select id="fetchCustomerDataForExcel" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+            SELECT `Customer`.`id` AS "custID",
+            TRIM(`Customer`.`customer_name`) AS "customerName",
+            `Customer`.`customer_code` AS "customerCode",
+            `customer`.`division` AS "customerGroupName",
+            CONCAT(`Employee`.`employee_number`,'-',`Employee`.`first_name`,' ',`Employee`.last_name) AS "salesPerson",
+            `Customer`.`sales_person_contact_no` AS "salesPersonContactNo",
+            `custBA`.`address_line` AS "billingAddress",
+            `custBA`.`address_shortcode` AS "billingAddressShortCode",
+            `bCountry`.`country` AS "billingCountry",
+            `bRegion`.`region` AS "billingRegion",
+            `bCity`.`city` AS "billingCity",
+            `custBA`.`zip_code` AS "billingPincode",
+            `custBA`.`state_code` AS "billingGstCode",
+            `custBA`.`gstin_number` AS "billingGstNumber",
+            `custWL`.`address_line` AS "workLocationAddress",
+            `custWL`.`address_shortcode` AS "workLocationShortCode",
+            `wCountry`.`country` AS "workLocationCountry",
+            `wRegion`.`region` AS "workLocationRegion",
+            `wCity`.`city` AS "workLocationCity",
+            `custWL`.`zip_code` AS "workLocationPincode",
+            `custWL`.`customer_working_hrs` AS "workingHrs",	
+            `custFC`.`contact_person_name` AS "financeContactPerson",
+            `custFC`.`contact_person_designation` AS "financeContactDesignation",
+            `custFC`.`contact_person_mobile` AS "financeContactPhone",
+            `custFC`.`contact_person_email` AS "financeEmail",
+            `custBC`.`contact_person_name` AS "businessContactPerson",
+            `custBC`.`contact_person_designation` AS "businessContactDesignation",
+            `custBC`.`contact_person_mobile` AS "businessContactPhone",
+            `custBC`.`contact_person_email` AS "businessEmail"
+            FROM `customers` AS `Customer` 
+            LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+            LEFT JOIN `employees` AS `businessLeader` ON (`Customer`.business_leader_id = `businessLeader`.`id`)
+            LEFT JOIN `customer_billing_addresses` AS `custBA` ON (`Customer`.`id`=`custBA`.`customer_id` and `custBA`.`deleted` = 0)
+            LEFT JOIN `customer_work_locations` AS `custWL` ON (`Customer`.`id`=`custWL`.`customer_id`and `custWL`.`deleted` = 0)
+            LEFT JOIN `customer_contacts` AS `custFC` ON (`Customer`.`id`=`custFC`.`customer_id` AND `custFC`.`customer_contact_type`='f' and `custFC`.`deleted` = 0)
+            LEFT JOIN `customer_contacts` AS `custBC` ON (`Customer`.`id`=`custBC`.`customer_id` AND `custBC`.`customer_contact_type`='bu' and `custBC`.`deleted` = 0)
+            LEFT JOIN configuration_values cv on `Customer`.`status` = `cv`.`configuration_key` and `cv`.`parent_id` = 646
+            LEFT JOIN `countries` AS `bCountry` ON (`custBA`.`country_id` = `bCountry`.`id`)
+            LEFT JOIN `countries` AS `wCountry` ON (`custWL`.`country_id` = `wCountry`.`id`)
+            LEFT JOIN `regions` AS `bRegion` ON (`custBA`.`region_id` = `bRegion`.`id`)
+            LEFT JOIN `regions` AS `wRegion` ON (`custWL`.`region_id` = `wRegion`.`id`)
+            LEFT JOIN `cities` AS `bCity` ON (`custBA`.`city_id` = `bCity`.`id`)
+            LEFT JOIN `cities` AS `wCity` ON (`custWL`.`city_id` = `wCity`.`id`)
+            WHERE `Customer`.`deleted` = '0' 
+        </select>
+	<select id="fetchCustomerApproveData" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO" resultClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+<!--		SELECT `Customer`.`id` as "custID",
+		CASE WHEN `Customer`.`is_customer_group` = 'y' THEN "Yes" ELSE "No" END as "customerGroup",
+		(select group_name from customer_groups where id = Customer.customer_group) as "customerGroupName",
+		trim(`Customer`.`customer_name`) as "customerName",
+		`Customer`.`customer_code` as "customerCode",
+		`Customer`.`customer_category`,
+		`Customer`.`about_customer`,
+		`Customer`.`remarks`,
+		concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+		`Customer`.`customer_url` as "customerURL",
+		Customer.status as "status",
+		Customer.terms_of_payment as "termsOfPayment",
+		Customer.stc_number as "stcNo",
+		Customer.data_area_id  as "dataAreaId",
+		Customer.customer_email  as "customerEmail",
+		Customer.customer_contact_person as "customerContactPerson",
+		Customer.sales_person_contact_no  as "salesPersonContactNo",
+		concat_ws(" ",`businessLeader`.`first_name`,`businessLeader`.last_name) as "businessLeaderName",
+		Customer.customer_address as "customerAddress",
+		Customer.about_customer as "aboutCustomer",
+		CASE WHEN Customer.status = 'a' THEN "Approved"
+		WHEN Customer.status = 'm' THEN "Submitted"
+		WHEN Customer.status = 'd' THEN "Amended"
+		WHEN Customer.status = 'r' THEN "Rejected"
+		WHEN Customer.status = 's' THEN "Saved" END as "customerStatus",
+		`Currency`.`currency_code` as "currency",
+		`Currency`.`currency_symbol`,
+		`Employee`.`employee_number`,
+		`Employee`.`first_name`,
+		`Employee`.`last_name`,
+		`Employee`.`middle_name`,
+		`sbu`.`name` as "SBU",
+		`rbu`.`name` as "RBU",
+		`subrbu`.`name` as "subRBU",
+		cty.country as "customerCountry"
+		FROM `customers` AS `Customer` LEFT JOIN `currencies` AS `Currency` ON (`Customer`.`currency_id` = `Currency`.`id`)
+		LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+		LEFT JOIN `employees` AS `businessLeader` ON (`Customer`.business_leader_id = `businessLeader`.`id`)
+		LEFT JOIN `company_structures` AS `sbu` ON (`Customer`.`sbu_id` = `sbu`.`id`)
+		LEFT JOIN `company_structures` AS `rbu` ON (`Customer`.customer_rbu = `rbu`.`id`)
+		LEFT JOIN `company_structures` AS `subrbu` ON (`Customer`.sub_rbu = `subrbu`.`id`)
+		LEFT JOIN `countries` AS `cty` ON (`Customer`.country_id = cty.`id`)
+		where Customer.status IN ('m','d') -->
+                SELECT `Customer`.`id` as "custID",
+                trim(`Customer`.`customer_name`) as "customerName",
+                `Customer`.`customer_code` as "customerCode",
+                `Customer`.`division` as "divisionName",
+                concat_ws(" ",`Employee`.`first_name`,`Employee`.last_name) as "salesPerson",
+                `Customer`.`customer_url` as "customerURL",
+                Customer.status as "status",
+                cv.configuration_value AS "customerStatus"
+                FROM `customers` AS `Customer` 
+                LEFT JOIN `employees` AS `Employee` ON (`Customer`.`sales_person_reference` = `Employee`.`id`)
+                LEFT JOIN configuration_values cv on Customer.status = cv.configuration_key and cv.parent_id = 646
+                where Customer.status IN ('m','d') 
+        </select>
+
+	<select id="getInvoiceCode" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT inv_con.`id`  as "invoiceID",
+		inv_con.invoice_code  as "invoiceCode"
+		FROM invoice_configurations AS inv_con ORDER BY invoice_code asc
+        </select>
+
+	<select id="getlegalEntityId" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT legal_entity_id as "legalInvoiceCodeId"
+		from invoice_configurations
+		WHERE id = #customerInvoiceCode#
+        </select>
+
+	<select id="getMaxCustomerCode" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+<!--		SELECT max(customer_code) as "customerMaxId"
+		from customers
+		WHERE legal_entity_code IN (select id from invoice_configurations where  legal_entity_id = #legalInvoiceCodeId#)
+		AND customer_code LIKE
+		concat("",(SELECT substring( customer_code, 1, 5 ) FROM legal_entities WHERE id =#legalInvoiceCodeId#),"%")-->
+<!--                SELECT MAX(substring(customer_code, 1, 6)) AS "customerMaxId" from customers where customer_code LIKE "C0%"-->
+                SELECT MAX(substring(customer_code, 1, 6)) AS "customerMaxId" from customers where customer_code LIKE "1%"
+        </select>
+        
+        <select id="getDivisionCount" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            <!--SELECT COUNT(*) AS customerDivision FROM customers WHERE parent_id = (SELECT parent_id FROM customers where id = #customerID#)-->
+            SELECT COUNT(*) AS customerDivision FROM customers WHERE parent_id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#)
+        </select>
+        
+        
+        <select id="getCustomerCodeMaxLike" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            <!--SELECT substring(customer_code, 1, 6) AS customerCode from customers where id = (SELECT parent_id FROM customers where id = #customerID#)-->
+            SELECT MAX(customer_code) AS customerCode from customers where customer_code LIKE #customerCodelike#"%"
+        </select>
+        
+        <select id="getCustomerDivisionApprovedCount" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            <!--SELECT count(*) AS customerDivision from customers where parent_id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#) and status IN('a','d')-->
+            SELECT CASE WHEN LENGTH(MAX(customer_code)) = 8 THEN 
+            (SELECT MAX(substring(customer_code, 8, 2)) from customers where parent_id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#))
+            ELSE "0" END as customerDivision
+            from customers where parent_id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#)
+        </select>
+        
+        <select id="getCustomerCode" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            <!--SELECT substring(customer_code, 1, 6) AS customerCode from customers where id = (SELECT parent_id FROM customers where id = #customerID#)-->
+            SELECT substring(customer_code, 1, 6) AS customerCode from customers where id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#) OR
+            parent_id = (SELECT CASE WHEN parent_id != 0 THEN parent_id ELSE id END FROM customers where id = #customerID#) ORDER BY customer_code DESC
+        </select>
+        
+        <select id="getCustomerActivatingCode" resultClass="String" parameterClass="String">
+            SELECT customer_code AS "CustomerCode" from customers where id = #customerID#
+        </select>
+
+	<select id="getFirstCustomerCode" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+		SELECT customer_code as "customerMaxId"
+		from legal_entities
+		WHERE id = #legalInvoiceCodeId#
+        </select>
+        <insert id="insertParentCustomer" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+            INSERT INTO customers set				
+		customer_name = #customerName#                
+		<selectKey resultClass="int" keyProperty="parentId">
+			select last_insert_id() as parentId
+		</selectKey>
+        </insert>
+	<insert id="insertCustomerDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" >
+<!--		INSERT INTO customers set
+		is_customer_group = 'y',
+		customer_name = #customerName#,
+		sales_person_reference = #salesPerson#,
+		customer_category = #customerCategory#,
+		about_customer = #aboutCustomer#,
+		currency_id = #currency#,
+		customer_url = #customerURL#,
+		status = #status#,
+		deleted = 0,
+		city_id = #city#,
+		region_id = #region#,
+		country_id = #country#,
+		customer_contact_phone = #customerContactPhone#,
+		customer_email = #customerEmail#,
+		customer_contact_person = #customerContactPerson#,
+		business_leader_id = #businessLeaderName#,
+		sales_person_contact_no = #salesPersonContactNo#,
+		customer_rbu = #RBU#,
+		sub_rbu = 24,
+		customer_address = #customerAddress#,
+		sbu_id = #SBU#,
+		stc_number = #stcNo#,
+		data_area_id = #dataAreaId#,
+		created_on = CURDATE();
+		INSERT INTO customers (is_customer_group,customer_group,customer_name,sales_person_reference,customer_category,about_customer,currency_id,customer_url,
+		status,deleted,city_id,region_id,country_id,customer_contact_phone,customer_email,customer_contact_person,business_leader_id,
+		sales_person_contact_no,customer_rbu,sub_rbu,customer_address,sbu_id,stc_number,data_area_id,created_on,division,attachment_type,attachments)values('y',
+                #customerGroup#,#customerName#,
+		#salesPerson#,#customerCategory#,#aboutCustomer#,#currency#,#customerURL#,#status#,0,#city#,#region#,#country#,#customerContactPhone#,
+		#customerEmail#,#customerContactPerson#,#businessLeaderName#,#salesPersonContactNo#,#RBU#,#subRBU#,#customerAddress#,#SBU#,#stcNo#,#dataAreaId#,CURDATE(),
+                #customerDivision#,#attachmentType#,#attachmentValue#);-->
+                INSERT INTO customers set
+		is_customer_group = 'n',
+		customer_group =#customerGroupName#,
+		customer_name = #customerName#,
+                parent_id =#parentId#,
+                tan_number = #tanNumber#,
+                sales_person_reference = #salesPerson#,
+		about_customer = #aboutCustomer#,
+		customer_url = #customerURL#,
+		status = #status#,
+		deleted = 0,
+                invoice_to = #invoiceTo#,
+		sales_person_contact_no = #salesPersonContactNo#,
+		created_on = CURDATE(),
+		division = #customerDivision#,
+		attachment_type = #attachmentType#,
+		attachments =#attchedFileName#;
+		<selectKey resultClass="String" keyProperty="lastInsertId">
+                    select last_insert_id() as lastInsertId
+		</selectKey>
+	</insert>
+	
+        
+    <insert id="insertCustomerDivisionDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_divisions(customer_id,division_name,date_created) values
+                                        (#customerID#,#customerDivisionName#,NOW());
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+                select last_insert_id() as divisionId
+        </selectKey>
+    </insert>
+                        	
+  <insert id="insertCustomerBilling" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+    insert into customer_billing_addresses(customer_id,address_line,address_shortcode,country_id,region_id,city_id,zip_code,state_code,gstin_number) values
+    (#customerID#,#customerAddress#,#addressShortCode#,#countryID#,#regionID#,#cityID#,#pincode#,#gstCode#,#gstNumber#)
+  </insert>
+  
+  <insert id="insertCustomerWorkLoc" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+    insert into customer_work_locations(customer_id,address_line,address_shortcode,country_id,region_id,city_id,zip_code,customer_working_hrs,is_company_location) values
+            (#customerID#,#customerAddress#,#addressShortCode#,#countryID#,#regionID#,#cityID#,#pincode#,#workLocationWorkingHours#,#isCompanyLocation#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+  </insert>
+<!--  <insert id="insertCustomerCalendar" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+    insert into customer_calendars(customer_id,location_id,customer_calendar_name,available_hours) values
+                                       (#customerID#,#lastInsertId#,CONCAT(#customerName#,'_',#addressShortCode#,'_',#workLocationWorkingHours#),#workLocationWorkingHours#)
+      
+    </insert>-->
+    <insert id="insertCustomerCalendar" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_calendars(customer_id,location_id,customer_calendar_name,available_hours,is_customer,location_table) values
+        (#customerID#,#lastInsertId#,#customerCalName#,#workLocationWorkingHours#,1,'customer_work_locations')
+      
+    </insert>
+    <insert id="insertCustomerFinanceContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_contacts(customer_id,customer_contact_type,contact_person_name,contact_person_designation,contact_person_mobile,contact_person_email) values
+        (#customerID#,#contactType#,#contactPerson#,#contactDesignation#,#contactPhone#,#contactEmail#)
+    </insert>
+  <insert id="insertCustomerDunningContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_contacts(customer_id,customer_contact_type,contact_person_name,contact_person_designation,contact_person_mobile,contact_person_email) values
+        (#customerID#,#contactType#,#contactPerson#,#contactDesignation#,#contactPhone#,#contactEmail#)
+    </insert>
+    <insert id="insertCustomerContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_contacts(customer_id,customer_contact_type,contact_person_name,contact_person_designation,contact_person_mobile,contact_person_email) values
+        (#customerID#,#contactType#,#contactPerson#,#contactDesignation#,#contactPhone#,#contactEmail#)
+    </insert>
+  
+    <update id="updateCustomerDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        UPDATE customers set
+        is_customer_group = 'n',
+        customer_name = #customerName#,
+        sales_person_reference = #salesPerson#,
+        customer_category = #customerCategory#,
+        about_customer = #aboutCustomer#,
+        currency_id = #currency#,
+        customer_url = #customerURL#,
+        status = #status#,
+        deleted = 0,
+        city_id = #city#,
+        region_id = #region#,
+        country_id = #country#,
+        invoice_to = #invoiceTo#,
+        customer_contact_phone = #customerContactPhoneNew#,
+        customer_email = #customerContactEmailNew#,
+        customer_contact_person = #customerContactPersonNew#,
+        business_leader_id = #businessLeaderName#,
+        sales_person_contact_no = #salesPersonContactNo#,
+        customer_address = #customerAddress#,
+        customer_rbu = #RBU#,
+        sbu_id = #SBU#,
+        stc_number = #stcNo#,
+        data_area_id = #dataAreaId#,
+        modified_on = CURDATE()
+        WHERE id = #customerID#;
+    </update>
+
+    <update id="approveCustomerDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        UPDATE customers set 
+        status = #status#
+        <dynamic>
+            <isNotEmpty prepend="," property="customerInvoiceCode">
+                legal_entity_code = #customerInvoiceCode#
+            </isNotEmpty>
+        </dynamic>
+        ,remarks = #remarks#
+        <dynamic>
+            <isNotEmpty prepend="," property="customerCode">
+                customer_code = #customerCode#
+            </isNotEmpty>
+            <isNotEmpty prepend="," property="customerCode">
+                approved_on = CURDATE()
+            </isNotEmpty>
+        </dynamic>    
+        WHERE id = #customerID#;
+    </update>
+
+    <update id="rmgApproveCustomerDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        UPDATE customers set customer_group = #customerGroupName# WHERE id = #customerID#;
+    </update>
+        
+    <update id="updateCustomerActiveInactive" parameterClass="com.defiance.ideal.application.dto.CustomerDataDTO">
+        UPDATE customers set deleted = #deleted# WHERE id = #custID#;
+    </update>
+        
+    <update id="updateCustomerCode" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        UPDATE customers set customer_code = #customerCode# WHERE id = #customerID#;
+    </update>
+        
+    <select id="getEmailAddress" parameterClass="String" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT emp.work_email_address AS empWorkMail,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        rm.work_email_address AS rmWorkMail,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rmName
+        FROM employees AS emp LEFT JOIN employees AS rm ON(rm.id=emp.manager) WHERE emp.id=#empId#;
+    </select>
+
+	
+    <select id="getCurrencyCode" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT currency_code AS currencyCode FROM currencies WHERE id = #currencyId#;
+    </select>
+        
+    <select id="getcountryName" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        <!--SELECT country AS countryName FROM countries WHERE id = #billingCountry#;-->
+        SELECT DISTINCT (con.country) AS countryName FROM customer_billing_addresses AS cwl
+        LEFT JOIN countries AS con ON con.id = cwl.country_id WHERE cwl.customer_id = #customerID#
+    </select>
+        
+    <select id="getcountryNameBasedId" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT country AS countryName FROM countries WHERE id = #countryId#;
+    </select>
+        
+    <select id="getRegionNameBasedId" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT region AS regionName FROM regions WHERE id = #regionId#;
+    </select>
+        
+    <select id="getCityNameBasedId" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT city AS cityName FROM cities WHERE id = #CityId#;
+    </select>
+
+    <select id="getDuplicateCustomerName" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT id AS customerId FROM customers WHERE customer_name = #customerName#
+        <dynamic>
+            <isNotEmpty prepend="and" property="customerID">
+                id != #customerID#;
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    <select id="getDuplicateCustomerDivisionName" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT id AS customerId FROM customers WHERE division = #customerDivisionName#
+        <dynamic>
+            <isNotEmpty prepend="and" property="parentId">
+                parent_id = #parentId#;
+            </isNotEmpty>
+            <!--                    <isNotEmpty prepend="and" property="customerID">
+                id != #customerID#;
+            </isNotEmpty>-->
+        </dynamic>
+    </select>
+    <select id="getCustomerGroupName" parameterClass="String"  resultClass="String">
+        SELECT group_name AS customerGroupName FROM customer_groups WHERE id = #customerGroupName#;
+    </select>
+        
+    <update id="updateCustomerWorkLoc" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" >
+        update customer_work_locations set  
+        address_line = #customerAddress#,
+        address_shortcode  = #addressShortCode#,
+        country_id = #countryID#,
+        region_id = #regionID#,
+        city_id = #cityID#,
+        zip_code = #pincode# ,
+        customer_working_hrs = #workLocationWorkingHours#,
+        is_company_location = #workLocationIscmpyLocation#
+        where id = #id#; 
+    </update>
+    <update id="updateCustomerCalendar" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO" >
+        update customer_calendars set  
+        customer_id=#customerID#,
+        customer_calendar_name=#customerCalName#,
+        available_hours=#workLocationWorkingHours#
+        where location_id=#id#  ; 
+    </update>
+   
+    <update id="updateCustomerBilling" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        update customer_billing_addresses set  
+        address_line = #customerAddress#,
+        address_shortcode  = #addressShortCode#,
+        country_id = #countryID#,
+        region_id = #regionID#,
+        city_id = #cityID#,
+        zip_code = #pincode#,
+        state_code = #gstCode#,
+        gstin_number = #gstNumber#
+        where id = #id#; 
+    </update>
+
+    <update id="updateCustomerFinanceContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+
+        update  customer_contacts set 
+        customer_contact_type = #contactType#,
+        contact_person_name = #contactPerson#,
+        contact_person_designation =#contactDesignation#,
+        contact_person_mobile = #contactPhone#,
+        contact_person_email = #contactEmail#
+        where id = #id#; 
+    </update>
+    
+    <update id="updateCustomerDunningContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+
+        update  customer_contacts set 
+        customer_contact_type = #contactType#,
+        contact_person_name = #contactPerson#,
+        contact_person_designation =#contactDesignation#,
+        contact_person_mobile = #contactPhone#,
+        contact_person_email = #contactEmail#
+        where id = #id#; 
+    </update>
+
+    <update id="updateCustomerContact" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+
+        update  customer_contacts set 
+        customer_contact_type = #contactType#,
+        contact_person_name = #contactPerson#,
+        contact_person_designation =#contactDesignation#,
+        contact_person_mobile = #contactPhone#,
+        contact_person_email = #contactEmail#
+        where id = #id#; 
+    </update>
+  
+    <update id="updateCustomerMasterDetails" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        update customers set 
+        is_customer_group = 'n',
+        parent_id = #parentId#,
+        customer_group =#customerGroupName#,
+        customer_name = #customerName#,
+        tan_number = #tanNumber#,
+        sales_person_reference = #salesPerson#,
+        about_customer = #aboutCustomer#,
+        customer_url = #customerURL#,
+        status = #status#,
+        deleted = 0,
+        sales_person_contact_no = #salesPersonContactNo#,
+        division = #customerDivision#,
+        invoice_to = #invoiceTo#
+        <!--        attachment_type = #attachmentType#,
+        attachments =#attchedFileName#-->
+        <dynamic>
+            <isNotEmpty property="queryString">
+                $queryString$
+            </isNotEmpty>
+        </dynamic>
+        where id=#customerID#;
+    </update>
+  
+    <update id="updateParentId" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        update customers set 
+        parent_id = #parentId# 
+        where id=#parentId#
+    </update>
+   
+    <insert id="insertCustomerInfoHistory" parameterClass="com.defiance.ideal.application.dto.CustomerAddDTO"  >
+        insert into customer_info_histories (customer_id,table_name,table_pk,changed_by,changed_from,changed_to,field_changed,modified_date,status) values
+        (#customerID#,#tableName#,#tableId#,#changedBy#,#changedFrom#,#changedTo#,#fieldChanged#,CURDATE(),'d')
+    </insert>
+  
+    <select id="getApproverMailId" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(emp.work_email_address) AS mailId
+        FROM general_approvers AS ga
+        LEFT JOIN employees AS emp ON(emp.employee_number = ga.employee_id)
+        WHERE ga.function_id  = 73;
+    </select>
+    <select id="getInvoiceList" resultClass="com.defiance.ideal.application.dto.CustomerAddDTO">
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values WHERE parent_id='771' ORDER BY configuration_key DESC;
+    </select>
+    <select id="getInvoiceValue" parameterClass="String" resultClass="String" >
+        SELECT configuration_value FROM configuration_values WHERE configuration_key=#key# AND parent_id='771';
+    </select>
+    <select id="getDunningMaxDate" parameterClass="String" resultClass="String" >
+        SELECT MAX(drs.date) FROM dunning_report_status AS drs;
+    </select>
+    <select id="getDunningList" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+        SELECT cust.customer_code AS customer_code,
+        CONCAT(cust.customer_name," ",COALESCE(cust.division, "")) AS customer_name,
+        le.legal_entity AS entity_name,
+        drs.file_name AS pdf_file_name,
+        drs.excel_name AS excel_file_name,
+        drs.zip_name AS zip_folder_name,
+        DATE_FORMAT(drs.date,"%d%m%Y") AS dunningDate 
+        FROM dunning_report_status AS drs
+        LEFT JOIN customers AS cust ON drs.customer_id = cust.id
+        LEFT JOIN legal_entities AS le ON drs.entity_id = le.id
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        WHERE MONTH(drs.date) = #currentMonth#
+        AND YEAR(drs.date) = #currentYear#
+        <dynamic>
+            <isNotEmpty prepend="and" property="selected_date">
+                drs.date = #selected_date#
+            </isNotEmpty>
+            <isNotEmpty prepend="and" property="bdm_id">
+                cdm.bdm_id = #bdm_id#
+            </isNotEmpty>
+        </dynamic>
+        ORDER BY cust.customer_code;
+    </select>
+    <select id="getDunningDate" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+        SELECT DISTINCT(drs.date) AS dunningDate
+        FROM dunning_report_status as drs
+        WHERE MONTH(drs.date) = #currentMonth#
+        AND YEAR(drs.date) = #currentYear#;
+    </select>
+    <select id="getDunningCustomerList" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+        SELECT cust.id AS customer_id, cust.customer_code AS customer_code,
+        CONCAT(cust.customer_name," ",COALESCE(cust.division, "")) AS customer_name,
+        bdm.id AS bdm_id,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        cdm.dunning_status AS dunning_status
+        FROM customer_dunning_mapping AS cdm
+        LEFT JOIN customers AS cust ON cdm.customer_id = cust.id
+        LEFT JOIN employees AS bdm ON cdm.bdm_id = bdm.id
+        WHERE cust.customer_code IS NOT NULL
+        <dynamic>
+            <isNotEmpty prepend="and" property="dunning_status">
+                cdm.dunning_status = #dunning_status#
+            </isNotEmpty>
+            <isNotEmpty prepend="and" property="bdm_id">
+                cdm.bdm_id = #bdm_id#
+            </isNotEmpty>
+        </dynamic>;
+    </select>
+    <select id="getBdmId" resultClass="String">
+        SELECT configuration_value FROM configuration_values WHERE id = 581;
+    </select>
+    <select id="getBdmList" parameterClass="String" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+        SELECT bdm.id AS bdm_id,
+        CONCAT(bdm.first_name,' ',bdm.last_name,'-',bdm.employee_number) AS bdm_name
+        FROM employees AS bdm
+        WHERE bdm.id IN($bdm_id$)
+        AND bdm.employment_status NOT IN('r','t','b','q','o','y');
+    </select>
+    <update id="updateDunningStatus" parameterClass="com.defiance.ideal.application.dto.CustomerGroupDTO">
+        UPDATE customer_dunning_mapping SET
+        bdm_id = #bdm_id#, dunning_status = #dunning_status#
+        WHERE customer_id = #customer_id#;
+    </update>
+    <select id="debtorsReport" resultClass="com.defiance.ideal.application.dto.CustomerGroupDTO" >
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY),'%d-%b-%Y') AS due_date,
+        DATEDIFF(CURDATE(), DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY)) AS days_count,
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM invoices AS inv 
+        LEFT JOIN project_so_masters AS pso ON inv.project_id = pso.project_id 
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id 
+        LEFT JOIN currencies AS curr ON so.currency_id = curr.id 
+        LEFT JOIN customers AS cust ON so.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON so.hinduja_entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY) <![CDATA[ < ]]> CURDATE() AND 
+        inv.status = 'a' 
+        GROUP BY inv.id
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY),'%d-%b-%Y') AS due_date, 
+        DATEDIFF(CURDATE(), DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY)) AS days_count, 
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM non_ideal_invoices AS inv 
+        LEFT JOIN currencies AS curr ON inv.invoicing_currency_id = curr.id 
+        LEFT JOIN customers AS cust ON inv.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON inv.entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY) <![CDATA[ < ]]> CURDATE() 
+        GROUP BY inv.id
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY),'%d-%b-%Y') AS due_date, 
+        DATEDIFF(CURDATE(),DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY)) AS days_count, 
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM invoices AS inv 
+        LEFT JOIN invoice_consolidations AS inc ON inv.consolidated_id = inc.id 
+        LEFT JOIN invoice_consolidation_details AS incd ON inc.id = incd.invoice_consolidation_id 
+        LEFT JOIN invoices AS invli ON incd.invoice_id = invli.id 
+        LEFT JOIN project_so_masters AS pso ON invli.project_id = pso.project_id 
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id 
+        LEFT JOIN currencies AS curr ON so.currency_id = curr.id 
+        LEFT JOIN customers AS cust ON so.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON so.hinduja_entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY) <![CDATA[ < ]]> CURDATE() AND 
+        inv.status = 'a'  
+        GROUP BY inv.id
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY), '%d-%b-%Y') AS due_date,
+        DATEDIFF(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY), CURDATE()) AS days_count,
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM invoices AS inv 
+        LEFT JOIN project_so_masters AS pso ON inv.project_id = pso.project_id 
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id 
+        LEFT JOIN currencies AS curr ON so.currency_id = curr.id 
+        LEFT JOIN customers AS cust ON so.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON so.hinduja_entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY) <![CDATA[ >= ]]> CURDATE() AND 
+        inv.status = 'a' 
+        GROUP BY inv.id 
+
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY),'%d-%b-%Y') AS due_date, 
+        DATEDIFF(DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY), CURDATE()) AS days_count, 
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM invoices AS inv 
+        LEFT JOIN invoice_consolidations AS inc ON inv.consolidated_id = inc.id 
+        LEFT JOIN invoice_consolidation_details AS incd ON inc.id = incd.invoice_consolidation_id 
+        LEFT JOIN invoices AS invli ON incd.invoice_id = invli.id 
+        LEFT JOIN project_so_masters AS pso ON invli.project_id = pso.project_id 
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id 
+        LEFT JOIN currencies AS curr ON so.currency_id = curr.id 
+        LEFT JOIN customers AS cust ON so.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON so.hinduja_entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL so.credit_period DAY) <![CDATA[ >= ]]> CURDATE() AND 
+        inv.status = 'a' 
+        GROUP BY inv.id 
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        inv.invoice_code AS invoice_code, DATE_FORMAT(inv.invoice_date,'%d-%b-%Y') AS invoice_date, 
+        DATE_FORMAT(DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY), '%d-%b-%Y') AS due_date, 
+        DATEDIFF(DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY), CURDATE()) AS days_count, 
+        curr.currency_code AS currency_name, inv.total_amount AS total_amount, inv.balance_amount AS balance_amount, 
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM non_ideal_invoices AS inv 
+        LEFT JOIN currencies AS curr ON inv.invoicing_currency_id = curr.id 
+        LEFT JOIN customers AS cust ON inv.customer_id = cust.id 
+        LEFT JOIN legal_entities AS le ON inv.entity_id = le.id 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE inv.balance_amount <![CDATA[ > ]]> 0 AND DATE_ADD(inv.invoice_date, INTERVAL inv.credit_period DAY) <![CDATA[ >= ]]> CURDATE() 
+        GROUP BY inv.id
+        UNION ALL
+
+        SELECT cust.customer_code AS customer_code,cust.customer_name AS customer_name, 
+        le.legal_entity AS entity_name, 
+        cn.mode_no AS invoice_code, DATE_FORMAT(cn.date,'%d-%b-%Y') AS invoice_date, 
+        cn.date AS due_date, '0' AS days_count, 
+        cwnr.currency AS currency_name, -cn.amount AS total_amount, -cn.balance_amount AS balance_amount,
+        CONCAT(bdm.employee_number,'-',bdm.first_name,' ',bdm.last_name) AS bdm_name,
+        GROUP_CONCAT(cc.contact_person_email) AS customer_email
+        FROM credit_notes AS cn 
+        LEFT JOIN credit_with_no_references AS cwnr ON cn.id = cwnr.credite_note_id 
+        LEFT JOIN customers AS cust ON cwnr.customer_no = cust.id 
+        LEFT JOIN project_so_masters AS pso ON cwnr.project_id = pso.project_id 
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id 
+        LEFT JOIN legal_entities AS le ON cwnr.entity = le.legal_entity 
+        LEFT JOIN customer_dunning_mapping AS cdm ON cust.id = cdm.customer_id
+        LEFT JOIN customer_contacts AS cc ON cust.id = cc.customer_id AND cc.customer_contact_type = 'd'
+        LEFT JOIN employees AS bdm ON(cdm.bdm_id = bdm.id)
+        WHERE cn.balance_amount <![CDATA[ > ]]> 0 AND cn.deleted = 0 
+        GROUP BY cn.id
+    </select>
+        
+</sqlMap>

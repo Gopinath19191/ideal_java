@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ProjectReportMap"> 
+
+    <select id="projectDetailsList" parameterClass="com.defiance.ideal.reports.dto.ProjectDetails" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+		select * from (select concat(p1.project_code,'-',p1.project_name ) pstring,p1.id As id from projects p1) q1
+		where
+		q1.pstring like '%$project_code$%'
+		or
+		q1.pstring like '%$project_name$%'
+    </select>
+
+    <select id="entireProjectDetail" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+        SELECT p.project_code
+             , p.project_name
+             , p.project_manager
+             , p.planned_start_date
+             , p.planned_end_date
+             , project_status
+             , emp.first_name
+             , emp.last_name
+             , p.id as project_id
+             , cv.configuration_value
+             , cr.currency_code
+             , con.configuration_value AS projectStatus
+        FROM
+          projects p INNER JOIN employees emp ON emp.id= p.project_manager
+          INNER JOIN configuration_values cv ON cv.parent_id=82 and cv.configuration_key =p.project_status
+          LEFT JOIN currencies cr ON cr.id= p.currency_id
+          LEFT JOIN configuration_values con ON(con.configuration_key=p.status)
+          WHERE p.id = #projectId#  AND con.parent_id=262
+    </select>
+
+    <select id="getCustomerName" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+    select customer_name from customers c
+      where
+      c.id in( select customer_id from projects p
+              where p.id = #projectId#)
+    </select>
+
+    <select id="getTeamAllocationList" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+        SELECT pta.project_id,pta.employee_id,emp.employee_number,emp.first_name,emp.last_name,rol.role_description,
+        pta.start_date,pta.end_date,pta.billing_hours,
+        (select SUM(b.billable_effort)FROM accrual_consolidations b WHERE b.emp_id=pta.employee_id AND pta.project_id=b.project_id) AS allocated_hours
+        FROM project_team_allocations pta
+        LEFT JOIN employees emp ON(emp.id=pta.employee_id)
+        LEFT JOIN roles rol ON(rol.id=pta.role_id)
+        WHERE pta.project_id=#projectId# AND pta.deleted=0  ORDER BY emp.first_name;
+    </select>
+
+    <select id="getTeamAllocationList1" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+     select * from (
+    SELECT ba.project_id
+             , ba.emp_id
+             , sum(ba.billable_effort) as allocated_hours
+        FROM
+          accrual_consolidations ba
+        WHERE
+          ba.project_id = #projectId#
+        GROUP BY
+          ba.emp_id
+        ORDER BY
+          ba.emp_id) a, (SELECT pta.employee_id as emp_id
+             , emp.employee_number
+             , emp.first_name
+             , emp.last_name
+             , pta.start_date
+             , pta.end_date
+             , r.role_description
+             , pta.billing_hours
+             , pta.deleted
+        FROM
+           projects p
+          LEFT JOIN project_team_allocations as pta ON (p.id = pta.project_id)
+          LEFT JOIN employees as emp ON (emp.id = pta.employee_id)
+          LEFT JOIN roles r  ON (r.id = pta.role_id)
+        WHERE
+          p.project_code = #projectCode#
+          and
+          pta.deleted = 0) b
+          where
+          a.employee_id = b.emp_id
+          order by b.employee_number
+    </select>
+    <select id="getAccruedEffort" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+			select ba.project_id,
+			CASE p.efforts_uom
+			WHEN 'd' THEN 'Days'
+			WHEN 'm' THEN 'Months'
+			WHEN 'h' THEN 'Hour'
+			END AS 'efforts_uom', 
+			sum(ba.billable_effort) as accrued_effort 
+			from accrual_consolidations ba, projects p
+			where
+			    ba.project_id=#projectId#
+			    and
+			    p.id=#projectId#
+			    group by ba.project_id    
+    </select>
+    <select id="getTotalEffort" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+    select ppo.project_id, sum(ppo.planned_efforts) total_effort from project_purchase_orders ppo
+    where
+    ppo.project_id=#projectId#
+    GROUP BY ppo.project_id
+    </select>
+    <select id="getPoValue" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+    select sum(ppo.po_value) as poValue from project_purchase_orders ppo
+    where
+    ppo.project_id =#projectId#
+    group by ppo.project_id
+    </select>
+  
+    <select id="getBillableAmtSum" parameterClass="com.defiance.ideal.reports.dto.ProjectReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.ProjectDetails">
+    select sum(ba.billable_amount) as billable_amt_sum from accrual_consolidations ba
+    where ba.project_id = #projectId#
+    group by ba.project_id
+    </select>
+    
+    <!--  purchase order report query                                      -->
+    
+   <select id="getPurchaseOrderReportDetails" parameterClass="com.defiance.ideal.reports.dto.PurchaseOrderReportDetails" resultClass="com.defiance.ideal.reports.dto.PurchaseOrderReportDetails">
+   SELECT cst.customer_name AS customer,prj.project_code AS pid_Num,prj.project_name AS pid_Description,
+   cs.name AS sbu,CONCAT(salPer.first_name,' ',salPer.last_name) AS bdm,
+   CONCAT(emp.first_name,' ',emp.last_name) AS projectManager,
+   DATE_FORMAT(pod.po_created_date,'%d-%m-%Y') AS po_Date,sum(pod.po_value) AS po_Value,
+   pod.po_reference_number AS po_Reference_Number,
+   c.currency_code AS currencies
+   FROM projects prj
+   LEFT JOIN customers cst ON(cst.id=prj.customer_id)
+   LEFT JOIN employees emp ON(emp.id=prj.project_manager)
+   LEFT JOIN company_structures cs ON (cs.id=prj.project_sbu)
+   LEFT JOIN project_purchase_orders pod ON (pod.project_id=prj.id)
+   LEFT JOIN employees salPer ON(salPer.id=prj.sales_person)
+   LEFT JOIN currencies c ON(prj.currency_id = c.id)
+   WHERE 1=1
+        <dynamic>
+            <isNotEmpty property="fromDate">
+                <isNotEmpty prepend="AND" property="toDate">
+               pod.po_created_date BETWEEN #fromDate# AND #toDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="customerName">
+               cst.customer_code like #customerName#
+            </isNotEmpty>
+       
+            <isNotEmpty prepend="AND" property="pid_Num">
+               prj.project_code like #pid_Num#
+            </isNotEmpty>
+        
+            <isNotEmpty prepend="AND" property="projectManager">
+                emp.employee_number = #projectManager#
+            </isNotEmpty>
+        </dynamic>
+        group by pod.project_id order by cst.customer_name
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+</select>
+
+
+<select id="getPurchaseOrderReportDetailsCount" parameterClass="com.defiance.ideal.reports.dto.PurchaseOrderReportDetails" resultClass="java.lang.Integer">
+   SELECT count(*) AS recordCount FROM (SELECT cst.customer_name AS customer,prj.project_code AS pid_Num,prj.project_name AS pid_Description,
+   cs.name AS sbu,CONCAT(salPer.first_name,' ',salPer.last_name) AS bdm,
+   CONCAT(emp.first_name,' ',emp.last_name) AS projectManager,
+   DATE_FORMAT(pod.po_created_date,'%d-%m-%Y') AS po_Date,sum(pod.po_value) AS po_Value,
+   pod.po_reference_number AS po_Reference_Number,
+   c.currency_code AS currencies
+   FROM projects prj
+   LEFT JOIN customers cst ON(cst.id=prj.customer_id)
+   LEFT JOIN employees emp ON(emp.id=prj.project_manager)
+   LEFT JOIN company_structures cs ON (cs.id=prj.project_sbu)
+   LEFT JOIN project_purchase_orders pod ON (pod.project_id=prj.id)
+   LEFT JOIN employees salPer ON(salPer.id=prj.sales_person)
+   LEFT JOIN currencies c ON(prj.currency_id = c.id)
+   WHERE 1=1
+        <dynamic>
+            <isNotEmpty property="fromDate">
+                <isNotEmpty prepend="AND" property="toDate">
+               pod.po_created_date BETWEEN #fromDate# AND #toDate#
+                </isNotEmpty>
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="customerName">
+               cst.customer_code like #customerName#
+            </isNotEmpty>
+       
+            <isNotEmpty prepend="AND" property="pid_Num">
+               prj.project_code like #pid_Num#
+            </isNotEmpty>
+        
+            <isNotEmpty prepend="AND" property="projectManager">
+                emp.employee_number = #projectManager#
+            </isNotEmpty>
+        </dynamic>
+        group by pod.project_id order by cst.customer_name) AS temp
+        
+</select>
+</sqlMap>

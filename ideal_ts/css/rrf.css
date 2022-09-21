@@ -1,0 +1,254 @@
+/* 
+    Document   : rrf
+    Created on : Jun 18, 2012, 3:49:02 PM
+    Author     : 14578
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+root { 
+    display: block;
+}
+html {
+    overflow: auto;
+}
+body {
+    background:#EEF2F8 url("images/bg_page.png") repeat-x top;   
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 1000px;
+}
+.page_heading {
+    color: #666666;
+    font-size: 18px;
+    font-weight: bold;
+}
+.goToList {
+    color: #4C83B3;
+    float: right;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 8px 0 18px;
+    /*    margin: 0 45px 0 0;*/
+}   
+.container_inner {
+    margin: 30px 0 0 21px;
+}
+element.style {
+    margin-top: 0;
+}
+.breadcrumb {
+    color: #999999;
+    font-size: 10px;
+    font-weight: bold;
+    margin: 8px 0 18px;
+}
+.add {
+    background: url("images/add.png") no-repeat scroll left center transparent;
+    color: #4C83B3;
+    padding: 0 0 0 20px;
+    text-decoration: none;
+}
+div.formContent_new {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CADFF2;
+    float: left;
+    margin: 0 0 30px 18px;
+    outline: 1px none;
+    padding-bottom: 0;
+    width: 950px;
+}
+.new_style div {
+}
+
+div.contentHolderMax {
+    float: left;
+    width: 975px;
+}
+div.style_tab {
+    border-bottom: 1px solid #BCCFEA;
+    float: left;
+    margin-left: 20px;
+    width: 922px;
+}
+span.ticket_tab {
+/*    border: 1px solid #BCCFEA;*/
+/*    color: #4786C2;*/
+    color: #666666;
+    cursor: pointer;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    font-weight: bold;
+    height: 20px;
+    margin: 0 2px -1px 0;
+    padding: 5px 7px;
+    position: relative;
+    text-align: center;
+    width: 200px;
+    border-bottom-color: #FFF;
+}
+.travelDetails_new {
+    clear: both;
+    color: #666666;
+    font-family: arial;
+    font-size: 12px;
+    margin: 8px 20px 12px 5px;
+    width: 975px;
+}
+.travelDetails_new tr td {
+    margin: 8px 20px 12px 5px;
+    width: 100px;
+}
+.fieldsetHeading {
+    color: #666666;
+    font-family: Arial;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0 0 0 6px;
+}
+.buttonAlignment {
+    color: #FFFFFF;
+    font-family: arial;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0 0 20px;
+}
+div#btnGroup {
+    float: left;
+    text-align: center;
+    width: 100%;
+}
+div#btnGroup input {
+/*    width: 9%;*/
+}
+.savebutton {
+    background: url("images/icon_btn_save.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+.rrfsubmitbutton {
+    background: url("images/icon_btn_submit.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+.rrfsendback {
+    background: url("images/back.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+.rrfexcelsearch {
+    background: url("images/icon_btn_search.PNG") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+.rrfexcelexport {
+    background: url("images/export-to-excel-button-icon.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+.rrfvalidate {
+    background: url("images/icon_btn_validate.PNG") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+div#btnGroup {
+    text-align: center;
+}
+.cancelbutton{
+    background: url("images/icon_btn_cancel.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;  
+}
+    select.selectbox_new {
+    background: url("images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+    width: 159px;
+}
+.notice_page {
+    background-color: #ECE6D2;
+    background-repeat: no-repeat;
+    border: 1px solid #DDD6B7;
+    float: left;
+    height: 32px;
+    margin: -10px 0 7px;
+    padding: 10px;
+    width: 970px;
+}
+.textbox_new {
+    background: url("images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+    width: 158px;
+}
+
+div.colordescriptortable{
+     background :  url("images/table-header-strip.jpg") repeat-x scroll center top #EFF4FB;;
+/*    border: 1px solid #CADFF2;*/
+    float: left;
+    margin: 0 0 30px 18px;
+    outline: 1px none;
+    padding-bottom: 0;
+    width: 950px;
+}
+.colordesc{
+    width:20px;
+    border-collapse:collapse; 
+    margin-top: 2px;  
+    align:center;
+    border: 0px;
+    margin-left: 20px;
+}
+
+.tdcolordesc{
+    border-right:  1px solid #CADFF2;
+}
+/*.active_tab{
+    border-bottom-color:  #FFFFFF;
+}*/

@@ -1,0 +1,889 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : International.xml
+    Created on : 3 October, 2012, 12:11 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="Common">
+    
+<!--    <select id="getDashBoardList" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT 'I' AS system,master.id AS tpId,master.tp_reference_id AS tpReferenceId,master.employee_id AS tpRequestorId,master.travel_requested_date AS tpRequestedDate,
+        master.customer_id AS customerId,master.customer_others AS customerOthers,cust.customer_name AS customerName,
+        master.project_id AS projectId,master.project_others AS projectOthers,proj.project_name AS projectName,
+        master.status AS tpStatus,master.workflow_id AS tpWorkFlowId,wf.travel_type AS travelType,wf.workflows AS workFlow,
+        CASE WHEN master.status <![CDATA[ >= ]]> 0 THEN 'Submitted' WHEN master.status = '-1' THEN 'Saved' END AS employeeStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 2 AND (INSTR(wf.workflows, 'r')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN (INSTR(wf.workflows, 'r'))=0 THEN 'NA' WHEN (master.status=1 AND (INSTR(wf.workflows, 'r')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS rmStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 4 AND (INSTR(wf.workflows, 'b')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN (INSTR(wf.workflows, 'b'))=0 THEN 'NA' WHEN (master.status=3 AND (INSTR(wf.workflows, 'b')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS buhStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 6 AND (INSTR(wf.workflows, 'm')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN (INSTR(wf.workflows, 'm'))=0 THEN 'NA' WHEN (master.status=5 AND (INSTR(wf.workflows, 'm')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS mdStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 8 AND (INSTR(wf.workflows, 'f')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN (INSTR(wf.workflows, 'f'))=0 THEN 'NA' WHEN (master.status=7 AND (INSTR(wf.workflows, 'f')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS financeStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 10 AND (INSTR(wf.workflows, 'a')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN ((INSTR(wf.workflows, 'a'))=0 || master.admin_action_required='N') THEN 'NA' WHEN (master.status=9 AND (INSTR(wf.workflows, 'a')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS adminStatus,
+        CASE WHEN (master.status <![CDATA[ >= ]]> 12 AND (INSTR(wf.workflows, 't')) <![CDATA[ > ]]> 0) THEN 'Submitted' WHEN ((INSTR(wf.workflows, 't'))=0 || master.advance_required='' || master.advance_required=null) THEN 'NA' WHEN (master.status=11 AND (INSTR(wf.workflows, 't')) <![CDATA[ > ]]> 0) THEN 'Send Back' ELSE 'Pending' END AS treasuryStatus
+        FROM tp_master AS master
+        LEFT JOIN customers AS cust ON(cust.id=master.customer_id)
+        LEFT JOIN projects AS proj ON(proj.id=master.project_id)
+        LEFT JOIN tp_workflows AS wf ON(wf.id=master.workflow_id)
+        WHERE master.employee_id=#employee_id# AND master.travel_type=#travelType#
+        LIMIT #start_page#,#end_page#;
+    </select>-->
+
+    <select id="getDashBoardList" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT 'I' AS system,master.id AS tpId,master.tp_reference_id AS tpReferenceId,master.employee_id AS tpRequestorId,
+        CASE WHEN master.finance_approved_status='a' AND CURRENT_DATE BETWEEN master.travel_start_date AND master.travel_end_date THEN 'yes' ELSE 'no' END AS furtherAdvance,
+        master.travel_requested_date AS tpRequestedDate,
+        master.customer_id AS customerId,master.customer_others AS customerOthers,cust.customer_name AS customerName,
+        master.project_id AS projectId,master.project_others AS projectOthers,proj.project_name AS projectName,
+        master.status,master.previous_status,master.workflow_id AS tpWorkFlowId,wf.travel_type AS travelType,wf.workflows AS workFlow,
+        CASE WHEN master.status = 's' THEN 'Saved' ELSE 'Submitted' END AS employeeStatus
+        FROM tp_master AS master
+        LEFT JOIN customers AS cust ON(cust.id=master.customer_id)
+        LEFT JOIN projects AS proj ON(proj.id=master.project_id)
+        LEFT JOIN tp_workflows AS wf ON(wf.id=master.workflow_id)
+        WHERE master.employee_id=#employee_id# AND master.travel_type=#travelType#
+        ORDER BY master.id DESC
+        LIMIT #start_page#,#end_page#;
+    </select>
+    
+    <select id="getAdvanceDashBoardList" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+         SELECT 'I' AS system,master.id AS tpId,advance.further_advance AS furtherAdvance,advance.id AS advanceTpId,master.tp_reference_id AS tpReferenceId,master.employee_id AS tpRequestorId,
+         CASE WHEN master.finance_approved_status='a' AND CURRENT_DATE BETWEEN master.travel_start_date AND master.travel_end_date THEN 'yes' ELSE 'no' END AS furtherAdvance,
+         advance.advance_requested_date AS travelAdvanceRequestedDate, advance.extended_end_date AS travelAdvanceEndDate,
+         advance.status AS advanceStatus,advance.previous_status AS advancePreviousStatus,advance.advance_workflow_id AS advanceWorkFlowId,
+         wf.travel_type AS travelType,wf.workflows AS workFlow,
+         CASE WHEN advance.status = 's' THEN 'Saved' ELSE 'Submitted' END AS employeeStatus
+         FROM tp_advance AS advance
+         LEFT JOIN tp_master AS master ON(master.id=advance.master_id)
+         LEFT JOIN tp_workflows AS wf ON(wf.id=advance.advance_workflow_id)
+         WHERE master.employee_id=#employee_id# AND master.travel_type=#travelType#
+         ORDER BY advance.id DESC
+         LIMIT #start_page#,#end_page#;
+    </select>
+
+   <select id="getApprovalDashBoardList" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+       SELECT 'I' AS system,wf.workflows,master.id AS tpId,master.tp_reference_id AS tpReferenceId,master.employee_id AS tpRequestorId,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        master.travel_requested_date AS tpRequestedDate,
+        master.travel_type AS travelType,master.status AS currentStatus,master.previous_status,
+       date_format(master.travel_start_date,'%d-%m-%Y') as startDate,
+        date_format(master.travel_end_date,'%d-%m-%Y') as endDate,
+        cur.currency_code as currency_type,
+        master.advance_required as amount
+        FROM tp_master AS master
+        LEFT JOIN tp_workflows AS wf ON(wf.id=master.workflow_id)
+        LEFT JOIN employees AS emp ON(emp.id=master.employee_id)
+       LEFT JOIN currencies as cur ON (master.currency_type = cur.id)
+        <dynamic>
+            <isEqual prepend="" property="moduleId" compareValue="481">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    <!--WHERE master.status='r' and emp.manager=#employee_id# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0-->
+                    WHERE master.status='r' and CASE WHEN master.travel_type='L' THEN master.rm_id = #employee_id# ELSE emp.manager=#employee_id# END AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    WHERE master.rm_approved_by=#employee_id# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="482">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.status='b' and  master.buh_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.buh_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="486">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='m' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.md_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="483">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.status='f' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    INNER JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name and category = #travelActionCode#)
+                    WHERE master.finance_approved_by !='' AND master.finance_approved_by != 0 AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="all pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE (master.finance_approved_by ='' OR master.finance_approved_by IS NULL) AND master.status != 's' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="484">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='c' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.cfo_approved_by=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="485">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND ( master.admin_approved_by = '' OR master.admin_approved_by = 0 OR master.admin_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                    
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    INNER JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#)
+                    WHERE master.admin_approved_by !='' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="606">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 AND (master.treasury_approved_by = '' OR master.treasury_approved_by = 0 OR master.treasury_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 )
+                    WHERE master.treasury_approved_by != '' and  master.treasury_approved_by != 0 and master.treasury_approved_by IS NOT NULL and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#
+                </isEqual>
+            </isEqual>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="filter_travelType">
+                master.travel_type = #filter_travelType#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="filter_employeeId">
+                master.employee_id = #filter_employeeId#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+<!--            <isNotNull property="start_page">-->
+                <isNotEqual property="end_page" compareValue="0">
+            LIMIT #start_page#,#end_page#;         
+                </isNotEqual>
+<!--            </isNotNull>-->
+        </dynamic>
+    </select>
+
+   <select id="getApprovalDashBoardListForExport" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+       SELECT 'I' AS system,wf.workflows,master.id AS tpId,master.tp_reference_id AS tpReferenceId,master.employee_id AS tpRequestorId,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        DATE_FORMAT(master.travel_requested_date,'%d-%m-%Y') AS tpRequestedDateDisplay,
+<!--        master.travel_requested_date AS tpRequestedDate,-->
+        CASE master.travel_type WHEN 'D' THEN 'Domestic' WHEN 'I' THEN 'International' WHEN 'L' THEN 'LocalConveyance' ELSE 'NA' END AS travelType,
+        tsc.status_desc As exportDesc,
+        master.status AS currentStatus,master.previous_status,
+        date_format(master.travel_start_date,'%d-%m-%Y') as startDate,
+        date_format(master.travel_end_date,'%d-%m-%Y') as endDate,
+        cur.currency_code as currency_type,
+        master.advance_required as amount
+        FROM tp_master AS master
+        LEFT JOIN tp_workflows AS wf ON(wf.id=master.workflow_id)
+        LEFT JOIN employees AS emp ON(emp.id=master.employee_id)
+        LEFT JOIN currencies as cur ON (master.currency_type = cur.id)
+        LEFT JOIN tp_status_config as tsc ON(tsc.status_name=master.previous_status)
+        <dynamic>
+            <isEqual prepend="" property="moduleId" compareValue="481">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    WHERE master.status='r' and CASE WHEN master.travel_type='L' THEN master.rm_id = #employee_id# ELSE emp.manager=#employee_id# END AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    WHERE master.rm_approved_by=#employee_id# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="482">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.status='b' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.buh_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="486">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='m' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.md_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="483">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.status='f' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    WHERE master.finance_approved_by !='' AND master.finance_approved_by != 0 AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="all pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE (master.finance_approved_by ='' OR master.finance_approved_by IS NULL) AND master.status != 's' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="484">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='c' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.cfo_approved_by=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="485">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND ( master.admin_approved_by = '' OR master.admin_approved_by = 0 OR master.admin_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    INNER JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#)
+                    WHERE master.admin_approved_by !='' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="606">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 AND (master.treasury_approved_by = '' OR master.treasury_approved_by = 0 OR master.treasury_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 )
+                    WHERE master.treasury_approved_by != '' and  master.treasury_approved_by != 0 and master.treasury_approved_by IS NOT NULL and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#
+                </isEqual>
+            </isEqual>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="filter_travelType">
+                master.travel_type = #filter_travelType#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="filter_employeeId">
+                master.employee_id = #filter_employeeId#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+<!--            <isNotNull property="start_page">-->
+                <isNotEqual property="end_page" compareValue="0">
+            LIMIT #start_page#,#end_page#;
+                </isNotEqual>
+<!--            </isNotNull>-->
+        </dynamic>
+    </select>
+
+
+    
+    <select id="getCustomerName" parameterClass="String" resultClass="String" >
+        SELECT customer_name AS customerName FROM customers WHERE id=#customerId#;
+    </select>
+    
+    <select id="getProjectName" parameterClass="String" resultClass="String" >
+       SELECT CONCAT(project_code,'-',project_name) AS projectName FROM projects WHERE id=#projectId#;
+    </select>
+
+    <select id="getCountryName" parameterClass="String" resultClass="String" >
+        SELECT country FROM countries WHERE id=#key#;
+    </select>
+
+    <select id="getCityName" parameterClass="String" resultClass="String" >
+        SELECT city FROM cities WHERE id=#key#;
+    </select>
+    
+    <select id="getDashBoardCount" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="String" >
+        SELECT
+            count(master.id)
+        FROM tp_master AS master
+        WHERE master.employee_id=#employee_id# AND master.travel_type=#travelType#
+    </select>
+    
+    <select id="getAdvanceDashBoardCount" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="String" >
+       SELECT
+            count(advance.id)
+        FROM tp_advance AS advance
+        LEFT JOIN tp_master AS master ON(master.id=advance.master_id)
+        WHERE master.employee_id=#employee_id# AND master.travel_type=#travelType#
+    </select>
+
+    <select id="getApprovalDashBoardCount" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="Integer" >
+        SELECT count(master.id) FROM tp_master AS master
+        LEFT JOIN employees AS emp ON(emp.id=master.employee_id)
+        LEFT JOIN tp_workflows AS wf ON(wf.id=master.workflow_id)
+        <dynamic>
+            <isEqual prepend="" property="moduleId" compareValue="481">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    WHERE master.status='r' and emp.manager=#employee_id# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    WHERE master.rm_approved_by=#employee_id# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="482">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+
+                    WHERE master.status='b' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.buh_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="486">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='m' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.md_approved_by=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="483">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE master.status='f' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    INNER JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name and category = #travelActionCode#)
+                    WHERE master.finance_approved_by !='' AND master.finance_approved_by != 0 AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="all pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=emp.structure_name)
+                    WHERE (master.finance_approved_by ='' OR master.finance_approved_by IS NULL) AND master.status != 's' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="484">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='c' and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.cfo_approved_by=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="485">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND ( master.admin_approved_by = '' OR master.admin_approved_by = 0 OR master.admin_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode# AND INSTR(wf.workflows,#travelActionCode#) <![CDATA[ > ]]>  0
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    INNER JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#)
+                    WHERE master.admin_approved_by !='' AND (master.admin_action_required = 'Y' OR master.travel_type = 'L') AND INSTR(wf.workflows,#travelActionCode#)<![CDATA[ > ]]> 0
+                </isEqual>
+            </isEqual>
+            <isEqual prepend="" property="moduleId" compareValue="606">
+                <isEqual prepend="" property="approveType" compareValue="pending">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0)
+                    WHERE master.status='a' and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 AND (master.treasury_approved_by = '' OR master.treasury_approved_by = 0 OR master.treasury_approved_by IS NULL) and approvers.employee_id=#employee_id# AND approvers.category=#travelActionCode#
+                </isEqual>
+                <isEqual prepend="" property="approveType" compareValue="processed">
+                    LEFT JOIN tp_approvers AS approvers ON(approvers.company_structure_id=0 )
+                    WHERE master.treasury_approved_by != '' and  master.treasury_approved_by != 0 and master.treasury_approved_by IS NOT NULL and master.travel_type != 'L' and master.advance_required != '' and master.advance_required != 0 and approvers.employee_id=#employee_id# AND category = #travelActionCode#
+                </isEqual>
+            </isEqual>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty prepend="AND" property="filter_travelType">
+                master.travel_type = #filter_travelType#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="filter_employeeId">
+                master.employee_id = #filter_employeeId#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getStatusFlowInfo" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT wf.id AS tpWorkFlowId,wf.workflows AS tpWorkFlowName,
+        SUBSTRING(wf.workflows,INSTR(wf.workflows,#actionName#)+2,1) AS status FROM tp_workflows AS wf
+        WHERE wf.travel_type=#travelType# AND INSTR(wf.band_ids,#empBandId#) AND wf.billable=#billable# AND wf.deviation=#deviation# 
+        AND wf.sales=#sales# AND wf.vetri=#vetri#;
+    </select>
+    
+    <select id="getAdvanceStatusFlowInfo" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT wf.id AS advanceWorkFlowId,wf.workflows_advance AS advanceWorkFlowName,
+        SUBSTRING(wf.workflows_advance,INSTR(wf.workflows_advance,#actionName#)+2,1) AS advanceStatus FROM tp_workflows AS wf
+        WHERE wf.id=#tpWorkFlowId#;
+    </select>
+    
+    <select id="getApprovalStatusFlowInfo" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT wf.id AS tpWorkFlowId,wf.workflows AS tpWorkFlowName,emp.structure_name AS requestorPracticeGroup,master.buh_id AS buhid,
+        SUBSTRING(wf.workflows,INSTR(wf.workflows,#actionName#)+2,1) AS status,
+        SUBSTRING(wf.workflows,INSTR(wf.workflows,#actionName#)+4,1) AS firstNextLevel,
+        SUBSTRING(wf.workflows,INSTR(wf.workflows,#actionName#)+6,1) AS secondNextLevel FROM tp_master AS master
+        LEFT JOIN employees emp ON(emp.id=master.employee_id)
+        LEFT JOIN tp_workflows wf ON(wf.id=master.workflow_id)
+        WHERE master.id=#tpId# AND INSTR(wf.workflows,#actionName#) <![CDATA[ > ]]>  0
+    </select>
+
+    <select id="getNextFlow" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="String" >
+        SELECT SUBSTRING(wf.workflows,INSTR(wf.workflows,#actionName#)+2,1) AS status 
+        LEFT JOIN tp_workflows wf ON(wf.id=master.workflow_id)
+        WHERE master.id=#tpId# AND INSTR(wf.workflows,#actionName#) <![CDATA[ > ]]>  0
+    </select>
+    
+    <update id="updateApprovalStatus" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_master SET $columnName$_remarks=#remarks#,$columnName$_approved_by=#approvedBy#,$columnName$_action_date=#actionDate#,$columnName$_approved_status=#approved_status#,status=#status#,previous_status=#previous_status# WHERE id=#tpId#;
+    </update>
+    
+    <update id="updateFinanceToCfo" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_master SET cfo_action_required='Y' WHERE id=#tpId#;
+    </update>
+    
+    <select id="getEmpDetails" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT emp.band_id  AS empBandId,emp.structure_name AS empStructure,CASE WHEN user.group_id=#salesGroupId# THEN 'Y' WHEN user.group_id!=#salesGroupId# THEN 'N' END AS sales
+        FROM employees AS emp 
+        LEFT JOIN users AS user ON (user.employee_id=emp.id)
+        WHERE emp.id=#employee_id#;
+    </select>
+    
+    <select id="getRejectStatus" parameterClass="String" resultClass="String" >
+       SELECT status_value FROM tp_status_config WHERE status_name=#rejectCode#;
+    </select>
+    
+    <select id="getNextLevelEmpId" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="String" >
+       SELECT employee_id as nextLevelId FROM tp_approvers WHERE company_structure_id=#requestorPracticeGroup# AND category=#nextLevel#;
+       <!--   select buh_id as nextLevelId FROM tp_masters WHERE buh_id=#buhid#; -->
+    </select>
+    <select id="getBuhName" parameterClass="String" resultClass="String">
+        SELECT CONCAT(emp.first_name,' ',emp.last_name) AS buhsName from employees AS emp where emp.id=#key#
+    </select>
+    <select id="getRMApprover" parameterClass="String" resultClass="String">
+        SELECT rm_approved_by AS rm_id FROM tp_master WHERE id=#tpId#;
+    </select>
+    <select id="getAutoCity" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            id AS keyRes,
+            city AS valueRes
+        FROM cities
+        WHERE city LIKE #key#
+    </select>
+
+    <select id="getCustomerDetails" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT id AS customer_id, CONCAT(customer_name, '-', COALESCE(division,""),' ',COALESCE(customer_code,"")) AS customer_name
+        FROM customers WHERE deleted = 0 and customer_code is not null
+        ORDER BY customer_name ASC
+    </select>
+
+   <!-- <select id="getBUHApproverList" parameterClass="String"  resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+      SELECT DISTINCT (CONCAT( emp.first_name, ' ', emp.last_name )) AS buhName, cs.name AS sbuName, tp.employee_id AS emp_id
+        FROM tp_approvers AS tp
+        INNER JOIN employees AS emp ON ( emp.id = tp.employee_id )
+        INNER JOIN company_structures AS cs ON ( cs.id = tp.company_structure_id
+        AND emp.employment_status NOT
+        IN ( 'r', 'b', 't', 'q') )
+        WHERE tp.category = 'b'
+        GROUP BY buhName
+        ORDER BY cs.id ASC ;
+      </select> -->
+      <select id="getBUHApproverList" parameterClass="String"  resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+       SELECT DISTINCT (CONCAT( emp.first_name, ' ', emp.last_name )) AS buhName, cs.name AS sbuName, tp.employee_id AS emp_id
+         FROM tp_approvers AS tp
+        INNER JOIN employees AS emp ON ( emp.id = tp.employee_id )
+        INNER JOIN company_structures AS cs ON ( cs.id = tp.company_structure_id AND emp.employment_status NOT IN ( 'r', 'b', 't', 'q') )
+        WHERE tp.category = 'b' AND tp.employee_id not in (#key#) GROUP BY buhName ORDER BY cs.id ASC
+        </select>
+
+    <select id="getProjects" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+         id AS project_id,project_code,CONCAT(project_code,'-',project_name) as project_name
+        FROM projects
+        WHERE customer_id = #key# AND project_code IS NOT NULL
+        ORDER BY project_name ASC
+    </select>
+
+    <select id="getCurrencyList" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            id AS currency_id,CONCAT(currency,' (',currency_code,')') AS currency_code
+        FROM currencies
+        ORDER BY currency_code ASC
+    </select>
+
+    <select id="getCountryList" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            id AS countryId,country AS countryName
+        FROM countries
+        ORDER BY country ASC
+    </select>
+
+    <select id="getVisaList" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            child.configuration_key as visaId,
+            child.configuration_value as visaType 
+        FROM configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id)
+        WHERE
+            pt.configuration_key = 'visa_type'
+        ORDER BY child.configuration_value ASC ;
+    </select>
+
+    <select id="getEmployeeDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        
+        SELECT
+            CONCAT(Emp.first_name,' ',Emp.last_name) AS employee_name,
+            Emp.employee_number,
+            Emp.id AS employee_id,
+            Desig.designation,
+            SBU.name As group_name,
+            SBU.id As group_id,
+            subGroup.name As sub_group_name,
+            City.city AS city_name,
+            Band.name as band_name,
+            Emp.band_id,tp.employee_id as buh_id,
+            Emp.manager AS empManager
+        FROM employees Emp
+        INNER JOIN designations AS Desig ON (Emp.designation_id = Desig.id)
+        INNER JOIN company_structures AS SBU ON (Emp.structure_name = SBU.id)
+        INNER JOIN company_structures AS subGroup ON (Emp.structure_name_subgroup = subGroup.id AND subGroup.parent_id = SBU.id)
+        LEFT JOIN bands AS Band ON (Emp.band_id = Band.id)
+        LEFT JOIN company_locations Location ON (Emp.current_location_id = Location.id)
+        LEFT JOIN cities As City ON (Location.city_id = City.id)
+        LEFT JOIN tp_approvers as tp on(tp.company_structure_id=Emp.structure_name)
+        WHERE Emp.id=#key# and tp.category='b'
+
+
+
+       <!-- SELECT
+            CONCAT(Emp.first_name,' ',Emp.last_name) AS employee_name,
+            Emp.employee_number,
+            Emp.id AS employee_id,
+            Desig.designation,
+            SBU.name As group_name,
+            subGroup.name As sub_group_name,
+            City.city AS city_name,
+            Band.name as band_name,
+            Emp.band_id
+        FROM employees Emp
+        INNER JOIN designations AS Desig ON (Emp.designation_id = Desig.id)
+        INNER JOIN company_structures AS SBU ON (Emp.structure_name = SBU.id)
+        INNER JOIN company_structures AS subGroup ON (Emp.structure_name_subgroup = subGroup.id AND subGroup.parent_id = SBU.id)
+        LEFT JOIN bands AS Band ON (Emp.band_id = Band.id)
+        LEFT JOIN company_locations Location ON (Emp.company_location_id = Location.id)
+        LEFT JOIN cities As City ON (Location.city_id = City.id)
+        WHERE Emp.id=#key#; -->
+    </select>
+
+    <select id="getTravelHotelData" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT
+            id AS out_hotel_id,
+            country AS out_country,
+            city AS out_city,
+            city AS out_city_id,
+            city_others AS out_city_others,
+            location AS out_location,
+            DATE_FORMAT(from_date,'%d-%m-%Y') AS out_from_date,
+            DATE_FORMAT(to_date,'%d-%m-%Y') AS out_to_date,
+            remarks AS out_hotel_remarks
+        FROM tp_hotel_bookings AS Travel
+        WHERE master_id = #key# AND deleted = 0;
+    </select>
+
+    <select id="getTravelTicketData" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT
+            id AS out_ticket_id,
+            from_country AS out_from_country,
+            from_city AS out_from_city_id,
+            from_city_others AS out_from_city_others,
+            to_country AS out_to_country,
+            to_city AS out_to_city_id,
+            to_city_others AS out_to_city_others,
+            DATE_FORMAT(travel_date,'%d-%m-%Y') AS out_travel_date,
+            travel_preference AS out_travel_preference,
+            travel_mode AS out_travel_mode,
+            remarks AS out_ticket_remarks
+        FROM tp_travel_ticket Travel 
+        WHERE master_id = #key# AND deleted = 0;
+    </select>
+    
+    <select id="getTravelConveyanceData" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT
+            id AS out_conveyance_id,
+            country AS out_conveyance_country,
+            city AS out_conveyance_city_id,
+            city_others AS out_conveyance_city_others,
+            pickup AS out_pickup,
+            dropto AS out_dropto,
+            DATE_FORMAT(start_date,'%d-%m-%Y') AS out_start_date,
+            DATE_FORMAT(end_date,'%d-%m-%Y') AS out_end_date,
+            time AS out_travel_time,
+            remarks AS out_conveyance_remarks
+        FROM tp_conveyance Travel 
+        WHERE master_id = #key# AND deleted = 0;
+    </select>
+
+    <select id="getTravelVisa" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT
+            id AS visa_id,reference_number,country_issue,place_of_issue,visa_type,DATE_FORMAT(valid_from,'%d-%m-%Y') AS out_valid_from,
+            DATE_FORMAT(valid_to,'%d-%m-%Y') AS out_valid_to,visa_visit,remarks AS visa_remarks
+        FROM tp_visa
+        WHERE master_id = #key#
+    </select>
+
+    <select id="getTravelData" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            Travel.id AS master_id,Travel.tp_reference_id AS tpReferenceId,Travel.advance_required,Travel.travel_purpose,
+            DATE_FORMAT(Travel.travel_start_date,'%d-%m-%Y') AS out_travel_start_date,DATE_FORMAT(Travel.travel_end_date,'%d-%m-%Y') AS out_travel_end_date,
+            DATE_FORMAT(Travel.travel_requested_date,'%d-%m-%Y') AS out_travel_requested_date,Travel.travel_billable,
+            Travel.client_reimbursable,Travel.travel_term,Travel.customer_id,Travel.customer_others,Travel.project_id,Travel.project_others,
+            Travel.currency_type,Travel.emp_remarks,Travel.mobileNo,Travel.travel_other_country,
+            Travel.rm_remarks,Travel.rm_approved_by,DATE_FORMAT(Travel.rm_action_date,'%d-%m-%Y') as rm_approved_date,
+            Travel.buh_remarks,Travel.buh_approved_by,DATE_FORMAT(Travel.buh_action_date,'%d-%m-%Y') as buh_approved_date,
+            Travel.md_remarks,Travel.md_approved_by,DATE_FORMAT(Travel.md_action_date,'%d-%m-%Y') as md_approved_date,
+            Travel.finance_remarks,Travel.finance_approved_by,DATE_FORMAT(Travel.finance_action_date,'%d-%m-%Y') as finance_approved_date,
+            Travel.cfo_remarks,Travel.cfo_approved_by,DATE_FORMAT(Travel.cfo_action_date,'%d-%m-%Y') as cfo_approved_date,
+            Travel.admin_remarks,Travel.admin_approved_by,DATE_FORMAT(Travel.admin_action_date,'%d-%m-%Y') as admin_approved_date,
+            Travel.treasury_remarks,Travel.treasury_approved_by,DATE_FORMAT(Travel.treasury_action_date,'%d-%m-%Y') as treasury_approved_date,
+            Travel.guest_booking,Travel.guest_name,Travel.employee_id,Travel.admin_action_required,Travel.cfo_action_required,
+            Travel.rm_approved_status,Travel.buh_approved_status,Travel.md_approved_status,Travel.finance_approved_status,
+            Travel.cfo_approved_status,Travel.admin_approved_status,Travel.treasury_approved_status,Travel.status AS currentStatus,
+            Travel.previous_status,Workflow.workflows AS workFlow,Travel.workflow_id,Travel.buh_id,Travel.approved_advance 
+        FROM tp_master AS Travel
+        LEFT JOIN tp_workflows Workflow ON (Workflow.id = Travel.workflow_id)
+        WHERE Travel.id = #key#
+    </select>
+    
+    <select id="getTpDetailsForAdvance" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT 'I' AS system,
+            Travel.id AS master_id,Travel.tp_reference_id AS tpReferenceId,Travel.advance_required,Travel.travel_term,
+            Travel.travel_start_date,Travel.travel_end_date,Travel.workflow_id,
+            Travel.currency_type,emp.employee_number AS employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName
+        FROM tp_master AS Travel
+        LEFT JOIN employees AS  emp ON (emp.id = Travel.employee_id)
+        WHERE Travel.id = #tpId#
+    </select>
+
+    <insert id="insertTravel" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_master 
+            (tp_reference_id,travel_type,workflow_id,employee_id,advance_required,travel_purpose,travel_start_date,travel_end_date,
+            travel_requested_date,travel_billable,client_reimbursable,travel_term,customer_id,customer_others,project_id,
+            project_others,currency_type,emp_remarks,mobileNo,status,previous_status,guest_booking,guest_name,travel_other_country,buh_id,admin_action_required)
+        values(#tpReferenceId#,#travelType#,#tpWorkFlowId#,#employee_id#,#advance_required#,#travel_purpose#,#travel_start_date#,#travel_end_date#,
+            #travel_requested_date#,#travel_billable#,#client_reimbursable#,#travel_term#,#customer_id#,#customer_others#,#project_id#,
+            #project_others#,#currency_type#,#emp_remarks#,#mobileNo#,#status#,#previous_status#,#guest_booking#,#guest_name#,#travel_other_country#,#change_buh_id#,admin_action_required)
+        <selectKey resultClass="String" keyProperty="last_id">
+          select last_insert_id() as last_id
+        </selectKey>
+    </insert>
+    
+    <insert id="insertTravelAdvance" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_advance 
+            (master_id,advance_workflow_id,further_advance,advance_requested_date,extended_end_date,emp_remarks,previous_status,status)
+        values(#master_id#,#advanceWorkFlowId#,#furtherAdvance#,Now(),#travelAdvanceEndDate#,
+            #advanceRemarks#,#advancePreviousStatus#,#advanceStatus#)
+    </insert>
+
+    <update id="updateTravel" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_master set 
+            tp_reference_id=#tpReferenceId#,workflow_id=#tpWorkFlowId#,advance_required=#advance_required#,travel_purpose=#travel_purpose#,
+            travel_start_date=#travel_start_date#,travel_end_date=#travel_end_date#,travel_requested_date=#travel_requested_date#,
+            travel_billable=#travel_billable#,client_reimbursable=#client_reimbursable#,travel_term=#travel_term#,customer_id=#customer_id#,
+            customer_others=#customer_others#,project_id=#project_id#,project_others=#project_others#,currency_type=#currency_type#,
+            emp_remarks=#emp_remarks#,mobileNo=#mobileNo#,status=#status#,admin_action_required=#admin_action_required#,previous_status=#previous_status#,
+            travel_other_country=#travel_other_country#,guest_booking=#guest_booking#,guest_name=#guest_name#,buh_id=#change_buh_id#
+        WHERE id=#master_id#
+    </update>
+
+    <select id="getLastRequestId" resultClass="String" >
+        SELECT SUBSTR( tp_reference_id, 5 ) FROM tp_master ORDER BY SUBSTR( tp_reference_id, 5 ) DESC LIMIT 1
+    </select>
+
+    <insert id="insertTicket" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_travel_ticket
+            (master_id,from_country,from_city,from_city_others,to_country,to_city,
+            to_city_others,travel_date,travel_preference,travel_mode,remarks,deleted)
+        values(#master_id#,#out_from_country#,#out_from_city_id#,#out_from_city#,#out_to_country#,#out_to_city_id#,
+            #out_to_city#,#travel_ticket_date#,#out_travel_preference#,#out_travel_mode#,#out_ticket_remarks#,#out_ticketdeleted#)
+    </insert>
+
+    <update id="updateTicket" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_travel_ticket set
+            from_country=#out_from_country#,from_city=#out_from_city_id#,from_city_others=#out_from_city#,to_country=#out_to_country#,to_city=#out_to_city_id#,
+            to_city_others=#out_to_city#,travel_date=#travel_ticket_date#,travel_preference=#out_travel_preference#,travel_mode=#out_travel_mode#,remarks=#out_ticket_remarks#,deleted=#out_ticketdeleted#
+        WHERE id=#out_ticket_id#
+    </update>
+    
+    <insert id="insertHotel" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_hotel_bookings
+            (master_id,country,city,city_others,location,from_date,to_date,remarks,deleted)
+        values(#master_id#,#out_country#,#out_city_id#,#out_city#,#out_location#,#hotel_from_date#,#hotel_to_date#,#out_hotel_remarks#,#out_hoteldeleted#)
+    </insert>
+
+    <update id="updateHotel" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_hotel_bookings set
+            country=#out_country#,city=#out_city_id#,city_others=#out_city#,location=#out_location#,from_date=#hotel_from_date#,to_date=#hotel_to_date#,remarks=#out_hotel_remarks#,deleted=#out_hoteldeleted#
+        WHERE id=#out_hotel_id#
+    </update>
+
+    <insert id="insertConveyance" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_conveyance
+            (master_id,country,city,city_others,pickup,dropto,start_date,end_date,time,remarks,deleted)
+        values(#master_id#,#out_conveyance_country#,#out_conveyance_city_id#,#out_conveyance_city#,#out_pickup#,#out_dropto#,
+            #conveyance_start_date#,#conveyance_end_date#,#out_travel_time#,#out_conveyance_remarks#,#out_conveyancedeleted#)
+    </insert>
+
+    <update id="updateConveyance" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_conveyance set
+            country=#out_conveyance_country#,city=#out_conveyance_city_id#,city_others=#out_conveyance_city#,pickup=#out_pickup#,dropto=#out_dropto#,
+            start_date=#conveyance_start_date#,end_date=#conveyance_end_date#,time=#out_travel_time#,remarks=#out_conveyance_remarks#,deleted=#out_conveyancedeleted#
+        WHERE id=#out_conveyance_id#
+    </update>
+
+    <insert id="saveAttachment" parameterClass="Map">
+        INSERT INTO tp_attachments 
+            (master_id,file_name,created_date)
+        values(#master_id#,#file_name#,#created_date#)
+    </insert>
+
+    <update id="updateAttachment" parameterClass="String">
+        UPDATE tp_attachments set deleted=1
+        WHERE id=#key#
+    </update>
+    
+    <select id="getTravelAttachment" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            id as attachment_id,file_name as fileName 
+        FROM tp_attachments
+        WHERE master_id = #key# AND deleted = 0
+    </select>
+
+    <insert id="insertVisa" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_visa
+            (master_id,reference_number,country_issue,place_of_issue,visa_type,valid_from,valid_to,visa_visit,remarks)
+        values(#master_id#,#reference_number#,#country_issue#,#place_of_issue#,#visa_type#,#valid_from#,#valid_to#,#visa_visit#,#visa_remarks#)
+    </insert>
+
+    <update id="updateVisa" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_visa set
+            reference_number=#reference_number#,country_issue=#country_issue#,place_of_issue=#place_of_issue#,
+            visa_type=#visa_type#,valid_from=#valid_from#,valid_to=#valid_to#,visa_visit=#visa_visit#,remarks=#visa_remarks#
+        WHERE id=#visa_id#
+    </update>
+
+    <select id="getNationalityList" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT DISTINCT nationality AS nationality,id as nationalityId,country AS countryId  from countries where nationality!='' order by nationality;
+    </select>
+
+    <select id="getGenericDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT last_name AS surName,first_name AS givenName,DATE_FORMAT(birth_date,'%d-%m-%Y') AS birth_date,gender AS gender,mobile_number AS mobileNo,work_email_address AS officialMailId,
+personal_email_address AS alternateMailId FROM employees WHERE id=#empId#;
+    </select>
+    
+    <select id="getEmpGenericDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT gendet.id AS empGenericDetId,gendet.employee_id AS empId,gendet.surName As surName,gendet.givenName AS givenName,gendet.nationality AS nationality,
+            gendet.passportNumber AS passportNumber,gendet.expiryDate AS expiryDate,gendet.issuePlace AS issuePlace,
+            gendet.issuedDate AS issuedDate,gendet.birthPlace AS birthPlace,gendet.ecnrStatus AS ecnrStatus,gendet.nominee AS nominee,
+            gendet.relationship AS relationShip,doorNo AS doorNo,gendet.street AS streetName,gendet.area AS area,gendet.place AS place,
+            gendet.mealPrefer AS mealPreference,emp.gender AS gender,emp.birth_date AS birthDate,
+            emp.mobile_number AS mobileNo,emp.work_email_address AS officialMailId,emp.personal_email_address AS alternateMailId
+            FROM tp_employee_genericdetails AS gendet
+            LEFT JOIN employees AS emp ON(emp.id=gendet.employee_id)
+            WHERE genDet.employee_id=#empId#;
+    </select>
+    
+    <insert id="insertEmpGenericDetails" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        INSERT INTO tp_employee_genericdetails(employee_id,surName,givenName,nationality,passportNumber,expiryDate,issuedDate,birthPlace,
+            ecnrStatus,nominee,relationship,doorNo,street,area,place,mealPrefer,issuePlace)
+            VALUES(#empId#,#surName#,#givenName#,#nationality#,#passportNumber#,#expiryDate#,#issuedDate#,#birthPlace#,
+            #ecnrStatus#,#nominee#,#relationShip#,#doorNo#,#streetName#,#area#,#place#,#mealPreference#,#issuePlace#)
+    </insert>
+
+    <update id="updateEmpGenericDetails" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        UPDATE tp_employee_genericdetails SET surName=#surName#,givenName=#givenName#,nationality=#nationality#,passportNumber=#passportNumber#,
+                issuePlace=#issuePlace#,issuedDate=#issuedDate#,expiryDate=#expiryDate#,
+                birthPlace=#birthPlace#,ecnrStatus=#ecnrStatus#,nominee=#nominee#,relationShip=#relationShip#,doorNo=#doorNo#,
+                street=#streetName#,area=#area#,place=#place#,mealPrefer=#mealPreference#
+        WHERE employee_id=#empId#
+    </update>
+    
+    <update id="updateGenericDetails" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE employees SET mobile_number=#mobileNo#,personal_email_address=#alternateMailId# WHERE id=#empId#
+    </update>
+
+    <select id="checkGenericId" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        SELECT id AS empId FROM tp_employee_genericdetails t WHERE employee_id=#empId#;
+    </select>
+
+    <select id="getEmployeeName" parameterClass="String" resultClass="String">
+        SELECT 
+            CONCAT(employee_number,' - ',first_name,' ',last_name) AS employee_name
+        FROM employees
+        WHERE id = #key#
+    </select>
+
+    <select id="getTravelDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            CASE WHEN Travel.travel_billable = 'Y' THEN 'Billable' ELSE 'Non Billable' END AS travel_billable,
+            CASE WHEN Travel.client_reimbursable = 'Y' THEN 'Yes' ELSE 'No' END AS client_reimbursable,
+            Travel.customer_id,Travel.customer_others,Travel.project_id,Travel.project_others,
+            Travel.tp_reference_id AS tpReferenceId,Travel.approved_advance AS approvedAdvance,cur.currency_code AS currencyCode,DATE_FORMAT(Travel.treasury_action_date,'%d-%m-%Y') AS trApprovedDate,
+            Travel.travel_type AS travelType,
+            CASE WHEN Travel.travel_type = 'I' THEN 'International Travel' WHEN Travel.travel_type = 'D' THEN 'Domestic Travel' ELSE 'Local Conveyance' END AS travel_text,
+            CONCAT(Employee.employee_number,' - ',Employee.first_name,' ',Employee.last_name) AS employeeName,
+            CONCAT(Employee.first_name,' ',Employee.last_name) AS requestor,
+            Employee.structure_name AS requestorPracticeGroup,
+            Employee.work_email_address as email_address,
+            Travel.admin_action_required,Travel.advance_required,
+            CASE WHEN Travel.travel_type = 'L' THEN Travel.rm_id ELSE Employee.manager END AS manager,
+            Workflow.workflows as workflow,
+            Travel.status,Travel.previous_status,Travel.buh_id as changeBuh
+        FROM tp_master AS Travel
+        LEFT JOIN employees AS Employee ON (Employee.id = Travel.employee_id)
+        LEFT JOIN tp_workflows AS Workflow ON (Workflow.id = Travel.workflow_id)
+        LEFT JOIN currencies AS cur ON (cur.id = Travel.approved_currency)
+        WHERE Travel.id = #key#
+    </select>
+
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+
+    <select id="getApprovers" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT tp.employee_id as approverId FROM tp_approvers as tp
+        LEFT JOIN employees  AS emp ON (emp.id = tp.employee_id)
+        WHERE
+        tp.category=#nextLevel# AND tp.company_structure_id=#requestorPracticeGroup# AND emp.employment_status NOT IN('r','q','t','b','o');
+    </select>
+
+    <select id="getApproverEmail" parameterClass="String" resultClass="String" >
+        SELECT work_email_address
+        FROM employees
+        WHERE id=#key#
+    </select>
+
+    <update id="updateTreasuryDetails" parameterClass="com.defiance.ideal.travelplan.dto.CommonDto">
+        UPDATE tp_master SET approved_advance=#amount_deposited#,approved_currency=#currency_type# WHERE id=#tpId#;
+    </update>
+
+    <select id="getAutoEmployee" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            id AS keyRes,
+            CONCAT(employee_number,' - ',first_name,' ',last_name) AS valueRes
+        FROM employees
+        WHERE employee_number LIKE #key# OR first_name LIKE #key# OR last_name LIKE #key#
+    </select>
+
+    <select id="getEmployee" parameterClass="String" resultClass="String" >
+        SELECT
+            CONCAT(employee_number,' - ',first_name,' ',last_name) AS valueRes
+        FROM employees
+        WHERE id = #key#
+    </select>
+
+   <select id="getDisclaimer" resultClass="com.defiance.ideal.travelplan.dto.CommonDto" >
+        SELECT
+            child.configuration_key as disclaimerId,child.configuration_value as disclaimerName
+        FROM configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id)
+        WHERE pt.configuration_key = 'germany_disclaimer'
+    </select>
+<select id = "getBuhid" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+    SELECT employee_id as buhid FROM tp_approvers WHERE category = 'b' AND company_structure_id = #group_id#
+</select>
+
+
+</sqlMap>

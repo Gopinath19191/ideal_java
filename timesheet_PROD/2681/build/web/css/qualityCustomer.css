@@ -1,0 +1,282 @@
+/* 
+    Document   : qualityCustomer
+    Created on : Jun 21, 2012, 11:27:25 AM
+    Author     : 14578
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+root { 
+    display: block;
+}
+body {
+
+    background:#EEF2F8 url("images/bg_page.png") repeat-x top ;
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 1000px;
+    color: #666666;
+}
+.customeradd {
+    background: url("images/add.png") no-repeat scroll left center transparent;
+    color: #4C83B3;
+    padding: 0 0 0 20px;
+    text-decoration: none;
+}
+.goToList {
+    color: #4C83B3;
+    float: right;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 8px 0 18px;
+}
+.container_inner {
+    margin: 30px 0 0 0px;
+}
+.page_heading {
+    color: #666666;
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 19px;
+}
+div.formContent_new {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CADFF2;
+    float: left;
+    margin: 0 0 30px 18px;
+    outline: 1px none;
+    padding-bottom: 0;
+    width: 950px;
+}
+.buttonAlignment {
+    color: #FFFFFF;
+    font-family: arial;
+    font-size: 13px;
+    font-weight: bold;
+    margin: 0 0 20px;
+}
+div#btnGroup {
+    float: left;
+    text-align: center;
+    width: 100%;
+}
+.qualitysave {
+    background: url("images/icon_btn_save.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+}
+.qualitysubmit {
+    background: url("images/icon_btn_submit.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+}
+.qualityback {
+    background: url("images/back.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+    width: 90px;
+}
+.qualitycancel {
+    background: url("images/icon_btn_cancel.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+    width: 90px;
+}
+.qualitysearch {
+    background: url("images/icon_btn_search.PNG") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+}
+.qualityexcelexport {
+    background: url("images/export-to-excel-button-icon.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 0 0 15px;
+    padding: 0 10px 0 30px;
+}
+.textbox_new {
+    background: url("images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+    width: 158px;
+}
+
+#customerdatadisplay table {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-top: 0 none;
+    clear: both;
+    width: 930px;
+}
+#customerdatadisplay table tr td {
+    padding: 3px 3px;
+    vertical-align: top;
+    width: 50%;
+}
+.add {
+    background: url("images/add.png") no-repeat scroll left center transparent;
+    color: #4D85B8;
+    float: right;
+    height: 20px;
+    padding: 2px 0 0 21px;
+    text-decoration: none;
+}
+.customerexportexcel{
+    background: url("images/export-16x16.png") no-repeat scroll left center transparent;
+    color: #4D85B8;
+    float: right;
+    height: 20px;
+    padding: 2px 0 0 21px;
+    text-decoration: none;
+}
+.exportexcel {
+    background: url("images/export-to-excel-button-icon.png") no-repeat scroll left center transparent;
+    color: #4D85B8;
+    float: right;
+    height: 20px;
+    padding: 2px 0 0 21px;
+    text-decoration: none;
+}
+.notice_page {
+    background-color: #ECE6D2;
+    background-repeat: no-repeat;
+    border: 1px solid #DDD6B7;
+    float: left;
+    height: 32px;
+    margin: -10px 0 7px 19px;
+    padding: 10px;
+    width: 938px;
+}
+.filterWrap{
+    background: url("../images/box-strip.jpg") repeat-x scroll center top #E2E8EC;
+    border: 1px solid #BDC9D1;
+    float: left;
+    margin: 8px 0 9px 18px;
+    padding: 20px;
+    width: 909px;
+
+}
+.filetrInnerWrap {
+    float: left;
+    padding: 0;
+    width: 100%;
+    margin-top: -6px;
+}
+
+#container {
+    text-align: left;
+    width:95%;
+    padding: 0px 20px 0px 20px;
+    margin: auto;
+}
+
+
+#datadisplay table {
+    background: #fff;
+    /*    border:1px solid #99BBE8;*/
+    border-top:0;
+    clear: both;
+    /*color: #000;*/
+    /*    width: 100%;*/
+}
+.tabletools {
+    float: left;
+    width: 100%;
+    padding: 10px;
+}
+.toolsbuttonwrap{
+    float:left;
+    width:auto;
+    padding:0;
+    clear:none;
+    margin-left:10px;
+}
+.approvebutton{
+    background: url("../images/icon_btn_submit.png")  no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+.rejectbutton{
+    background: url("../images/icon_btn_cancel.png")  no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+
+#datadisplay th {
+    background: url("../img/table-header-strip.jpg") repeat-x scroll center top #EFF4FB;
+    border-bottom: 0 none;
+    border-left: 1px solid #EFF4FB;
+    font-weight: bolder;
+    padding: 5px 3px;
+}
+.even{
+    background-color: #EFF4FB;
+}
+.odd{
+    background-color: transparent;
+}
+.toolfind {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #BCCFEA;
+    color: #4D85B8;
+    float: right;
+    font-weight: bold;
+    height: 25px;
+    margin: 0px 0 0 10px;
+    width: 36px;
+}
+
+#datadisplay table tr.altrow td {
+    background: none repeat scroll 0 0 #FFFFFF;
+}
+
+#datadisplay table tr td {
+/*    background: none repeat scroll 0 0 #EFF4FA;*/
+    background: none repeat scroll 0 0 ;
+    padding: 5px 3px;
+    vertical-align: top;
+}
+
+.numeric,.right_align{
+    text-align: right;
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="EffortsLeakage">
+    
+    <select id="getData" parameterClass="com.defiance.ideal.reports.dto.EffortsLeakageDataDTO" resultClass="com.defiance.ideal.reports.dto.EffortsLeakageDataDTO">
+        CALL PR_EFFORTS_LEKAGE_REPORT(#start_date#, #end_date#, null);
+    </select>
+    
+    <select id="getprojectUnbilledDetails" parameterClass="com.defiance.ideal.reports.dto.EffortsLeakageDataDTO" resultClass="com.defiance.ideal.reports.dto.EffortsLeakageDataDTO">
+        CALL PR_EMPLOYEE_UTILIZATION_REPORT(#start_date#, #end_date#, null);
+    </select>
+    
+    <select id="getRevenueLeakageReport" parameterClass="com.defiance.ideal.reports.dto.SearchDTO" resultClass="com.defiance.ideal.reports.dto.EffortsLeakageDataDTO">
+        CALL PR_REVENUE_LEKAGE_REPORT(#start_date#, #end_date#, #unit_id#, #sub_unit_id#, #project_manager_id#, #customer_id#);
+    </select>
+    
+    <select id="getCustomerList" resultClass="com.defiance.ideal.reports.dto.SearchDTO">
+        SELECT cus.id as customer_id, CONCAT(cus.customer_code," - ",cus.customer_name," ",IFNULL(cus.division,' ')) as customer_name
+        FROM customers AS cus
+        WHERE cus.deleted = 0 AND cus.status IN('a')
+        ORDER BY cus.customer_code;
+    </select>
+        
+    <select id="getParent_id" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(id) AS id FROM company_structures c WHERE parent_id IN (SELECT id FROM company_structures WHERE parent_id =0)
+    </select>
+    
+    <select id="getUnit" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.SearchDTO">
+        SELECT id as unit_id, name AS unit_name FROM company_structures c WHERE parent_id IN (SELECT id FROM company_structures WHERE parent_id =0);
+    </select>
+    
+    <select id="getSubUnit" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.SearchDTO">
+        SELECT id as sub_unit_id, name AS sub_unit_name FROM company_structures c WHERE parent_id IN ($parentId$);
+    </select>
+    
+</sqlMap>

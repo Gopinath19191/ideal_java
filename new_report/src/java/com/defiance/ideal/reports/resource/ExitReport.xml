@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ExitReportMap">
+    <select id="fetchExitReport" parameterClass="String" resultClass="com.defiance.ideal.reports.dto.ExitReportDTO">
+<!--        SELECT
+        emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name) AS 'employeeName',
+        emp.mobile_number AS contactNumber,
+	emp.personal_email_address AS emailId,
+        cfg.configuration_value AS leavingReason,
+	( ( eld.no_of_days_allotted + eld.leave_brought_forward ) - eld.leave_taken -eld.leave_encashed ) AS leaveBalance,
+        90-if((DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1)<![CDATA[ > ]]>90,90,DATEDIFF(emp.released_date,exrm.exit_trigger_date)+1) AS balanceNoticePeriod,
+        rm.employee_number AS 'rmNumber',
+        CONCAT(rm.first_name,' ',rm.last_name) AS 'rmName',
+        emp.resigned_date AS 'resignedDate',
+        emp.released_date AS lastWorkingDate,
+        cs.name AS 'practiceGroup',
+        band.name AS 'bandName',
+        subband.name AS subBandName,
+        cust.customer_name AS customerName,
+	
+        exrm.survey_status AS survey_status,
+        exrm.company_doc AS rm_company_doc,
+        exadmin.id_card AS admin_id_card,
+        exadmin.drawer_key AS admin_drawer_key,
+        exns.password_deactivation AS ns_pwd_deactivation,
+        exns.email_deactivation AS ns_email_deactivation,
+        CASE exrm.notice_wavier_value WHEN "0" THEN "Fully waived" WHEN "1" THEN "Partially waived" WHEN "2" THEN "No waiver" WHEN "3" THEN "Not Applicable" ELSE "-" End as noticeWaiver,
+        CASE
+        WHEN emp.released_date IS NULL THEN 'Pending With RM'
+        WHEN (exhr.approved_date IS NOT NULL AND emp.employment_status IN ('r','b','t','q','o')) THEN 'Exit Closed'
+        
+        ELSE 
+        case 
+        when (exrm.company_doc!=2 <![CDATA[ && ]]> exrm.project_doc!=2 <![CDATA[ && ]]>exrm.customer_approval!=2 <![CDATA[ && ]]>  exrm.rm_others!=2 <![CDATA[ && ]]> exrm.survey_status='Y' <![CDATA[ && ]]>
+        exadmin.id_card!=2  <![CDATA[ && ]]> exadmin.drawer_key!=2 <![CDATA[ && ]]> exadmin.data_card!=2 <![CDATA[ && ]]> exadmin.mobile_phone!=2 <![CDATA[ && ]]> exadmin.sim_card!=2 <![CDATA[ && ]]> exadmin.laptop!=2  <![CDATA[ && ]]> exadmin.cmp_res_phone!=2  <![CDATA[ && ]]> exadmin.out_bill_clr!=2  <![CDATA[ && ]]> exadmin.cd_pendrive!=2 <![CDATA[ && ]]> exadmin.cabin_key!=2 <![CDATA[ && ]]>
+        exns.password_deactivation!=2 <![CDATA[ && ]]> exns.email_deactivation!=2 <![CDATA[ && ]]> exns.sales_crm!=2 <![CDATA[ && ]]> exns.fin_dax!=2 <![CDATA[ && ]]> exns.ns_others!=2 <![CDATA[ && ]]>
+        exfinance.travel_advance!=1 <![CDATA[ && ]]> exfinance.salary_advance!=1 <![CDATA[ && ]]> exfinance.relocation!=1 <![CDATA[ && ]]> exfinance.joining_bonus!=1 <![CDATA[ && ]]> exfinance.notice_reimburse!=1  <![CDATA[ && ]]> exfinance.professional_fee!=1 <![CDATA[ && ]]> exfinance.loans!=1) THEN 'PENDING WITH HR'
+				
+        ELSE 'Pending With No Due Clearance'
+        END 
+        END  AS 'exitStatus',
+        case 
+        when (exrm.company_doc!=2 <![CDATA[ && ]]> exrm.project_doc!=2 <![CDATA[ && ]]> exrm.customer_approval!=2 <![CDATA[ && ]]> exrm.rm_others!=2) THEN
+        exrm.rm_clr_date 
+        ELSE 'NO'
+        END AS 'rmCleared',
+			
+        case
+        when (exadmin.id_card!=2  <![CDATA[ && ]]> exadmin.drawer_key!=2 <![CDATA[ && ]]> exadmin.data_card!=2 <![CDATA[ && ]]> exadmin.mobile_phone!=2 <![CDATA[ && ]]> exadmin.sim_card!=2 <![CDATA[ && ]]> exadmin.laptop!=2  <![CDATA[ && ]]> exadmin.cmp_res_phone!=2  <![CDATA[ && ]]> exadmin.out_bill_clr!=2  <![CDATA[ && ]]> exadmin.cd_pendrive!=2 <![CDATA[ && ]]> exadmin.cabin_key!=2) THEN 
+
+        exadmin.approved_date    
+        ELSE 'NO'
+        END AS 'adminCleared',
+			
+        case
+        when (exns.password_deactivation!=2 <![CDATA[ && ]]> exns.email_deactivation!=2 <![CDATA[ && ]]> exns.sales_crm!=2 <![CDATA[ && ]]> exns.fin_dax!=2 <![CDATA[ && ]]> exns.ns_others!=2 ) THEN 
+
+        exns.approved_date 
+        ELSE 'NO'
+        END AS 'nsCleared',
+			
+        case
+        when (exfinance.travel_advance!=1 <![CDATA[ && ]]> exfinance.salary_advance!=1 <![CDATA[ && ]]> exfinance.relocation!=1 <![CDATA[ && ]]> exfinance.joining_bonus!=1 <![CDATA[ && ]]> exfinance.notice_reimburse!=1  <![CDATA[ && ]]> exfinance.professional_fee!=1 <![CDATA[ && ]]> exfinance.loans!=1) THEN 
+
+        exfinance.approved_date 
+        ELSE 'NO'
+        END AS 'financeCleared',
+                        
+        case 
+        when(exrm.survey_status='Y') THEN 
+        'YES'
+        ELSE 'NO'
+        END AS 'exitSurveyClearance'
+        FROM dtl_exit_employee AS exemp
+        LEFT JOIN dtl_exit_rm_approval AS exrm ON (exemp.id=exrm.exit_emp_id)
+        LEFT JOIN dtl_exit_hr_approval AS exhr ON (exemp.id=exhr.exit_emp_id)
+        LEFT JOIN dtl_exit_admin_approval AS exadmin ON (exemp.id=exadmin.exit_emp_id)
+        LEFT JOIN dtl_exit_ns_approval AS exns ON (exemp.id=exns.exit_emp_id)
+        LEFT JOIN dtl_exit_finance_approval AS exfinance ON (exemp.id=exfinance.exit_emp_id)
+        LEFT JOIN employees AS emp ON (emp.id=exemp.employee_id)
+        LEFT JOIN configuration_values AS cfg ON (cfg.id=exemp.leaving_reason AND parent_id=588)
+	LEFT JOIN employee_leave_details AS eld ON(emp.id=eld.employee_id AND eld.leave_category_id=4 AND 
+        eld.year=(select max(year) from employee_leave_details where employee_id = eld.employee_id and leave_category_id=4 group by employee_id))
+        LEFT JOIN employees AS rm ON (rm.id=emp.manager)
+        LEFT JOIN bands AS subband ON (subband.id=emp.band_id)
+        LEFT JOIN bands AS band ON (band.id=subband.parent_id)
+        LEFT JOIN company_structures AS cs ON (cs.id=emp.structure_name)
+        LEFT JOIN project_team_allocations as pta ON (pta.employee_id = exemp.employee_id)
+        LEFT JOIN projects as prj ON (pta.project_id = prj.id)
+        LEFT JOIN customers as cust ON (cust.id = prj.customer_id)
+        WHERE exemp.submit_status<![CDATA[ >= ]]>2 AND (exemp.reason_rejection IS NULL <![CDATA[ || ]]> exemp.reason_rejection='') AND (emp.released_date<![CDATA[ >= ]]>STR_TO_DATE(#exitTriggerDate#,'%d-%m-%Y') <![CDATA[ || ]]> emp.released_date IS NULL)
+        group by exemp.id-->
+        CALL pr_exit_report(#exitTriggerDate#);
+
+    </select>
+</sqlMap>

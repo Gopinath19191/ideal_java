@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+    Document   : requestor.xml
+    Created on : March 8, 2012, 12:36 PM
+    Author     : 14355
+    Description:
+        Purpose of the document follows.
+-->
+<sqlMap namespace="requestDetails">
+
+    <!--<select id="getRequestorDetails" parameterClass="String"  resultClass="com.defiance.requestor.dto.RequestorDTO">
+        SELECT eem.exitEmpId,eem.deleted,eem.reasonRejection,DATE_FORMAT(eem.resignedDate,'%d-%m-%Y') AS resignedDate, eem.contactNo, eem.contactAddr, eem.personalEmail, eem.leavingReason,DATE_FORMAT(eem.submitDate,'%d-%m-%Y') AS submitDate,eem.submitStatus AS submitStatus,eem.surveyStatus AS surveyStatus,
+        eem.empId AS resEmpId,DATE_FORMAT(eem.rmApprovedDate,'%d-%m-%Y') AS rmApprovedDate,DATE_FORMAT(eem.rmClrDate,'%d-%m-%Y') AS rmClrDate,DATE_FORMAT(eem.adApprovedDate,'%d-%m-%Y') AS adApprovedDate,DATE_FORMAT(eem.finApprovedDate,'%d-%m-%Y') AS finApprovedDate,
+        DATE_FORMAT(eem.nsApprovedDate,'%d-%m-%Y') AS nsApprovedDate,DATE_FORMAT(eem.hrApprovedDate,'%d-%m-%Y') AS hrApprovedDate,emp.employee_number AS employeeNumber, CONCAT( emp.first_name, ' ', emp.last_name ) AS employeeName,
+        band.name AS band, band.id AS bandId, subBand.name AS subBand, subBand.id AS subBandId,desig.designation AS designation,pg.id AS practiceGroupId, pg.name AS practiceGroup,
+        rm.id AS rmId, rm.employee_number AS rmEmpNumber,cmpLoc.address_line1 AS empBaseLocation,CONCAT( rm.first_name, ' ', rm.last_name ) AS rmName,DATE_FORMAT(emp.joined_date,'%d-%m-%Y') AS empDoj,eem.nsStatus,eem.adminStatus,
+        eem.rmStatus,eem.finStatus,DATE_FORMAT(era.lastWorkingDate,'%d-%m-%Y') as lastWorkingDate
+        FROM employees AS emp
+        LEFT JOIN bands AS subBand ON ( subBand.id = emp.band_id )
+        LEFT JOIN bands AS band ON ( band.id = subBand.parent_id )
+        LEFT JOIN designations AS desig ON ( desig.id = emp.designation_id )
+        LEFT JOIN company_structures AS pg ON ( pg.id = emp.structure_name )
+        LEFT JOIN company_locations AS cmpLoc ON ( cmpLoc.id = emp.company_location_id )
+        LEFT JOIN employees AS rm ON ( rm.id = emp.manager )
+        LEFT JOIN exit_employee AS eem ON ( emp.id = eem.empId  AND eem.deleted=0)
+        LEFT JOIN exit_rmapproval AS era ON (eem.exitEmpId =era.exitEmpId)
+        WHERE emp.id =#employeeId#;
+    </select>
+
+     <select id="getEmailAddress" parameterClass="String" resultClass="com.defiance.ideal.exitMgmt.employee.dto.EmployeeDTO">
+        SELECT emp.work_email_address AS empWorkMail,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,rm.work_email_address AS rmWorkMail,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rmName FROM employees AS emp LEFT JOIN employees AS rm ON(rm.id=emp.manager) WHERE emp.id=#empId#;
+    </select>
+
+    <select id="getRequestorName" parameterClass="String"  resultClass="String">
+        SELECT CONCAT(first_name,' ',last_name) AS employeeName FROM employees WHERE id=#employeeId#;
+    </select>-->
+
+    
+
+
+  <insert id="insertRequestDetails" parameterClass="com.defiance.requestor.dto.RequestorDTO" >
+        INSERT INTO quality_request(empId,qualId,feedbackType,requestType,processArea,focusArea,description,justification,requestDate,requestStatus)
+        VALUES(#empId#,#qualId#,#feedbackType#,#requestType#,#processArea#,#focusArea#,#description#,#justification#,#requestDate#,#requestStatus#);
+    </insert>
+</sqlMap>

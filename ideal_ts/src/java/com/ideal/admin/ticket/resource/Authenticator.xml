@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AuthenticationMap">
+
+    <select id="getUserDetails" parameterClass="java.lang.String" resultClass="com.ideal.admin.ticket.dto.LoginDTO">
+        SELECT id as userAccountId,username,password,group_id as groupId,employee_id as empId from users where username=#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.ideal.admin.ticket.dto.LoginDTO"  resultClass="com.ideal.admin.ticket.dto.LoginDTO">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="authenticateGroup" parameterClass="com.ideal.admin.ticket.dto.LoginDTO"  resultClass="com.ideal.admin.ticket.dto.LoginDTO">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+    <select id="loginCheck" parameterClass="com.ideal.admin.ticket.dto.LoginDTO"  resultClass="com.ideal.admin.ticket.dto.LoginDTO">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#userName#;
+    </select>
+</sqlMap>

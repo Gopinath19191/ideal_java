@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+ "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="registerMap">   
+        
+    <select id = "getLoginDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="java.lang.Integer">       
+        select count(*) from users as us LEFT JOIN employees as emp ON us.username = emp.employee_number where us.username = #userName# and us.password = #password#
+        and emp.employment_status IN ('p','d','v','g','c','e')
+    </select>
+    
+    <select id = "getDeviceDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.EmployeeDto">
+        select employee_id as userName, device_id as deviceId, register_key as regId from device_details where employee_id = #userName# and device_id = #deviceId#
+    </select>
+    
+    <insert id="insertDeviceId" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+        insert into device_details (employee_id, device_id, register_key, platform)
+        values(#userName#, #deviceId#, #regId#, #platform#)
+        <selectKey keyProperty="id" resultClass="int">
+            select last_insert_id() as id
+        </selectKey>
+    </insert>
+    
+<!--    <update id="updateDeviceId" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+        update device_details set register_key = #regId# where employee_id = #userName# and device_id = #deviceId#  
+    </update>-->
+    
+    <select id = "getNotificationCount" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="java.lang.Integer">
+       select count(*) from timesheet_entries as te 
+	LEFT JOIN timesheet_entry_projects as tep ON tep.timesheet_entry_id = te.id
+	LEFT JOIN employees as emp ON emp.id = te.employee_id
+        where timesheet_date >= last_day(now()) + interval 1 day - interval 3 month
+	AND tep.status = 'r' 
+	AND tep.deleted = 0
+	AND emp.employee_number = #userName#
+    </select>
+    
+    <select id = "getUserProfile" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.EmployeeDto">
+       SELECT CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        CASE 
+	WHEN emp.gender = 'm' then 'Male'
+	ELSE 'Female' 
+	END as gender,	 
+	desg.designation as designation,
+	band.name as band,
+	CASE 
+	WHEN cs.name = 'TS' then 'DTS'
+	ELSE cs.name 
+	END as department,
+	cv.configuration_value as employmentStatus,
+	DATE_FORMAT(emp.birth_date,'%d-%m-%Y') as Dob,
+	DATE_FORMAT(emp.joined_date,'%d-%m-%Y') as Doj, 
+	CASE 
+	WHEN ewl.location_table ='customer_work_locations' THEN (SELECT cwl.address_shortcode as work_location from customer_work_locations as cwl WHERE ewl.work_location_id = cwl.id)
+	WHEN ewl.location_table='company_locations' THEN (SELECT cl.address_line1 as work_location from company_locations as cl WHERE ewl.work_location_id = cl.id)
+	END as location
+        FROM employees as emp
+	LEFT JOIN designations as desg ON emp.designation_id = desg.id
+	LEFT JOIN bands as band ON emp.band_id = band.id
+	LEFT JOIN company_structures as cs ON cs.id = emp.structure_name
+	LEFT JOIN configuration_values as cv ON (cv.configuration_key = emp.employment_status AND cv.parent_id=286)
+	LEFT JOIN employee_work_location as ewl ON ewl.employee_id = emp.id
+	WHERE emp.employee_number = #userName#
+    </select>
+    
+    <update id="updateDeviceRegId" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+        update device_details set register_key = #regId#, platform = #platform# where employee_id = #userName# and device_id = #deviceId#  
+    </update>
+    
+    <insert id="insertSessionDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+        insert into mobileapp_session (employee_id, session_token, start_time, end_time)
+        values(#userName#, #tokenNo#, now(), now())    
+    </insert>
+    
+     <select id = "getDeviceAppVersion" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="java.lang.Double">
+       select app_version  as appVersion from app_version
+    </select>
+    
+     <select id = "isTokenValid" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.EmployeeDto">
+       select start_time  as sesStartTime, now() as currentTime from mobileapp_session where session_token = #tokenNo# and employee_id = #userName#
+    </select>
+        
+    <select id = "isEmpValid" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="java.lang.Integer">
+       select count(*) from users as us LEFT JOIN employees as emp ON us.username = emp.employee_number where us.username = #userName# 
+       and emp.employment_status IN ('p','d','v','g','c','e')
+    </select>
+
+    <update id = "resettingPassword" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+       update users set password = #newPassword# where username = #userName# and password = #password#
+    </update>  
+    
+    <delete id = "deleteDeviceDtls" parameterClass="com.mycompany.employee.dto.EmployeeDto">        
+       delete from device_details where employee_id = #userName# and device_id =  #deviceId# 
+    </delete> 
+    
+    <delete id = "deleteToken" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+       delete from mobileapp_session where employee_id = #userName# and session_token =  #tokenNo#       
+    </delete>     
+    
+    <select id="getTimesheetNL" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.TSNotificationListDto">
+        select        
+        DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') as timesheet_date,
+	CASE 
+	WHEN tep.project_id = 'Non_Project_Activity' THEN 'Non_Project_Activity'
+	ELSE
+	tep.project_id
+	END as projectID,
+	CASE 
+	WHEN tep.project_id = 'Non_Project_Activity' THEN 'Non_Project_Activity'
+	ELSE
+	CONCAT(proj.project_code, ' ',proj.project_name)
+	END as project_name,
+	tep.worked_hours as timesheet_hours,
+	tep.remarks as rejection_remarks
+	from timesheet_entries as te 
+	LEFT JOIN timesheet_entry_projects as tep ON tep.timesheet_entry_id = te.id
+	LEFT JOIN projects as proj ON proj.id = tep.project_id 
+	LEFT JOIN employees as emp ON emp.id = te.employee_id
+        where timesheet_date >= last_day(now()) + interval 1 day - interval 3 month
+	AND tep.status = 'r' 
+	AND tep.deleted = 0
+	AND emp.employee_number = #userName#
+     </select>
+     
+      <procedure id="getTimesheetDetailsAndEntries" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.TimeSheetDto">
+         {call SP_GetEmpTimesheetEntries(#userName#, #startDate#, #endDate#)}
+     </procedure>
+     
+     <procedure id="getCurrentCalendar" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.CalendarDto">
+        {call SP_GetEmpCurrentCalendar(#userName#, #startDate#, #endDate#)}
+     </procedure>
+	 
+	<select id="getMasterData" parameterClass="com.mycompany.employee.dto.EmployeeDto" resultClass="com.mycompany.employee.dto.MasterDto">
+    SELECT         
+	projects.project_code as projectID,
+	projects.project_name as projectName, 	
+	PTA.start_date as startDate,
+	PTA.end_date as endDate, 
+	roles.role_description as roleName,
+	roles.id as roleID,
+	<!--  CASE WHEN PPT.phase_id = 'null'
+		THEN ''
+		ELSE PPT.phase_id			
+	END as phaseID,     
+	CASE WHEN PPT.phase_name = 'null'
+		THEN ''
+		ELSE PPT.phase_name			
+	END as phaseName, 
+        CASE WHEN PPT.task_name = 'null'
+		THEN ''
+		ELSE PPT.task_name			
+	END as taskName,
+        CASE WHEN PPT.task_id = 'null'
+		THEN ''
+		ELSE PPT.task_id			
+	END as taskID,	-->
+        CASE 
+	WHEN roles.id in ('null','') THEN 'false'
+	ELSE 'true'
+	END as is_role_enabled
+	FROM project_team_allocations PTA
+	LEFT JOIN employees emp ON emp.id = PTA.employee_id
+	LEFT JOIN roles ON PTA.role_id = roles.id
+	LEFT JOIN projects ON projects.id = PTA.project_id AND projects.project_status = 'e'
+	LEFT JOIN project_phases PP ON PP.project_id = PTA.project_id
+	LEFT JOIN project_phase_tasks PPT ON PPT.project_id = PP.project_id
+	LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')	
+	LEFT JOIN cities city ON(city.id = cl.city_id)
+	LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+	LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+	WHERE 
+	emp.employee_number = #userName# and PTA.deleted=0
+	AND ((#startDate# between PTA.start_date AND PTA.end_date) OR (#endDate# between PTA.start_date AND PTA.end_date));
+    </select>
+	 
+	 <select id="getRegularizationDtls" resultClass="com.mycompany.employee.dto.MasterDto">
+         SELECT parent_id as parentId, configuration_key as configurationKey, configuration_value as configurationValue FROM configuration_values WHERE parent_id = '632'          
+     </select>
+	 
+	 <select id="getPhaseDtls" parameterClass="com.mycompany.employee.dto.MasterDto" resultClass="com.mycompany.employee.dto.MasterDto">
+        Select phase_id as phaseID, phase_name as phaseName from project_phases where project_id  = (select id from projects where project_code = #dbProjectID#)
+     </select>     
+     
+     <select id="getTaskDtls" parameterClass="com.mycompany.employee.dto.MasterDto" resultClass="com.mycompany.employee.dto.MasterDto">
+    	Select task_id as taskID, task_name as taskName from project_phase_tasks where project_id = (select id from projects where project_code = #dbProjectID#) and phase_id = #phaseID# 
+     </select>
+	 
+</sqlMap>

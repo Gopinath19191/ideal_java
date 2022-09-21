@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="queryMap">
+    
+    <select id="getKraList" parameterClass="com.defiance.ideal.dto.kraDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT kra.financial_year AS financial_year,
+        kra.employee_id as employeeId,
+        kra.id AS kra_id,
+        kra.quarter_id AS quarter_id,
+        emp.employee_number AS empNumber,
+        emp.structure_name as structureName,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE_FORMAT(kra.kra_submitted_on,'%d-%m-%Y' )AS submitted_on,
+        DATE_FORMAT(kra.kra_approved_on,'%d-%m-%Y' )AS approved_on,
+        DATE_FORMAT(kra.kra_accepted_on,'%d-%m-%Y' )AS accepted_on,
+        sta.configuration_value AS status
+        FROM kra_employees AS kra
+        LEFT JOIN kra_quarter_master AS qtr ON(qtr.id = kra.quarter_id)
+        LEFT JOIN employees AS emp ON(emp.id = kra.employee_id)
+        LEFT JOIN employees AS rm ON(rm.id = kra.approved_by)
+        LEFT JOIN configuration_values AS sta ON(kra.status = sta.configuration_key AND sta.parent_id = 763)
+        WHERE 1 = 1          
+        <dynamic>
+             <isNotEmpty prepend="AND" property="status">
+                sta.configuration_key IN ('m','a','p')
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="employeeId">
+                kra.employee_id = #employeeId#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND" property="kra_id">
+                kra.id = #kra_id#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    <select id="getCmpStructData" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto" >
+        SELECT id, name FROM company_structures WHERE parent_id =#parentId#;
+    </select>
+    <select id="getEmployeeKraForExcel" parameterClass="com.defiance.ideal.dto.kraDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT kra.financial_year AS financial_year,
+        kra.id AS kra_id,
+        kra.quarter_id AS quarter_id,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE_FORMAT(kra.kra_submitted_on,'%d-%m-%Y' )AS submitted_on,
+        DATE_FORMAT(kra.kra_approved_on,'%d-%m-%Y' )AS approved_on,
+        DATE_FORMAT(kra.kra_accepted_on,'%d-%m-%Y' )AS accepted_on,
+        sta.configuration_value AS status
+        FROM kra_employees AS kra
+        LEFT JOIN kra_quarter_master AS qtr ON(qtr.id = kra.quarter_id)
+        LEFT JOIN employees AS emp ON(emp.id = kra.employee_id)
+        LEFT JOIN employees AS rm ON(rm.id = kra.approved_by)
+        LEFT JOIN configuration_values AS sta ON(kra.status = sta.configuration_key AND sta.parent_id = 763)
+        WHERE kra.employee_id = #employeeId#
+        AND kra.quarter_id = #quarter_id#
+        AND kra.financial_year = #financial_year#
+    </select>
+    
+<!--    <select id="getEmployeeKraDetails" parameterClass="com.defiance.ideal.dto.kraDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT kra.financial_year AS financial_year,
+        kra.id AS kra_id,
+        kra.employee_id AS employeeId,
+        kra.quarter_id AS quarter_id,
+        kra.status AS STATUS
+        FROM kra_employees AS kra
+        WHERE kra.employee_id = #employeeId# AND kra.quarter_id = #quarter_id# AND kra.financial_year = #financial_year#;
+    </select>-->
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+     <select id="getLevelOneStructure" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT name AS structureName,id AS structureId FROM company_structures WHERE parent_id = #parentId#
+    </select>
+    <select id="getIndividualKraDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT des.id as description_id,
+        des.kra_id as kra_id,
+        des.kra_description AS kra_description,
+        des.kra_uom AS kra_uom,
+        des.kra_target AS kra_target,
+        des.kra_weightage AS kra_weightage,
+        des.kra_achieved AS kra_achieved,
+        des.rm_remarks AS rm_remarks
+        FROM kra_employee_description AS des
+        WHERE des.kra_id = #kra_id# and des.deleted = 0;
+    </select>
+    
+    <select id="getTotalWeightage" parameterClass="String" resultClass="String">
+        SELECT SUM(kra_weightage) as total_weightage FROM kra_employee_description WHERE kra_id = #kra_id# AND deleted = 0;
+    </select>
+    
+    <select id="getMaxBandId" parameterClass="String" resultClass="String">
+        SELECT MAX(bandId) as bandId FROM aa_eligible_associates;
+    </select>
+    
+    <select id="getAaExisting" parameterClass="com.defiance.ideal.dto.EmployeeDto" resultClass="String">
+        SELECT COUNT(*) FROM aa_eligible_associates WHERE appraiseeId = #empId# AND year = #year#;
+    </select>
+    
+    <select id="getAppraiseerDetails" parameterClass="com.defiance.ideal.dto.EmployeeDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT emp.manager AS appraisee_id,
+        rm.manager AS reviewer_id,
+        rev.manager AS normalizer_id
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON emp.manager = rm.id
+        LEFT JOIN employees AS rev ON rm.manager = rev.id
+        WHERE emp.id = #empId#
+    </select>
+    
+    <select id="getFinancialYearList" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT DISTINCT(financial_year) AS financial_year FROM kra_employees WHERE employee_id = #employeeId#;
+    </select>
+    
+    <select id="getRMFinancialYearList" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT 
+        DISTINCT(kra.financial_year) AS financial_year
+        FROM kra_employees AS kra
+        LEFT JOIN employees AS emp ON emp.id = kra.employee_id
+        LEFT JOIN kra_quarter_master AS qtr ON qtr.id = kra.quarter_id
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = kra.status AND sta.parent_id = 763)
+        WHERE emp.manager = #employeeId# AND kra.status IN('m','a','p')
+        AND emp.employment_status NOT IN('r','t','b','q','y','o');
+    </select>
+    
+    <select id="getQuarterList" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT qtr.id AS quarter_id,
+        CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name
+        FROM kra_quarter_master AS qtr;
+    </select>
+    
+    <select id="getQuarterName" parameterClass="String" resultClass="String">
+        SELECT CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name
+        FROM kra_quarter_master AS qtr
+        WHERE id = #quarterId#;
+    </select>
+    
+    <select id="getEmployeeIdFromKraId" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT employee_id as employee_number,financial_year as financial_year, quarter_id as quarter_id from kra_employees WHERE id = #kra_id#;
+    </select>
+    
+    <select id="getEmployeeMailDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT emp.employee_number AS employee_number,
+        CONCAT(emp.first_name, ' ', emp.last_name) AS employee_name,
+        emp.work_email_address AS employee_mail_id,
+        CONCAT(mng.first_name,' ',mng.last_name) AS manager_name,
+        mng.work_email_address AS manager_mail_id
+        FROM employees AS emp
+        LEFT JOIN employees AS mng ON(mng.id = emp.manager)
+        WHERE emp.id = #employeeId#;
+    </select>
+    
+    <select id="getRmEmployeeList" parameterClass="com.defiance.ideal.dto.EmployeeDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT kra.id AS kra_id,
+         emp.id AS employeeId,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        kra.financial_year AS financial_year,
+        kra.quarter_id AS quarter_id,
+        CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+        sta.configuration_value AS status
+        FROM kra_employees AS kra
+        LEFT JOIN employees AS emp ON emp.id = kra.employee_id
+        LEFT JOIN kra_quarter_master AS qtr ON qtr.id = kra.quarter_id
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = kra.status AND sta.parent_id = 763)
+        WHERE emp.manager = #employeeId# AND kra.status IN('m','a','p')
+        AND emp.employment_status NOT IN('r','t','b','q','y','o')
+        <dynamic>
+            <isNotEmpty property="employeeId">
+                <isNotNull prepend="AND" property="year">
+                    kra.financial_year = #year#
+                </isNotNull>    
+                <isNotNull prepend="AND" property="quarterId">
+                    kra.quarter_id = #quarterId#
+                </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    
+    <select id="getReportList" parameterClass="com.defiance.ideal.dto.EmployeeDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT kra.id AS kra_id,
+        emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        kra.financial_year AS financial_year,
+        kra.quarter_id AS quarter_id,
+        CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+        sta.configuration_value AS status
+        FROM kra_employees AS kra
+        LEFT JOIN employees AS emp ON emp.id = kra.employee_id
+        LEFT JOIN kra_quarter_master AS qtr ON qtr.id = kra.quarter_id
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = kra.status AND sta.parent_id = 763)
+        WHERE kra.status IN('m','a','p','s')
+        AND emp.employment_status NOT IN('r','t','b','q','y','o')
+        <dynamic>
+            <isNotEmpty property="employeeId">
+                <isNotNull prepend="AND" property="year">
+                    kra.financial_year = #year#
+                </isNotNull>    
+                <isNotNull prepend="AND" property="quarterId">
+                    kra.quarter_id = #quarterId#
+                </isNotNull>
+                <isNotEmpty prepend="AND" property="practiceGroup">
+                    emp.structure_name in ($practiceGroup$)
+                </isNotEmpty>
+                  
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    
+    <select id="getUserDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT id as userAccountId,username,password,group_id as groupId,employee_id as empId from users where username=#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="authenticateGroup" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="loginCheck" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#userName#;
+    </select>
+
+    <select id="getInstituteList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as instituteId,institute_name as instituteName from institutes ORDER BY institute_name ASC;
+    </select>
+
+    <select id="getUniversityList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as universityId,university_name as universityName from universities ORDER BY university_name ASC ;
+    </select>
+
+    <select id="getDegreeList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT child.configuration_key as degreeId,child.configuration_value as degreeName from configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id)
+        WHERE pt.configuration_key = 'education_degree' AND child.configuration_key != 'c' 
+    </select>
+
+    <select id="getCourseList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as courseId,course_name as courseName from courses ORDER BY course_name ASC ;
+    </select>
+
+    <select id="getCountryList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as countryId,country as countryName from countries ORDER BY country ASC ;
+    </select>
+
+    <select id="getStreamList" parameterClass="com.defiance.ideal.dto.DetailsDto"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as streamId,stream_name as streamName from dtl_streams ORDER BY stream_name ASC ;
+    </select>
+
+    <select id="getSkillList" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT skill_id as skillId,skill_name as skillName from dtl_skills WHERE stream_id = #val# ORDER BY skill_name ASC ;
+    </select>
+
+    <select id="getRegionByCountrty" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as regionId,region as regionName from regions WHERE country_id = #val# ORDER BY region ASC ;
+    </select>
+
+    <select id="getCityByRegion" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT id as regionId,city as regionName from cities WHERE region_id = #val# ORDER BY city ASC ;
+    </select>
+
+    <select id="getEmployeeSearchList" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.DetailsDto">
+        SELECT
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE
+        Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+
+<!--    <insert id="addCertification" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO dtl_employee_education (degree,institute,course,percentage,year_of_passing,remarks,university,employee_id)
+        Values(#degree#,#institution#,#qualification#,#percentage#,#year_of_passing#,#remarks#,#university#,#employeeId#)
+    </insert>-->
+
+<!--    <update id="updateCertification" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE dtl_employee_education set degree=#degree#,institute=#institution#,course=#qualification#,year_of_passing=#year_of_passing#,
+        percentage=#percentage#,remarks=#remarks#,university=#university#,employee_id=#employeeId#,deleted=#deletedTR# WHERE id=#certificationId#
+    </update>-->
+    
+    <insert id="addEmployeeKraDescription" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO kra_employee_description (kra_id,kra_description,kra_uom,kra_target,kra_weightage,deleted)
+        Values(#kra_id#,#qualification#,#krauom#,#kratarget#,#percentage#,#deletedTR#);
+    </insert>
+
+    <update id="updateEmployeeKraDescription" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE kra_employee_description set kra_description=#qualification#,kra_uom=#krauom#,kra_target=#kratarget#,
+        kra_weightage=#percentage#,deleted=#deletedTR# WHERE id=#certificationId#
+    </update>
+    
+    <insert id="addEmployeeKra" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO kra_employees (employee_id,financial_year,quarter_id,kra_submitted_by,kra_submitted_on,status)
+        Values(#associateId#,#year#,#quarterId#,#submittedBy#,NOW(),#actionValue#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    <insert id="insertAaKra" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO aa_kra (kraDescription, bandId)
+        Values(#certificationIdX#, #uniqueId#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    
+    <insert id="insertIntoAaEligibleAssociates" parameterClass="com.defiance.ideal.dto.kraDto">
+        INSERT INTO aa_eligible_associates (quarter, year, bandId, departmentId, appraiseeId, appraiserId, reviewerId, hrId, reviewerRating, normalisedReviewerRating, submitStatus, sendbackbyhr, financeid, appraisalTriggered, normalizerId)
+        VALUES(#quarter_id#, #financial_year#, #band_id#, #structureId#, #employeeId#, #appraisee_id#, #reviewer_id#, '3221','0','0','0','0','259','1',#reviewer_id#);
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    
+    <insert id="insertAaKraMaster" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO aa_kra_master (kra, attributes, performanceCriteria, measurementCriteria, weightage)
+        Values(#kra_id#, #krauom#, #kratarget#, ' ', #percentage#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    
+    <insert id="insertAaKraMapping" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO aa_kra_quarter_mapping (kraId, quarter, year, bandId, departmentId)
+        Values(#kra_id#, #quarterId#, #year#, #bandId#, #structureId#);
+    </insert>
+    
+    <insert id="addEmployeeKraByExcel" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO kra_employees (employee_id,financial_year,quarter_id,kra_submitted_by,kra_submitted_on,status)
+        Values(#employeeId#,#year#,#quarterId#,#submittedBy#,NOW(),#actionValue#)
+    </insert>
+    <select id="getEmpid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from employees where employee_number=#empNumber#
+    </select>  
+    <select id="getBandid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select band_id from employees where employee_number=#empNumber#
+    </select>  
+    <insert id="addEmployeeKraDescriptionByExcel" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        INSERT INTO kra_employee_description (kra_id,kra_description,kra_uom,kra_target,kra_weightage,deleted)
+        Values(#kra_id#,#qualification#,#krauom#,#kratarget#,#percentage#,#deletedTR#);
+    </insert>
+    <update id="updateEmployeeKra" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE kra_employees set kra_submitted_on = NOW(),status=#actionValue# WHERE id=#kra_id#
+    </update>
+      <update id="updateEmployeeKraByExcel" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE kra_employees set kra_submitted_on = NOW(),status=#actionValue# WHERE id=#kra_id#
+    </update>
+    
+    <update id="updateKraAcceptance" parameterClass="java.lang.String">
+        UPDATE kra_employees set kra_accepted_on = NOW(),status='p' WHERE id=#kra_id#
+    </update>
+    
+    <update id="updateRmKraDescription" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE kra_employee_description set rm_remarks=#qualification#
+        WHERE id=#certificationId# and kra_id = #kra_id#
+    </update>
+    
+    <update id="updateRmKra" parameterClass="com.defiance.ideal.dto.EmployeeDto">
+        UPDATE kra_employees set approved_by = #employeeId#,kra_approved_on = NOW(),status=#actionValue# WHERE id=#kra_id#
+    </update>
+
+    <select id="getCertificationDetails" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT
+        cert.id AS certificationIdX,
+        cert.institute AS institutionX,
+        cert.course AS qualificationX,
+        cert.percentage AS percentageX,
+        cert.year_of_passing AS year_of_passingX,
+        cert.remarks AS remarksX,
+        CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName,
+        CONCAT(emp.first_name, ' ', emp.last_name ) AS empFullName,
+        emp.employee_number AS empId,
+        comp.name AS sbuName,
+        subcomp.name AS subSbuName
+        FROM dtl_employee_education AS cert
+        INNER JOIN employees emp ON (emp.id = cert.employee_id) 
+        LEFT JOIN company_structures AS comp ON (comp.id = emp.structure_name  )
+        LEFT JOIN company_structures AS subcomp ON (subcomp.id = emp.structure_name_subgroup  )
+        WHERE
+        cert.degree = 'c' AND
+        cert.deleted = 0 AND
+        emp.employment_status NOT IN ('t','r','b','q') 
+        <dynamic>
+            <isNotEmpty property="employeeId">
+                <isNull prepend="AND" property="excelbuttonName">
+                    cert.employee_id = #employeeId#
+                    LIMIT #start_page#,#end_page#
+                </isNull>    
+                <isNotNull prepend="AND" property="excelbuttonName">
+                    cert.employee_id = #employeeId#
+                </isNotNull>
+            </isNotEmpty>
+            <isEmpty property="employeeId">
+                <isNull property="excelbuttonName">
+                    LIMIT #start_page#,#end_page#
+                </isNull>
+            </isEmpty>
+        </dynamic>
+    </select>
+    <select id="getEmployeeKraDetails" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT
+        cert.id as kra_id,
+        kra.id AS certificationIdX,
+        kra.KRA_description AS qualificationX,
+        kra.KRA_uom AS krauomX,
+        kra.KRA_target AS kratargetX,
+        kra.KRA_weightage AS percentageX,
+        kra.rm_remarks AS rm_remarks,
+        CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName,
+        CONCAT(emp.first_name, ' ', emp.last_name ) AS empFullName,
+        emp.employee_number AS empId,
+        comp.name AS sbuName,
+        subcomp.name AS subSbuName,
+        cert.status AS actionValueX
+        FROM KRA_employees AS cert
+        LEFT JOIN kra_employee_description AS kra ON (kra.kra_id = cert.id)
+        INNER JOIN employees emp ON (emp.id = cert.employee_id) 
+        LEFT JOIN company_structures AS comp ON (comp.id = emp.structure_name  )
+        LEFT JOIN company_structures AS subcomp ON (subcomp.id = emp.structure_name_subgroup  )
+        WHERE
+        kra.deleted = 0
+        <dynamic>
+            <isNotEmpty property="employeeId">
+                <isNull prepend="AND" property="excelbuttonName">
+                    cert.employee_id = #employeeId#
+                </isNull>    
+                <isNotNull prepend="AND" property="excelbuttonName">
+                    cert.employee_id = #employeeId#
+                </isNotNull>
+                <isNotNull prepend="AND" property="year">
+                    cert.financial_year = #year#
+                </isNotNull>    
+                <isNotNull prepend="AND" property="quarterId">
+                    cert.quarter_id = #quarterId#
+                </isNotNull>
+            </isNotEmpty>
+            <isEmpty property="employeeId">
+                <isNull prepend="AND" property="excelbuttonName">
+                    cert.employee_id IS NULL
+                </isNull>
+            </isEmpty>
+        </dynamic>
+    </select>
+     <select id="checkEmployeeKraDetails" parameterClass="com.defiance.ideal.dto.kraDto"  resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT
+        cert.id as kra_id,
+        kra.id AS certificationIdX,
+        kra.KRA_description AS qualificationX,
+        kra.KRA_uom AS krauomX,
+        kra.KRA_target AS kratargetX,
+        kra.KRA_weightage AS percentageX,
+        kra.rm_remarks AS rm_remarks,
+        CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName,
+        CONCAT(emp.first_name, ' ', emp.last_name ) AS empFullName,
+        emp.employee_number AS empId,
+        comp.name AS sbuName,
+        subcomp.name AS subSbuName,
+        cert.status AS actionValueX
+        FROM KRA_employees AS cert
+        LEFT JOIN kra_employee_description AS kra ON (kra.kra_id = cert.id)
+        INNER JOIN employees emp ON (emp.id = cert.employee_id) 
+        LEFT JOIN company_structures AS comp ON (comp.id = emp.structure_name  )
+        LEFT JOIN company_structures AS subcomp ON (subcomp.id = emp.structure_name_subgroup  )
+        WHERE
+        kra.deleted = 0
+        <dynamic>
+            <isNotEmpty property="employeeId">                   
+                <isNotNull prepend="AND" property="employeeId">
+                    cert.employee_id = #employeeId#
+                </isNotNull>
+                <isNotNull prepend="AND" property="financial_year">
+                    cert.financial_year = #financial_year#
+                </isNotNull>    
+                <isNotNull prepend="AND" property="quarter_id">
+                    cert.quarter_id = #quarter_id#
+                </isNotNull>
+            </isNotEmpty>           
+        </dynamic>
+    </select>
+    
+    <select id="getEducationDetails" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT
+        ed.id AS certificationIdX,
+        ed.degree AS degreeX,
+        cv.configuration_value AS degreeXY,
+        ed.institute AS institutionX,
+        ed.course AS qualificationX,
+        ed.percentage AS percentageX,
+        ed.year_of_passing AS year_of_passingX,
+        ed.university AS universityX,
+        ed.remarks AS remarksX,
+        cs.course_name AS qualificationXY,
+        ins.institute_name AS institutionXY,
+        univ.university_name AS universityXY,
+        CONCAT( emp.employee_number, ' - ', emp.first_name, ' ', emp.last_name ) AS empName,
+        CONCAT(emp.first_name, ' ', emp.last_name ) AS empFullName,
+        emp.employee_number AS empId,
+        comp.name AS sbuName,
+        subcomp.name AS subSbuName,
+        CASE WHEN ceil(ed.institute) THEN ins.institute_name ELSE ed.institute END AS institutionName,
+        CASE WHEN ceil(ed.course) THEN cs.course_name ELSE ed.course END AS qualificationName,
+        CASE WHEN ceil(ed.university) THEN univ.university_name ELSE ed.university END AS universityName
+        FROM dtl_employee_education ed
+        LEFT JOIN courses AS cs ON (cs.id = ed.course)
+        LEFT JOIN institutes AS ins ON (ins.id = ed.institute)
+        LEFT JOIN universities AS univ ON (univ.id = ed.university)
+        LEFT JOIN configuration_values AS cv ON ( cv.configuration_key = ed.degree
+        AND cv.parent_id = (
+        SELECT parent.id
+        FROM configuration_values parent
+        WHERE configuration_key = 'education_degree' ) )
+        INNER JOIN employees emp ON (emp.id = ed.employee_id) 
+        LEFT JOIN company_structures AS comp ON (comp.id = emp.structure_name  )
+        LEFT JOIN company_structures AS subcomp ON (subcomp.id = emp.structure_name_subgroup  )
+        WHERE
+        ed.degree != 'c' AND 
+        ed.deleted = 0 AND
+        emp.employment_status NOT IN ('t','r','b','q','y','o') 
+        <dynamic>
+            <isNotEmpty property="employeeId">
+                <isNull prepend="AND" property="excelbuttonName">
+                    ed.employee_id = #employeeId# 
+                    LIMIT #start_page#,#end_page#
+                </isNull>    
+                <isNotNull prepend="AND" property="excelbuttonName">
+                    ed.employee_id = #employeeId# 
+                </isNotNull>
+            </isNotEmpty>
+            <isEmpty property="employeeId">
+                <isNull property="excelbuttonName">
+                    LIMIT #start_page#,#end_page#
+                </isNull>
+            </isEmpty>
+        </dynamic>
+    </select>
+
+    <select id="getEmployeeName" parameterClass="java.lang.String"  resultClass="java.lang.String">
+        SELECT CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empSearchName
+        FROM employees AS Employee
+        WHERE Employee.id = #key#
+    </select>
+    
+    <select id="getMaxId"  resultClass="java.lang.Integer">
+       select max(id) as lastinsertid from kra_employees;
+    </select>
+
+   
+    <select id="getCertificationCount" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="String">
+        SELECT COUNT(*) AS recordCount 
+        FROM dtl_employee_education AS Res
+        LEFT JOIN employees AS Emp ON (Emp.id = Res.employee_id)
+        WHERE
+        Res.deleted = 0 AND
+        Res.degree = 'c' AND
+        Emp.employment_status NOT IN ('t','r','b','q','y','o') 
+        <dynamic>
+            <isNotEmpty prepend="AND" property="employeeId">
+                Res.employee_id = #employeeId#
+            </isNotEmpty>
+        </dynamic>
+    </select>
+    <select id="getAssociatesList" parameterClass="com.defiance.ideal.dto.EmployeeDto"  resultClass="com.defiance.ideal.dto.EmployeeDto">
+        SELECT emp.id AS empId, CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) AS employeeName 
+        FROM employees AS emp 
+        WHERE emp.employment_status NOT IN ('t','r','b','q','o','y') AND emp.band_id NOT IN(11,12,13,14,31,33,34,44) AND emp.manager=#employeeId#
+    </select>
+     <select id="getRMKraForExcel" parameterClass="com.defiance.ideal.dto.kraDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT 
+            emp.employee_number AS employee_number,
+            CONCAT(emp.first_name, ' ', emp.last_name ) AS employee_name,
+            cert.financial_year AS financial_year,
+            cert.quarter_id AS quarter_id,
+            CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+            kra.KRA_description AS kra_description,
+            kra.KRA_uom AS kra_uom,
+            kra.KRA_target AS kra_target,
+            kra.KRA_weightage AS kra_weightage,
+            sta.configuration_value AS STATUS
+            FROM kra_employees cert 
+            LEFT JOIN kra_employee_description AS kra ON (kra.kra_id = cert.id)
+            INNER JOIN employees emp ON (emp.id = cert.employee_id)
+            LEFT JOIN kra_quarter_master AS qtr ON(qtr.id = cert.quarter_id)
+            LEFT JOIN configuration_values AS sta ON(cert.status = sta.configuration_key AND sta.parent_id = 763) 
+            WHERE kra.deleted = 0 AND cert.status IN('m','a','p','s') AND cert.quarter_id=#quarter_id# AND emp.manager=#employeeId# AND cert.financial_year = #financial_year#;
+    </select>
+     <select id="getReportKraForExcel" parameterClass="com.defiance.ideal.dto.kraDto" resultClass="com.defiance.ideal.dto.kraDto">
+        SELECT 
+            emp.employee_number AS employee_number,
+            CONCAT(emp.first_name, ' ', emp.last_name ) AS employee_name,
+            cert.financial_year AS financial_year,
+            cert.quarter_id AS quarter_id,
+            CONCAT(qtr.quarter_name,' ',DATE_FORMAT(STR_TO_DATE(qtr.month_start, '%m'),'%b'),' - ',DATE_FORMAT(STR_TO_DATE(qtr.month_end, '%m'),'%b')) AS quarter_name,
+            kra.KRA_description AS kra_description,
+            kra.KRA_uom AS kra_uom,
+            kra.KRA_target AS kra_target,
+            kra.KRA_weightage AS kra_weightage,
+            sta.configuration_value AS STATUS
+            FROM kra_employees cert 
+            LEFT JOIN kra_employee_description AS kra ON (kra.kra_id = cert.id)
+            INNER JOIN employees emp ON (emp.id = cert.employee_id)
+            LEFT JOIN kra_quarter_master AS qtr ON(qtr.id = cert.quarter_id)
+            LEFT JOIN configuration_values AS sta ON(cert.status = sta.configuration_key AND sta.parent_id = 763) 
+            WHERE kra.deleted = 0 
+         AND cert.status IN('m','a','p','s') 
+         AND cert.quarter_id=#quarter_id#  
+         AND cert.financial_year = #financial_year#;
+    </select>
+   <select id="getBands"  resultClass="java.lang.String">
+        SELECT id FROM bands WHERE parent_id in (7,1,4);
+    </select>
+     <select id="getEmployeNumber" resultClass="java.lang.String">
+        SELECT employee_number FROM employees where employment_status NOT IN('r','q','o','t','b','y')
+    </select>
+     <select id="getKraid" parameterClass="com.defiance.ideal.dto.EmployeeDto" resultClass="com.defiance.ideal.dto.kraDto">
+         SELECT id AS kra_id FROM kra_employees WHERE employee_id = #employeeId# AND quarter_id = #quarterId# AND financial_year = #year#
+     </select>
+</sqlMap>

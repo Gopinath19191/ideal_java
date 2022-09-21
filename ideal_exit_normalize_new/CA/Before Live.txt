@@ -1,0 +1,10 @@
+INSERT INTO `ca_kra_quarter_mapping` (`kraId`, `quarter`, `year`, `bandId`, `departmentId`) VALUES
+(1, NULL, NULL, 13, 22),
+(2, NULL, NULL, 13, 22),
+(3, NULL, NULL, 13, 22),
+(4, NULL, NULL, 13, 22),
+(5, NULL, NULL, 13, 22),
+(6, NULL, NULL, 13, 22),
+(7, NULL, NULL, 13, 22),
+(8, NULL, NULL, 13, 22),
+(9, NULL, NULL, 13, 22),

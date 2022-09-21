@@ -1,0 +1,649 @@
+body
+{ 
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    color: #666;
+    padding: 0px;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+ article,aside,details,figcaption,figure,
+    footer,header,hgroup,menu,nav,section { 
+            display:block;
+    }
+header, footer
+{
+    width: 100%;
+    background-color: #FFF;
+}
+.header-container
+{
+    width: 940px;
+    display: table;
+    margin: 0px auto;
+}
+.logo
+{
+    width: 50%;
+    display: table;
+    float: left;
+    padding: 25px 0px 25px 0px;
+}
+.login-person
+{
+    width: 50%;
+    display: table;
+    float: left;
+}
+.login-person img
+{
+    float: right;
+}
+.navigation
+{
+    display: table;
+    width: 100%;
+    background-color: #5590c7;
+    height: 35px;
+    border-bottom: 10px solid #dee8f4;
+}
+.navigation ul
+{
+    width: 940px;
+    margin: 0px auto;
+    padding: 5px 0px 0px 0px;
+}
+.navigation ul li{
+    display: inline-block;
+    font-weight: bold;
+    padding: 3px 10px 2px 0px;
+}
+.navigation ul li a
+{
+    text-decoration: none;
+    color: #fff;
+    padding: 10px;
+    border-right: 1px solid #dee8f4;
+}
+.navigation ul li a:hover
+{
+    background-color: #dee8f4; 
+}
+.center-content, .data-filter
+{
+    width: 940px;
+    margin: 0px auto;
+}
+.table-title
+{
+    font-size: 16px;
+    font-weight: bold;
+    margin: 15px 0px 10px 0px;
+}
+.data-filter
+{
+    background-color: #d5dee3;
+}
+.data-filter label
+{
+    font-weight: bold;
+    padding: 0px 0px 5px 0px;
+}
+.filter-container
+{
+    width: 900px; 
+    margin: 0px auto;
+}
+.searchBy 
+{
+    width: 50% !important;
+    float: left !important;
+}
+.filterBy
+{
+    width: 50% !important;
+    float: left !important;
+}
+.filter-wrap
+{
+    width: 100%;
+    display: table;
+    padding: 10px 0px 0px 0px;
+}
+.search1
+{
+    width: 50% !important;
+    float: left !important;
+}
+.search2{
+    width: 34% !important;
+    float: left !important;
+}
+.search3
+{
+    width: 43% !important;
+    float: left !important;
+}
+.search3 label
+{
+    padding: 0px 0px 3px 0px;
+}
+.employee-box
+{
+    width: 180px;
+    padding-left: 20px;
+    background: url(../css/images/username_icon.png) no-repeat 2px 0px;
+    background-color: #ffffff;
+}
+.button-container
+{
+    display: inline-block;
+    width: 20%;
+    float: right;
+    margin: 10px 0px 0px 0px;
+}
+.button-holder
+{
+    float: right;
+    padding: 5px 5px 5px 0px;
+}
+.location-wrap
+{
+    display: none;
+    padding: 30px 0px 0px 140px;
+}
+.location-change
+{
+    width: 900px; 
+    margin: 0px auto;
+    height: 100px;
+    padding-top: 15px;
+}
+.location-change label
+{
+    font-weight: bold;
+    width: 120px !important;
+}
+.location-title
+{
+    font-size: 14px !important;
+    padding: 0px 5px 10px 0px;
+    margin: 0px;
+    font-weight: bold;
+}
+.location
+{
+    display: table;
+    width: 50%;
+    float: left;
+    padding: 10px 0px 0px 25px;
+}
+.filter input
+{
+    width: 200px;
+}
+.filter select, .location-wrap select, .base-location select
+{
+    width: 150px;
+    height: 21px;
+}
+.eff
+{
+    width: 30%;
+    float: left;
+    margin: 10px 0px 0px 25px;
+    padding: 10px 0px 0px 0px;
+}
+.calName
+{
+    width: 30%;
+    float: left;
+    padding: 10px 0px 0px 0px;
+}
+.effectiveDate
+{
+    display: inline-block;
+    font-weight: bold;
+    padding-right: 5px;
+}
+.effectiveCalendar
+{
+    width: 120px;
+    background: url(../css/images/calender_icon.png) no-repeat 6px 0px;
+    background-color: #fff;
+    text-indent: 30px;
+}
+.location-message
+{
+    width: 20%;
+    display: block;
+    float: left;
+    padding: 10px 0px 0px 25px;
+    height: 52px;
+}
+.location-wrap p
+{
+    display: inline-block;
+    margin: 0px;
+    padding: 5px 0px 0px 5px;
+    font-weight: bold;
+}
+.location-wrap input[type=checkbox]
+{
+    margin: 0px 5px 0px 5px;
+    vertical-align: middle;
+}
+.customer-Location
+{
+    width: 360px;
+    height: 100px;
+    display: none;
+    background-color: #FFF;
+    z-index: 1;
+    position: absolute;
+    right: 225px;
+    top: 100px;
+    box-shadow: 0px 2px 10px 3px;
+    overflow-y: scroll;
+}
+.customer-Location ul
+{
+    margin: 0px;
+    padding: 10px;
+}
+.customer-Location ul li
+{
+    list-style-type: none;
+    padding-top: 2px;
+    padding-bottom: 10px;
+}
+.base-location
+{
+    padding: 30px 0px 0px 0px;
+}
+/****Table Fixed Header and Scrollable tbody**/
+.location-table
+{
+    width: 940px;
+    text-align: center;
+    margin: 5px 0px 5px 0px;
+    border: 1px solid #CADFF2;
+    max-height: 400px;
+    border-spacing: 0;
+}
+.location-table{
+    display: flex;
+    flex-flow: column;
+}
+.location-table thead {
+    /* head takes the height it requires, 
+    and it's not scaled when table is resized */
+    flex: 0 0 auto;
+    width: calc(100% - 0.9em);
+}
+.location-table thead th, .location-table tbody tr td
+{
+    height: 35px;
+}
+.location-table tbody tr td:first-child, .location-table thead th:first-child
+{
+    width: 15px;
+    padding-left: 15px;
+}
+.location-table thead th:nth-child(4), .location-table tbody td:nth-child(4)
+{
+   width: 198px;
+}
+.location-table thead th:nth-child(5), .location-table tbody td:nth-child(5)
+{
+   width: 250px;
+}
+.location-table thead th:nth-child(3), .location-table tbody td:nth-child(3)
+{
+    width: 150px;
+}
+.location-table tbody tr td:first-child
+{
+    width: 17px;
+    padding-left: 15px;
+}
+.location-table tbody tr td:nth-child(2), .location-table thead th:nth-child(2)
+{
+    width: 35px;
+}
+.location-table tbody tr td:nth-child(2)
+{
+    padding-left: 5px;
+}
+.location-table tbody {
+    /* body takes all the remaining available space */
+    display: block;
+    max-height: 350px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+.location-table tbody tr {
+    width: 100%;
+}
+.location-table thead,
+.location-table tbody tr {
+    display: table;
+    table-layout: fixed;
+}
+/****Table Fixed Header and Scrollable tbody**/
+.odd
+{
+    background-color: #fff;
+}
+.even
+{
+    background-color: #eff4fa;
+}
+.submit-button
+{
+    text-align: left;
+}
+.submit-button button
+{
+    padding-left: 20px;
+    background: url(../css/images/icon_btn_submit.png) no-repeat 8px 8px #316CA8;
+    width: 90px;
+    height: 32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+    cursor: pointer;
+    float: right;
+}
+.go
+{
+    border: 1px solid #bccfea;
+    width: 36px;
+    height: 25px;
+    color: #4d85b8;
+    font-weight: bold;
+    background: #FFF;
+    cursor: pointer;
+}
+.exportButton{
+    padding-left: 20px;
+    background: url(../css/images/export-to-excel-button-icon.png) no-repeat 8px 8px #316CA8;
+    width: 80px;
+    height: 32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+    cursor: pointer;
+    float: right;
+}
+.changeButton
+{
+    padding-left: 20px;
+    background: url(../css/images/change_icon.png) no-repeat 5px 7px #316CA8;
+    width: 80px;
+    height: 32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+    cursor: pointer;
+    margin-right: 5px;
+}
+.footer-container
+{
+    width: 940px;
+    margin: 0px auto;
+    height: 50px;
+}
+.footer-container p
+{
+    text-align: center;
+    font-size: 10px;
+    padding-top: 20px;
+}
+/*.fadein, .fadeout {
+    opacity: 0;
+    -moz-transition: opacity 0.4s ease-in-out;
+    -o-transition: opacity 0.4s ease-in-out;
+    -webkit-transition: opacity 0.4s ease-in-out;
+    transition: opacity 0.4s ease-in-out;
+}
+.fadein {
+    opacity: 1;
+}*/
+.slideup, .slidedown {
+    max-height: 0;            
+    overflow-y: hidden;
+    -webkit-transition: max-height 0.5s ease-in-out;
+    -moz-transition: max-height 0.5s ease-in-out;
+    -o-transition: max-height 0.5s ease-in-out;
+    transition: max-height 0.5s ease-in-out;
+}
+.slidedown {            
+    max-height: 100px ;                    
+}
+.modal-body p input
+{
+    vertical-align: sub;
+    margin-left: 10px;
+}
+.modal-body label
+{
+    width: 200px;
+}
+.modal-body select
+{
+    width: 180px;
+}
+#location-change
+{
+    background-color: #d5dee3;
+    width: 940px;
+    height : 150px;
+    margin: 0px auto;
+}
+.tabletools
+{
+    width: 1024px;
+}
+.searchForm
+{
+    width: 100%;
+}
+.searchFormTD1
+{
+    width: 140px;
+}
+.searchFormTD2
+{
+    width: 180px;
+}
+.searchFormTD3
+{
+    width: 580px;
+}
+.searchFormTD4
+{
+    width: 240px;
+}
+.padding-top
+{
+    padding-top: 10px;
+}
+.search-position
+{
+    position: relative;
+    left: 10px;
+    top: 10px;
+    padding-top: 10px;
+}
+.regular
+{
+    width: 50px;
+}
+.remark-box
+{
+    width: 140px;
+    height: 20px;
+}
+.calendar-field{
+    width: 80px;
+    height: 20px;
+    background: url(../css/images/calender_icon.png) no-repeat 5px 3px;
+    background-color: #FFF;
+    border-style: groove;
+    font-family: calibri;
+    font-size: 13px;
+    padding-left: 30px;
+}
+.attendance-label
+{
+    width: 70px;
+    padding: 5px 10px 3px 0px;
+}
+.attendance-label1
+{
+    width: 110px;
+    padding: 5px 10px 5px 0px;
+}
+.searchFormTD3 .gobutton
+{
+    width: 50px;
+    float: left;
+    padding-top: 2px;
+    margin-top: 3px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+.searchFormTD3 .exportbutton
+{
+    float: right;
+    cursor: pointer;
+    border-radius: 20px;
+}
+#datadisplay
+{
+    width: 1045px;
+    display: block;
+}
+.Attendance-table
+{
+    width: 1045px !important;
+    display: block;
+    font-size: 10px;
+}
+.Attendance-table tbody
+{
+    text-align: center;
+}
+.Attendance-table tbody th,.Attendance-table tbody td
+{
+    padding: 3px 2px !important;
+}
+.sendbtn-space
+{
+    width: 35px;
+}
+.Attendance-reason
+{
+    width: 70px;
+    font-size: 11px;
+}
+.Attendance-reason option
+{
+    font-size: 10px;
+}
+.remarks
+{
+    width: 145px;
+}
+.empSubmit-button
+{
+   width: 30px;
+   height: 20px;
+   background: url(../css/images/sent-icon.png) no-repeat 1px -2px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+-ms-input-placeholder
+{
+    text-align: right;
+}
+.empID
+{
+    width: 40px;
+}
+.empName
+{
+    width: 100px;
+}
+.tableUnit
+{
+    width: 60px;
+}
+.tableDate
+{
+    width: 100px;
+}
+.tableStatus
+{
+    width: 50px;
+}
+.tableTime{
+    width: 50px;
+}
+.swipeLocation
+{
+   width: 85px;  
+}
+.workLocation
+{
+    width: 85px;
+}
+.reg-hours
+{
+    
+}
+.tableReason
+{
+   width: 50px; 
+}
+.tableSubmit
+{
+    width: 43px;
+}
+.ui-datepicker .ui-datepicker-prev span, .ui-datepicker .ui-datepicker-next span{
+    text-indent: 0px !important;
+    width: auto !important;
+    font-size: 7px !important;
+}
+.mandat{
+    color: red;
+    width: 2px;
+    padding-left: 5px;
+}
+#msg{
+    width: 200px;
+    margin:0px auto;
+    padding:0px;
+    height:15px;
+    text-align: center;
+    color: #00cc44;
+}
+.sucess-message{
+    display: inline-block;
+    margin: auto;
+    margin-top:5px;
+    padding:0px;
+    
+}

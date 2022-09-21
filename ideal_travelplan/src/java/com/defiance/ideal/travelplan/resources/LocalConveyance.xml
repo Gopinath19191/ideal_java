@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : LocalConveyance.xml
+    Created on : 3 October, 2012, 12:13 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="LocalConveyance">
+    <select id="getEmpDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+       SELECT e.employee_number AS employeeNumber,
+               CONCAT(e.first_name,' ',e.last_name) AS employeeName,
+               e.designation_id AS designationId,
+               desg.designation AS designationName,
+               e.structure_name AS businessGroupId,
+               cs.name AS businessGroupName,
+               e.structure_name_subgroup AS practiceGroupId,
+               pg.name AS practiceGroupName,
+               e.current_location_id AS locationId,
+               e.band_id AS bandId,
+               band.name AS bandName,
+               comploc.city_id AS cityId,
+               cts.city AS cityName,
+               e.manager AS rm_id
+      FROM employees AS e
+      LEFT JOIN designations AS desg ON(desg.id = e.designation_id)
+      LEFT JOIN company_structures AS pg ON(pg.id=e.structure_name)
+      LEFT JOIN company_structures AS cs ON(cs.id=e.structure_name_subgroup)
+      LEFT JOIN bands AS band ON(band.id=e.band_id)
+      LEFT JOIN company_locations AS comploc ON(comploc.id=e.current_location_id)
+      LEFT JOIN cities AS cts ON(cts.id=comploc.city_id)
+      Where e.id=#empId#;
+    </select>
+
+    <select id="getConfigValues" parameterClass="string" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+       SELECT configuration_key AS configKey , configuration_value AS configValue FROM configuration_values c WHERE parent_id=#parentId#;
+    </select>
+
+    <select id="getProjectList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        SELECT p.project_id AS projectId,
+        p.employee_id AS empId,
+        prj.project_name AS projectName,
+        prj.project_code AS projectCode,
+        prj.project_manager AS rm_id
+        FROM project_team_allocations p
+        LEFT JOIN projects prj ON(prj.id=p.project_id)
+        WHERE p.employee_id=#empId# AND p.deleted=0 AND prj.project_status = 'e' 
+        AND CURDATE() BETWEEN p.start_date and p.end_date AND p.work_location_id IS NOT NULL;
+    </select>
+
+    <select id="getCityList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+       SELECT  DISTINCT(c.city_id) AS cityId, 
+               cts.city AS cityName ,
+               c.country_id AS countryId FROM company_locations c
+       LEFT JOIN cities AS cts ON(cts.id=c.city_id)
+       WHERE c.country_id=#countryId#;
+    </select>
+
+    <select id="getTravelPoints" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        SELECT c.id AS addressId, c.address_line1 AS travelPoints FROM company_locations c WHERE c.city_id=#cityId# AND c.deleted = 0;
+    </select>
+    
+    <select id="getLastInsertLCId" resultClass="String" >
+        SELECT LAST_INSERT_ID(id) AS maxMasterId FROM tp_master ORDER BY id DESC LIMIT 1;
+    </select>
+
+    <insert id="insertTpMaster" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+         INSERT INTO tp_master (tp_reference_id,
+                                travel_type,
+                                workflow_id,
+                                employee_id,
+                                rm_id,
+                                travel_purpose,
+                                travel_requested_date,
+                                travel_billable,
+                                travel_term,
+                                project_id,
+                                project_others,
+                                mobileNo,
+                                status,
+                                admin_action_required,
+                                guest_booking,
+                                guest_name,
+                                previous_status,
+                                client_reimbursable)
+                        VALUES(#tpReferenceId#,
+                                'L',
+                                #workFlowId#,
+                                #employee_id#,
+                                #rm_id#,
+                                #travelPurpose#,
+                                #reqDate#,
+                                #projectTravel#,
+                                'NA',
+                                #project#,
+                                #projectOthers#,
+                                #mobileNumber#,
+                                #status#,
+                                'Y',
+                                #guestBooking#,
+                                #guestName#,
+                                #previous_status#,
+                                #client_reimbursable#);
+        <selectKey resultClass="String" keyProperty="last_id">
+          select last_insert_id() as last_id
+        </selectKey>
+    </insert>
+    
+    <select id="getLastInsertTpMasterId" resultClass="String" >
+             SELECT LAST_INSERT_ID(id) AS maxMasterId FROM tp_master ORDER BY id DESC LIMIT 1 ;
+    </select>
+
+    <select id="getReferenceId" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+       SELECT tp_reference_id AS tpReferenceId,status AS status FROM tp_master WHERE id=#uniqueId#;
+    </select>
+
+    <insert id="insertTpLocalConveyance" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+         INSERT INTO tp_localconveyance (master_id,
+                                         city,
+                                         city_others,
+                                         pickup,
+                                         dropto,
+                                         pickup_date,
+                                         pickup_time,
+                                         place,
+                                         street,
+                                         area,
+                                         landmark,
+                                         drop_place,
+                                         drop_street,
+                                         drop_area,
+                                         drop_landmark,
+                                         return_pickup,
+                                         return_drop,
+                                         return_time,
+                                         return_place,
+                                         return_street,
+                                         return_area,
+                                         return_landmark,
+                                         return_drop_place,
+                                         return_drop_street,
+                                         return_drop_area,
+                                         return_drop_landmark,
+                                         alternate_mobileno,
+                                         return_type,
+                                         return_date,
+                                         remarks)
+                                  VALUES(#tpMasterId#,
+                                         #city#,
+                                         '',
+                                         #onwardPickUpPoint#,
+                                         #onwardDropJourney#,
+                                         #onwardPickUpDate#,
+                                         #onwardPickUpTime#,
+                                         #onwardPickupDoorNo#,
+                                         #onwardPickupStreetName#,
+                                         #onwardPickupArea#,
+                                         #onwardPickupLandMark#,
+                                         #onwardDropDoorNo#,
+                                         #onwardDropStreetName#,
+                                         #onwardDropArea#,
+                                         #onwardDropLandMark#,
+                                         #returnPickUpPoint#,
+                                         #returnDropJourney#,
+                                         #returnPickUpTime#,
+                                         #returnPickupDoorNo#,
+                                         #returnPickupStreetName#,
+                                         #returnPickupArea#,
+                                         #returnPickupLandMark#,
+                                         #returnDropDoorNo#,
+                                         #returnDropStreetName#,
+                                         #returnDropArea#,
+                                         #returnDropLandMark#,
+                                         #alternateMobileNumber#,
+                                         #returnCab#,
+                                         #returnPickUpDate#,
+                                         #remarks_lc#)
+
+    </insert>
+
+    <select id="selectRecordInTpMaster" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+         SELECT id AS tpMasterId,
+                workflow_id AS workFlowId,
+                employee_id AS empId,
+                travel_purpose AS travelPurpose,
+                travel_requested_date AS reqDate,
+                travel_billable AS projectTravel,
+                client_reimbursable AS client_reimbursable,
+                travel_term AS travelTerm,
+                project_id AS projectId,
+                project_others AS projectOthers,
+                mobileNo AS mobileNumber,
+                status AS status,
+                admin_action_required AS adminAction,
+                guest_booking AS guestBooking,
+                rm_remarks AS rmRemarks,
+                rm_approved_by AS rmApprovedId,
+                rm_action_date AS rmActionDate,
+                finance_remarks AS financeRemarks,
+                finance_approved_by AS financeApprovedId,
+                finance_action_date AS financeActionDate,
+                cfo_remarks AS cfoRemarks,
+                cfo_approved_by AS cfoApprovedId,
+                cfo_action_date AS cfoActionDate,
+                guest_name AS guestName
+         FROM tp_master WHERE id=#LCUniqueId#;
+    </select>
+
+    <insert id="insertTpHistories" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+         INSERT INTO tp_histories (master_id,
+                                   workflow_id,
+                                   travel_purpose,
+                                   travel_requested_date,
+                                   travel_billable,
+                                   travel_term,
+                                   project_id,
+                                   project_others,
+                                   mobileNo,
+                                   status,
+                                   guest_booking,
+                                   rm_remarks,
+                                   rm_approved_by,
+                                   rm_action_date,
+                                   finance_remarks,
+                                   finance_approved_by,
+                                   finance_action_date,
+                                   cfo_remarks,
+                                   cfo_approved_by,
+                                   cfo_action_date
+                                 )
+                             VALUES(#tpMasterId#,
+                                    #workFlowId#,
+                                    #travelPurpose#,
+                                    #reqDate#,
+                                    #projectTravel#,
+                                    'NA',
+                                    #projectId#,
+                                    #projectOthers#,
+                                    #mobileNumber#,
+                                    #status#,
+                                    #guestBooking#,
+                                    #rmRemarks#,
+                                    #rmApprovedId#,
+                                    #rmActionDate#,
+                                    #financeRemarks#,
+                                    #financeApprovedId#,
+                                    #financeActionDate#,
+                                    #cfoRemarks#,
+                                    #cfoApprovedId#,
+                                    #cfoActionDate#
+                                    );
+    </insert>
+
+    <update id="updateTpmaster" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        UPDATE tp_master SET tp_reference_id=#tpReferenceId#,
+                             workflow_id=#workFlowId#,
+                             travel_purpose=#travelPurpose#,
+                             travel_requested_date=#reqDate#,
+                             travel_billable=#projectTravel#,
+                             client_reimbursable=#client_reimbursable#,
+                             project_id=#project#,
+                             project_others=#projectOthers#,
+                             mobileNo=#mobileNumber#,
+                             status=#status#,
+                             previous_status=#previous_status#,
+                             guest_booking=#guestBooking#,
+                             guest_name=#guestName#
+                  WHERE id=#tpUniqueId#;
+    </update>
+    <select id="selectRecordInLC" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        SELECT master_id AS tpMasterId,
+                city AS city,
+                city_others AS cityOthers,
+                pickup AS onwardPickUpPoint,
+                dropto AS onwardDropJourney,
+                pickup_date AS onwardPickUpDate,
+                pickup_time AS onwardPickUpTime,
+                place AS onwardPickupDoorNo,
+                street AS onwardPickupStreetName,
+                area AS onwardPickupArea,
+                landmark AS onwardPickupLandMark,
+                drop_place AS onwardDropDoorNo,
+                drop_street AS onwardDropStreetName,
+                drop_area As onwardDropArea,
+                drop_landmark AS onwardDropLandMark,
+                return_pickup AS returnPickUpPoint,
+                return_drop AS returnDropJourney,
+                return_time AS returnPickUpTime,
+                return_place AS returnPickupDoorNo,
+                return_street AS returnPickupStreetName,
+                return_area AS returnPickupArea,
+                return_landmark AS returnPickupLandMark,
+                return_drop_place AS returnDropDoorNo,
+                return_drop_street AS returnDropStreetName,
+                return_drop_area AS returnDropArea,
+                return_landmark AS returnDropLandMark,
+                alternate_mobileno AS alternateMobileNumber,
+                return_date AS returnPickUpDate,
+                return_type AS returnCab
+                FROM tp_localconveyance
+           WHERE master_id=#LCUniqueId#;
+    </select>
+
+    <insert id="insertLCHistory" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+            INSERT INTO tp_localconveyance_histories(history_id,
+                                                     city,
+                                                     city_others,
+                                                     pickup,
+                                                     dropto,
+                                                     pickup_date,
+                                                     pickup_time,
+                                                     place,
+                                                     street,
+                                                     area,
+                                                     landmark,
+                                                     drop_place,
+                                                     drop_street,
+                                                     drop_area,
+                                                     drop_landmark,
+                                                     return_pickup,
+                                                     return_drop,
+                                                     return_time,
+                                                     return_place,
+                                                     return_street,
+                                                     return_area,
+                                                     return_landmark,
+                                                     return_drop_place,
+                                                     return_drop_street,
+                                                     return_drop_area,
+                                                     return_drop_landmark,
+                                                     alternate_mobileno,
+                                                     return_date,
+                                                     return_type
+                                                     )
+                                               VALUES(#tpMasterId#,
+                                                      #city#,
+                                                      #cityOthers#,
+                                                      #onwardPickUpPoint#,
+                                                      #onwardDropJourney#,
+                                                      #onwardPickUpDate#,
+                                                      #onwardPickUpTime#,
+                                                      #onwardPickupDoorNo#,
+                                                      #onwardPickupStreetName#,
+                                                      #onwardPickupArea#,
+                                                      #onwardPickupLandMark#,
+                                                      #onwardDropDoorNo#,
+                                                      #onwardDropStreetName#,
+                                                      #onwardDropArea#,
+                                                      #onwardDropLandMark#,
+                                                      #returnPickUpPoint#,
+                                                      #returnDropJourney#,
+                                                      #returnPickUpTime#,
+                                                      #returnPickupDoorNo#,
+                                                      #returnPickupStreetName#,
+                                                      #returnPickupArea#,
+                                                      #returnPickupLandMark#,
+                                                      #returnDropDoorNo#,
+                                                      #returnDropStreetName#,
+                                                      #returnDropArea#,
+                                                      #returnDropLandMark#,
+                                                      #alternateMobileNumber#,
+                                                      #returnPickUpDate#,
+                                                      #returnCab#)
+    </insert>
+
+    <update id="updateLC" parameterClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        UPDATE tp_localconveyance SET city=#city#,
+                                      city_others = #cityOthers#,
+                                      pickup=#onwardPickUpPoint#,
+                                      dropto=#onwardDropJourney#,
+                                      pickup_date=#onwardPickUpDate#,
+                                      pickup_time=#onwardPickUpTime#,
+                                      place=#onwardPickupDoorNo#,
+                                      street=#onwardPickupStreetName#,
+                                      area=#onwardPickupArea#,
+                                      landmark=#onwardPickupLandMark#,
+                                      drop_place=#onwardDropDoorNo#,
+                                      drop_street=#onwardDropStreetName#,
+                                      drop_area=#onwardDropArea#,
+                                      drop_landmark=#onwardDropLandMark#,
+                                      return_pickup=#returnPickUpPoint#,
+                                      return_drop=#returnDropJourney#,
+                                      return_time=#returnPickUpTime#,
+                                      return_place=#returnPickupDoorNo#,
+                                      return_street=#returnPickupStreetName#,
+                                      return_area=#returnPickupArea#,
+                                      return_landmark=#returnPickupLandMark#,
+                                      return_drop_place=#returnDropDoorNo#,
+                                      return_drop_street=#returnDropStreetName#,
+                                      return_drop_area=#returnDropArea#,
+                                      return_drop_landmark=#returnDropLandMark#,
+                                      alternate_mobileno=#alternateMobileNumber#,
+                                      return_date=#returnPickUpDate#,
+                                      return_type=#returnCab#,
+                                      remarks=#remarks_lc#
+                           WHERE master_id=#tpUniqueId#;
+
+    </update>
+    <select id="getLCViewDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+        SELECT 'I' as system,tpm.id AS tpMasterId,
+                tpm.tp_reference_id AS tpRefId,
+                tpm.workflow_id AS workFlowId,
+                tpm.employee_id AS empId,
+                CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+                emp.employee_number AS employeeNumber,
+                desg.designation AS designationName,
+                pg.name AS practicegroupName,
+                cs.name AS businessgroupName,
+                cts.city AS cityName,
+                band.name AS bandName,
+                tpm.travel_purpose AS travelPurpose,
+                tpm.travel_requested_date AS reqDate,
+                tpm.travel_billable AS projectTravel,
+                tpm.client_reimbursable AS client_reimbursable,
+                tpm.project_id AS projectId,
+                tpm.project_others AS projectOthers,
+                CONCAT(pjt.project_code, "--", pjt.project_name) AS projectName,
+                tpm.mobileNo AS mobileNumber,
+                tpm.status AS status,
+                tpm.previous_status,
+                tpm.workflow_id,
+                tpm.admin_action_required AS adminActionRequired,
+                tpm.guest_booking AS guestBooking,
+                tpm.guest_name AS guestName,
+                lc.city AS city,
+                city_others AS cityOthers,
+                pickup AS onwardPickUpPoint,
+                tpm.rm_remarks AS rmRemarks,
+                tpm.finance_remarks AS financeRemarks,
+                tpm.cfo_remarks AS cfoRemarks,
+                tpm.admin_remarks AS adminRemarks,
+                lc.dropto AS onwardDropJourney,
+                lc.pickup_date AS onwardPickUpDate,
+                lc.pickup_time AS onwardPickUpTime,
+                lc.place AS onwardPickupDoorNo,
+                lc.street AS onwardPickupStreetName,
+                lc.area AS onwardPickupArea,
+                lc.landmark AS onwardPickupLandMark,
+                lc.drop_place AS onwardDropDoorNo,
+                lc.drop_street AS onwardDropStreetName,
+                lc.drop_area As onwardDropArea,
+                lc.drop_landmark AS onwardDropLandMark,
+                lc.return_pickup AS returnPickUpPoint,
+                lc.return_drop AS returnDropJourney,
+                lc.return_time AS returnPickUpTime,
+                lc.return_place AS returnPickupDoorNo,
+                lc.return_street AS returnPickupStreetName,
+                lc.return_area AS returnPickupArea,
+                lc.return_landmark AS returnPickupLandMark,
+                lc.return_drop_place AS returnDropDoorNo,
+                lc.return_drop_street AS returnDropStreetName,
+                lc.return_drop_area AS returnDropArea,
+                lc.return_drop_landmark AS returnDropLandMark,
+                lc.alternate_mobileno AS alternateMobileNumber,
+                lc.return_date AS returnPickUpDate,
+                lc.return_type AS returnCab,
+                lc.remarks AS remarks_lc
+        FROM tp_master tpm
+        LEFT JOIN tp_localconveyance AS lc ON(lc.master_id=tpm.id)
+        LEFT JOIN employees AS emp ON(emp.id=tpm.employee_id)
+        LEFT JOIN designations AS desg ON(desg.id=emp.designation_id)
+        LEFT JOIN bands AS band ON(band.id=emp.band_id)
+        LEFT JOIN company_structures AS pg ON ( pg.id = emp.structure_name )
+        LEFT JOIN company_structures AS cs ON ( cs.id = emp.structure_name_subgroup )
+        LEFT JOIN company_locations AS comploc ON(comploc.id=emp.current_location_id)
+        LEFT JOIN cities AS cts ON(cts.id=comploc.city_id)
+        LEFT JOIN projects as pjt ON(tpm.project_id=pjt.id)
+        WHERE tpm.id=#tpUniqueId#;
+    </select>
+<select id="getHistoryDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.LocalConveyanceDto">
+    SELECT tph.rm_remarks AS rmRemarks,tph.rm_approved_by AS rmApproved,tph.rm_action_date AS rmActionDate,
+    CONCAT(emp.first_name,' ',emp.last_name) AS approverName ,
+    tph.finance_remarks AS financeRemarks,tph.finance_approved_by AS financeApprovedId,tph.finance_action_date AS financeActionDate,
+    CONCAT(financeEmp.first_name,' ',financeEmp.last_name) AS financeApproverName,
+    tph.cfo_remarks AS cfoRemarks,tph.cfo_approved_by AS cfoApprovedId,tph.cfo_action_date AS cfoActionDate,
+    CONCAT(cfoEmp.first_name,' ',cfoEmp.last_name) AS cfoName,
+    tph.admin_remarks AS adminRemarks, tph.admin_approved_by AS adminApprovedId,tph.admin_action_date AS adminActionDate,
+    CONCAT(adminEmp.first_name,' ',adminEmp.last_name) AS adminApproverName
+    FROM tp_histories tph
+    LEFT JOIN tp_master tpm ON(tpm.id=tph.master_id)
+    LEFT JOIN employees emp ON(emp.id=tpm.rm_approved_by)
+    LEFT JOIN employees financeEmp ON(financeEmp.id=tpm.finance_approved_by)
+    LEFT JOIN employees cfoEmp ON(cfoEmp.id=tph.cfo_approved_by)
+    LEFT JOIN employees adminEmp ON(adminEmp.id=tph.admin_approved_by)
+    WHERE tph.master_id=#tpUniqueId#;
+</select>
+</sqlMap>
+

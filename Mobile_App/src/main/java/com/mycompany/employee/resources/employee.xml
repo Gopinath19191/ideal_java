@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+        "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="registerMap">
+
+	<select id="getLoginDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from users as us
+		LEFT JOIN employees as emp
+		ON us.username = emp.employee_number
+		where us.username = #userName# and
+		us.password = #password#
+		and emp.employment_status IN
+		('p','d','v','g','c','e')
+	</select>
+
+	<!-- <select id = "getDeviceDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto" 
+		resultClass="com.mycompany.employee.dto.EmployeeDto"> select employee_id 
+		as userName, device_id as deviceId, register_key as regId from device_details 
+		where employee_id = #userName# and device_id = #deviceId# and platform = 
+		#platform# </select> -->
+
+	<select id="getDeviceDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		select employee_id as userName, device_id as deviceId,
+		register_key as regId
+		from device_details
+		where device_id = #deviceId#
+		and platform = #platform#
+	</select>
+
+	<!-- <insert id="insertDeviceId" parameterClass="com.mycompany.employee.dto.EmployeeDto"> 
+		insert into device_details (employee_id, device_id, register_key, platform) 
+		values(#userName#, #deviceId#, #regId#, #platform#) <selectKey keyProperty="id" 
+		resultClass="int"> select last_insert_id() as id </selectKey> </insert> -->
+
+	<insert id="insertDeviceId" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		insert into device_details (employee_id, device_id, register_key,
+		platform, version)
+		values(#userName#, #deviceId#, #regId#, #platform#,
+		#version#)
+		<selectKey keyProperty="id" resultClass="int">
+			select
+			last_insert_id() as id
+		</selectKey>
+	</insert>
+
+	<!-- <update id="updateDeviceId" parameterClass="com.mycompany.employee.dto.EmployeeDto"> 
+		update device_details set register_key = #regId# where employee_id = #userName# 
+		and device_id = #deviceId# </update> -->
+
+	<select id="getNotificationCount" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from timesheet_entries as te
+		LEFT JOIN
+		timesheet_entry_projects as tep ON tep.timesheet_entry_id =
+		te.id
+		LEFT
+		JOIN employees as emp ON emp.id = te.employee_id
+		<!-- where timesheet_date &lt;= CURDATE() -->
+		where timesheet_date &gt;= DATE_SUB(NOW(),INTERVAL 1 YEAR)
+		AND
+		tep.status = 'r'
+		AND tep.deleted = 0
+		AND emp.employee_number =
+		#userName#
+	</select>
+
+	<select id="getUserProfile" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		SELECT CONCAT(emp.first_name,' ',emp.last_name) as
+		empName,
+		CASE
+		WHEN emp.gender = 'm' then 'Male'
+		ELSE 'Female'
+		END as
+		gender,
+		desg.designation as designation,
+		band.name as band,
+		cs.name as
+		department,
+		cv.configuration_value as employmentStatus,
+		DATE_FORMAT(emp.birth_date,'%d-%m-%Y') as Dob,
+		DATE_FORMAT(emp.joined_date,'%d-%m-%Y') as Doj,
+		F_Current_EmpLocation((select id from employees where employee_number
+		= #userName#),now()) as
+		location,
+		emp.employee_photo as employeePhoto
+		FROM employees as emp
+		LEFT JOIN designations as desg ON
+		emp.designation_id = desg.id
+		LEFT JOIN bands as band ON emp.band_id =
+		band.id
+		LEFT JOIN company_structures as cs ON cs.id =
+		emp.structure_name
+		LEFT JOIN configuration_values as cv ON
+		(cv.configuration_key =
+		emp.employment_status AND cv.parent_id=286)
+		LEFT JOIN employee_work_location as ewl ON ewl.employee_id = emp.id
+		WHERE emp.employee_number = #userName#
+	</select>
+
+	<!-- <update id="updateDeviceRegId" parameterClass="com.mycompany.employee.dto.EmployeeDto"> 
+		update device_details set register_key = #regId#, version=#version# where 
+		employee_id = #userName# and device_id = #deviceId# AND platform = #platform# 
+		</update> -->
+
+	<update id="updateDeviceRegId" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		update
+		device_details
+		set register_key = #regId#, version=#version#,
+		employee_id = #userName#
+		where device_id = #deviceId# AND platform =
+		#platform#
+	</update>
+
+	<insert id="insertSessionDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		insert into
+		mobileapp_session (employee_id, session_token, device_id,
+		start_time,
+		end_time)
+		values(#userName#, #tokenNo#, #deviceId# , now(), now())
+	</insert>
+
+	<select id="getDeviceAppVersionAndroid" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Double">
+		select android_app_version as android from app_version
+	</select>
+
+	<select id="getDeviceAppVersionIOS" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Double">
+		select ios_app_version as ios from app_version
+	</select>
+
+	<select id="isTokenValid" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		select start_time as sesStartTime, now() as currentTime
+		from mobileapp_session
+		where session_token = #tokenNo# and employee_id
+		= #userName#
+	</select>
+
+	<update id="updateSessTime" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		update
+		mobileapp_session set start_time = now() WHERE session_token =
+		#tokenNo# and employee_id = #userName#
+	</update>
+
+	<select id="checkSessionExists" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		select count(*) from mobileapp_session WHERE employee_id =
+		#userName#
+	</select>
+
+	<update id="updateSessionToken" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		update
+		mobileapp_session set session_token = #tokenNo#, device_id =
+		#deviceId# WHERE employee_id = #userName#
+	</update>
+
+	<select id="selectRegKeyPN" parameterClass="com.mycompany.employee.dto.PushNotificationDto"
+		resultClass="com.mycompany.employee.dto.PushNotificationDto">
+		SELECT dd.platform as platform, dd.register_key as
+		register_key,
+		ms.device_id as deviceId
+		FROM device_details as dd
+		INNER
+		JOIN mobileapp_session as ms ON ms.device_id = dd.device_id AND
+		ms.employee_id = dd.employee_id
+		WHERE ms.employee_id = #userName#
+	</select>
+
+	<select id="selectRegKeySentBackPN" parameterClass="com.mycompany.employee.dto.PushNotificationDto"
+		resultClass="com.mycompany.employee.dto.PushNotificationDto">
+		SELECT device_id, register_key, platform from
+		device_details WHERE
+		employee_id = #userName#
+	</select>
+
+	<select id="isEmpValid" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		select count(*)
+		from users as us
+		LEFT JOIN employees as emp
+		ON us.username = emp.employee_number
+		where us.username = #userName#
+		and
+		emp.employment_status IN ('p','d','v','g','c','e')
+	</select>
+
+	<select id="getEmployeeId" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		SELECT id from employees where employee_number =
+		#userName#
+	</select>
+
+	<update id="resettingPassword" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		update users
+		set
+		password = #newPassword#
+		where username = #userName# and password =
+		#password#
+	</update>
+
+	<delete id="deleteDeviceDtls" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		delete from
+		device_details
+		where employee_id = #userName# and device_id =
+		#deviceId#
+	</delete>
+
+	<!-- <delete id = "deleteToken" parameterClass="com.mycompany.employee.dto.EmployeeDto"> 
+		delete from mobileapp_session where employee_id = #userName# and session_token 
+		= #tokenNo# </delete> -->
+
+	<delete id="deleteToken" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		delete from
+		mobileapp_session
+		where employee_id = #userName#
+	</delete>
+
+	<select id="getTimesheetNL" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.TSNotificationListDto">
+		select
+		DATE_FORMAT(te.timesheet_date,'%d-%m-%Y') as timesheet_date,
+		CASE
+		WHEN tep.project_id = 'Non_Project_Activity' THEN
+		'Non_Project_Activity'
+		ELSE
+		tep.project_id
+		END as projectID,
+		CASE
+		WHEN
+		tep.project_id = 'Non_Project_Activity' THEN 'Non_Project_Activity'
+		ELSE
+		CONCAT(proj.project_code, ' ',proj.project_name)
+		END as
+		project_name,
+		tep.worked_hours as timesheet_hours,
+		tep.remarks as
+		rejection_remarks
+		from timesheet_entries as te
+		LEFT JOIN
+		timesheet_entry_projects as tep ON tep.timesheet_entry_id =
+		te.id
+		LEFT
+		JOIN projects as proj ON proj.id = tep.project_id
+		LEFT JOIN employees
+		as emp ON emp.id = te.employee_id
+		<!-- where timesheet_date &lt;= CURDATE() -->
+		where timesheet_date &gt;= DATE_SUB(NOW(),INTERVAL 1 YEAR)
+		AND
+		tep.status = 'r'
+		AND tep.deleted = 0
+		AND emp.employee_number =
+		#userName# ORDER BY month(timesheet_date),
+		day(timesheet_date)
+	</select>
+
+	<procedure id="getTimesheetDetailsAndEntries" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.TimeSheetDto">
+		{call SP_GetEmpTimesheetEntries(#userName#, #startDate#,
+		#endDate#)}
+	</procedure>
+
+	<procedure id="getCurrentCalendar" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.CalendarDto">
+		{call SP_GetEmpCalendar(#userName#, #startDate#,
+		#endDate#)}
+	</procedure>
+
+	<!-- call SP_GetEmpTimesheetEntries(16425, '2017-12-12', '2017-12-19') call 
+		SP_GetEmpCalendar(16425, '2017-12-12', '2017-12-19') -->
+
+	<!-- <select id="getMasterData" parameterClass="com.mycompany.employee.dto.EmployeeDto" 
+		resultClass="com.mycompany.employee.dto.MasterDto"> SELECT pta.employee_id 
+		as empid, proj.id as projectID, proj.project_code as projectCode, CONCAT(proj.project_code, 
+		'-' ,proj.project_name) as projectName, CASE WHEN pta.role_id IS NULL OR 
+		'' THEN 'false' ELSE 'true' END as is_role_enabled, pta.start_date as startDate, 
+		pta.end_date as endDate, pta.role_id as roleID, role.role_description as 
+		roleName FROM project_team_allocations as pta INNER JOIN projects as proj 
+		ON proj.id = pta.project_id AND pta.deleted=0 AND proj.status IN ('a') LEFT 
+		JOIN roles as role ON role.id = pta.role_id LEFT JOIN employees as emp ON 
+		emp.id = pta.employee_id WHERE emp.employee_number = #userName# AND ((#startDate# 
+		BETWEEN pta.start_date and pta.end_date) OR (#endDate# BETWEEN pta.start_date 
+		and pta.end_date)); </select> -->
+
+	<select id="getMasterProjects" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT DISTINCT pta.employee_id as empid,
+		proj.id as
+		projectID,
+		proj.project_code as projectCode,
+		CONCAT(proj.project_code,
+		'-' ,proj.project_name) as projectName
+		FROM project_team_allocations as
+		pta
+		INNER JOIN projects as proj ON proj.id = pta.project_id AND
+		pta.deleted=0
+		AND proj.status IN ('a') AND proj.project_status = 'e'
+		INNER JOIN employees as emp ON
+		emp.id = pta.employee_id
+		WHERE emp.employee_number = #userName# AND
+		((#startDate# BETWEEN
+		pta.start_date and pta.end_date) OR (#endDate#
+		BETWEEN pta.start_date
+		and pta.end_date));
+	</select>
+
+	<select id="getMasterRoles" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT CASE
+		WHEN pta.role_id IS NULL OR '' THEN 'false'
+		ELSE 'true'
+		END as is_role_enabled,
+		proj.project_code as projectCode,
+		pta.start_date as startDate,
+		pta.end_date as endDate,
+		pta.role_id as
+		roleID,
+		role.role_description as roleName
+		FROM project_team_allocations
+		as pta
+		INNER JOIN projects as proj ON proj.id = pta.project_id AND
+		pta.deleted=0
+		AND proj.status IN ('a')
+		LEFT JOIN roles as role ON
+		role.id = pta.role_id
+		LEFT JOIN employees as emp ON emp.id =
+		pta.employee_id
+		WHERE emp.employee_number = #userName# AND
+		((#startDate# BETWEEN
+		pta.start_date and pta.end_date) OR (#endDate#
+		BETWEEN pta.start_date
+		and pta.end_date)) AND proj.id =#project_id#;
+	</select>
+
+
+	<select id="getMasterDataRoles" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT pta.employee_id as empid,
+		proj.id as projectID,
+		proj.project_code as projectCode,
+		pta.role_id as roleID,
+		role.role_description as roleName
+		FROM project_team_allocations as pta
+		INNER JOIN projects as proj ON proj.id = pta.project_id AND
+		pta.deleted=0
+		AND proj.status IN ('a')
+		LEFT JOIN project_phases as pp ON
+		pp.project_id = pta.project_id
+		LEFT JOIN project_phase_tasks as ppt ON
+		ppt.project_id = pp.project_id AND
+		pp.phase_id = ppt.phase_id
+		LEFT JOIN
+		roles as role ON role.id = pta.role_id
+		LEFT JOIN employees as emp ON
+		emp.id = pta.employee_id
+		WHERE emp.employee_number = #userName# AND
+		((#startDate# BETWEEN
+		pta.start_date and pta.end_date) OR (#endDate#
+		BETWEEN pta.start_date
+		and pta.end_date));
+	</select>
+
+	<select id="getRegularizationDtls" resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT id as
+		parentId, configuration_key as configurationKey,
+		configuration_value as
+		configurationValue
+		FROM configuration_values WHERE parent_id = '632'
+		ORDER BY
+		configurationValue
+	</select>
+
+	<select id="getPhaseDtls" parameterClass="com.mycompany.employee.dto.MasterDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		Select id as phaseID, phase_id as phasePrimarykey, phase_name as
+		phaseName from project_phases where project_id
+		= (select id from
+		projects where project_code = #projectCode#) AND
+		((#startDate# BETWEEN
+		project_phases.planned_start_date and project_phases.planned_end_date)
+		OR (#endDate# BETWEEN
+		project_phases.planned_start_date and
+		project_phases.planned_end_date))
+		UNION
+		SELECT 'Others' as
+		phaseID,'Others' as phasePrimarykey, 'Others' as
+		phaseName
+		ORDER BY
+		phaseID
+		<!-- Select phase_id as phaseID, phase_name as phaseName from project_phases 
+			where project_id = #projectPrimaryKey# -->
+	</select>
+
+	<select id="getTaskDtls" parameterClass="com.mycompany.employee.dto.MasterDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		Select id as taskID, task_id as taskPrimarykey, task_name as taskName
+		from project_phase_tasks where project_id
+		= (select id from projects
+		where project_code = #projectCode#) and
+		phase_id = #phasePrimarykey#
+		AND
+		((#startDate# BETWEEN project_phase_tasks.planned_start_date and
+		project_phase_tasks.planned_end_date) OR
+		(#endDate# BETWEEN
+		project_phase_tasks.planned_start_date and
+		project_phase_tasks.planned_end_date))
+		UNION
+		SELECT 'Others' as taskID,
+		'Others' as taskPrimarykey, 'Others' as taskName
+		ORDER BY taskID;
+		<!-- Select task_id as taskID, task_name as taskName from project_phase_tasks 
+			where project_id = #projectPrimaryKey# and phase_id = #phaseID# -->
+	</select>
+
+	<procedure id="insertTimesheetEntries" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		{call
+		P_Ins_Upd_TimeSheetMobApp(#userName#, #timeSheetDate#, #shift_id#,
+		#role_id#, #project_id#, #phase_id#,
+		#task_id#, #timesheet_hours#,
+		#remark#, #reasons#, #status#, #isDeleted#,
+		#timesheetId#)}
+	</procedure>
+
+	<update id="deleteUpdate" parameterClass="com.mycompany.employee.dto.EmployeeDto">
+		update
+		timesheet_entries as te, timesheet_entry_projects as tep
+		set te.deleted
+		= 1,
+		tep.deleted = 1
+		where te.id = tep.timesheet_entry_id
+		and
+		tep.timesheet_entry_id = #timesheetId#
+	</update>
+
+	<!-- <select id="getNonProjectActivities" resultClass="com.mycompany.employee.dto.MasterDto"> 
+		SELECT np.id as NphaseId, np.phase_name as NphaseName, npt.id as NtaskId, 
+		npt.task_name as NtaskName FROM non_project_phases as np LEFT JOIN non_project_phase_tasks 
+		as npt ON np.id = npt.phase_id UNION SELECT 'Others' AS NphaseId, 'Others' 
+		as NphaseName, 'Others' as NtaskId, 'Others' as NtaskName ORDER BY NphaseId 
+		</select> -->
+
+	<select id="getNonProjectActivitiesPhases" resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT id
+		as NphaseId, phase_name as NphaseName FROM non_project_phases
+		UNION
+		SELECT 'Others' as NphaseId, 'Others' as NphaseName
+		ORDER BY NphaseId;
+	</select>
+
+	<select id="getNonProjectActivitiesTasks" parameterClass="com.mycompany.employee.dto.MasterDto"
+		resultClass="com.mycompany.employee.dto.MasterDto">
+		SELECT id as NtaskId, task_name as NtaskName from
+		non_project_phase_tasks
+		WHERE phase_id = #NphaseId#
+		UNION
+		SELECT 'Others'
+		as NtaskId, 'Others' as NtaskName
+		ORDER BY NtaskId;
+	</select>
+
+	<procedure id="getEmpWfhDetails" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		{call P_WFH_Details((select DATE_SUB((select
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), INTERVAL
+		DAYOFMONTH(#timeSheetDateStr#)-1 DAY)),(select STR_TO_DATE((select
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')),
+		'%Y-%m-%d')),(select
+		MAKEDATE(YEAR(#timeSheetDateStr#), 1)),(select STR_TO_DATE((select
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), '%Y-%m-%d')),(select id
+		as id from employees where employee_number
+		= #userName#))}
+	</procedure>
+
+	<procedure id="getWfhPolicy" resultClass="com.mycompany.employee.dto.EmployeeDto">
+		{call
+		p_WFH_PolicyValue()}
+	</procedure>
+
+	<procedure id="getWfhExcList" resultClass="com.mycompany.employee.dto.EmployeeDto">
+		{call
+		P_WFH_ExceptionList()}
+	</procedure>
+
+	<insert id="insertTxnLog">
+		INSERT INTO transaction_log (txn_type_name,
+		module_name, function_name,
+		emp_id, data)
+		VALUES(#txn_type_name#,
+		#module_name#, #function_name#, #emp_id#, #data#)
+	</insert>
+
+	<insert id="insertErrorLog">
+		INSERT INTO error_log (error_code, error_description,
+		module_name,
+		function_name, emp_id, data)
+		VALUES(#error_code#,
+		#error_description#, #module_name#, #function_name#, #emp_id#,
+		#data#)
+	</insert>
+	<!-- <select id="isEntrySubmitted" parameterClass="com.mycompany.employee.dto.EmployeeDto" 
+		resultClass="java.lang.Integer"> Select count(*) from timesheet_entries as 
+		te, timesheet_entry_projects as tep where tep.timesheet_entry_id = te.id 
+		and tep.status = te.status and te.timesheet_date = (select STR_TO_DATE((select 
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), '%Y-%m-%d')) and tep.status 
+		in ('s','r') and te.employee_id = (SELECT id from employees WHERE employee_number 
+		= #userName#); </select> -->
+
+	<select id="isEntrySubmitted" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		Select count(*) from timesheet_entries as te
+		LEFT JOIN
+		timesheet_entry_projects as tep ON tep.timesheet_entry_id =
+		te.id
+		WHERE
+		te.timesheet_date = (select STR_TO_DATE((select
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), '%Y-%m-%d'))
+		and
+		te.employee_id = (SELECT id from employees WHERE employee_number =
+		#userName#);
+	</select>
+
+	<!-- <select id="isEntry" parameterClass="com.mycompany.employee.dto.EmployeeDto" 
+		resultClass="java.lang.Integer"> Select count(*) from timesheet_entries as 
+		te, timesheet_entry_projects as tep where tep.timesheet_entry_id = te.id 
+		and tep.status = te.status and te.timesheet_date = (select STR_TO_DATE((select 
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), '%Y-%m-%d')) and te.employee_id 
+		= (SELECT id from employees WHERE employee_number = #userName#); </select> -->
+
+	<select id="isEntry" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		Select count(*) from timesheet_entries as te
+		LEFT JOIN
+		timesheet_entry_projects as tep ON tep.timesheet_entry_id =
+		te.id
+		WHERE
+		te.timesheet_date = (select STR_TO_DATE((select
+		STR_TO_DATE(#timeSheetDateStr#, '%Y-%m-%d')), '%Y-%m-%d'))
+		and
+		tep.status in ('s','r')
+		and te.employee_id = (SELECT id from employees
+		WHERE employee_number =
+		#userName#);
+	</select>
+
+	<select id="isEmpLeave" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.String">
+		SELECT F_CheckEmpLeaveType(#userName#, #timeSheetDate#) AS
+		leave_applied
+	</select>
+
+	<procedure id="getEmpWfhDetailsForReasons" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		{call P_WFH_Details(#startDate#, #endDate#, (select
+		MAKEDATE(YEAR(#startDate#), 1)), (SELECT
+		DATE_FORMAT(#endDate#,'%Y-12-31')) ,(select id as id from employees
+		where employee_number = #userName#))}
+	</procedure>
+
+	<select id="checkWFHEligible" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="java.lang.Integer">
+		SELECT F_Check_WFH_Eligible(#userName#, #startDate#) as
+		wfh_eligibility
+	</select>
+
+	<select id="leaveDaysPN" parameterClass="com.mycompany.employee.dto.EmployeeDto"
+		resultClass="com.mycompany.employee.dto.EmployeeDto">
+		SELECT elr.from_date AS leave_from_date,
+		elr.to_date AS
+		leave_to_date
+		FROM employee_leave_requests AS elr
+		INNER JOIN employees
+		AS emp ON emp.id = elr.employee_id
+		WHERE emp.employee_number=#userName#
+		AND elr.id = #leaveReqID# AND elr.leave_status IN ('t','o','a');
+	</select>
+
+	<select id="timesheetDatePN" parameterClass="com.mycompany.employee.dto.PushNotificationDto"
+		resultClass="com.mycompany.employee.dto.PushNotificationDto">
+		select timesheet_date AS timesheetDate from
+		timesheet_entries where id =
+		#timesheetID#;
+	</select>
+
+	<select id="nodeviceFound" parameterClass="com.mycompany.employee.dto.PushNotificationDto"
+		resultClass="java.lang.Integer">
+		SELECT count(*) from device_details WHERE employee_id =
+		#userName#
+	</select>
+	<select id="newsCategories" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.entitiy.NewsCategories">
+		SELECT nc.id, nc.name
+		,DATE_FORMAT(nc.date_created,'%d-%m-%Y') as
+		dateCreated ,
+		(SELECT
+		COUNT(DISTINCT(nf.id))
+		FROM news_feeds nf
+		LEFT JOIN news_categories ns
+		ON nf.section_id = ns.id
+		LEFT JOIN news_feed_read_status n
+		ON nf.id =
+		n.news_feed_id
+		LEFT JOIN feed_schedule fs
+		ON nf.id = fs.news_feed_id
+		WHERE nf.section_id = ns.id AND nf.deleted=0
+		AND fs.date_expired >=
+		CURRENT_DATE()
+		AND nf.section_id = nc.id) as feedCount,
+		DATE_FORMAT(nc.date_updated,'%d-%m-%Y') as dateUpdated,
+		(SELECT
+		COUNT(DISTINCT(nf.id))
+		FROM news_feeds nf
+		LEFT JOIN news_categories ns
+		ON nf.section_id = ns.id
+		LEFT JOIN news_feed_read_status n
+		ON nf.id =
+		n.news_feed_id
+		LEFT JOIN feed_schedule fs
+		ON nf.id = fs.news_feed_id
+		WHERE nf.section_id = ns.id AND nf.deleted=0
+		AND nf.status = 'p'
+		AND
+		fs.date_expired >= CURRENT_DATE()
+		AND nf.section_id = nc.id
+		AND nf.id
+		NOT IN (SELECT news_feed_id
+		FROM news_feed_read_status
+		WHERE is_deleted
+		= 0
+		AND feed_received_by = #empId#)) as messageCount
+		FROM
+		news_categories nc
+		LEFT JOIN news_feeds nf2
+		ON nc.id = nf2.section_id
+		LEFT JOIN feed_schedule schedule2
+		ON nf2.id = schedule2.news_feed_id
+		WHERE nc.deleted = 0
+		AND nc.parent_id IS NOT NULL GROUP BY nc.id
+		HAVING
+		feedCount > 0
+		ORDER BY schedule2.date_publish
+		AND messageCount
+		DESC LIMIT
+		#firstNode#, #lastNode#;
+	</select>
+	<select id="newsFeeds" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.dto.NewsFeedMessageDTO">
+		SELECT DISTINCT (nf.id) as newsFeedId,
+		DATE_FORMAT(nf.start_datetime,'%d-%m-%Y') as startDate,
+		DATE_FORMAT(nf.end_datetime,'%d-%m-%Y') as endDate,
+		DATE_FORMAT(fs.date_publish,'%d-%m-%Y') as publishedDate,
+		DATE_FORMAT(fs.date_expired,'%d-%m-%Y') as expireDate,
+		CASE WHEN
+		((SELECT id FROM news_feed_read_status WHERE news_feed_id =
+		nf.id AND
+		feed_received_by = #empId# AND is_deleted = 0) IS
+		NULL || is_readed IS
+		NULL ) THEN FALSE ELSE is_readed END as isFeedReed,
+		nf.description as
+		feedDescription,
+		nf.location as venueDetails,
+		nf.start_time as
+		startTime,
+		nf.end_time as endTime,
+		nf.section_id as sectionId,
+		category.name as sectionName,
+		nf.feed_type as feedType,
+		nf.interaction_type as interactionType,
+		nf.title as feedTitle,
+		nf.deleted as isFeedDeleted,
+		nf.date_created as feedCreatedDate,
+		nf.date_updated as feedUpdatedDate,
+		(SELECT COUNT(*)
+		FROM
+		news_interaction_status nis
+		WHERE interaction_type =
+		nf.interaction_type
+		AND nf.id = nis.news_feed_id
+		AND interacted_by =
+		#empId# AND nis.is_deleted = '0') AS
+		interActionCount,
+		CONCAT((SELECT
+		configuration_value as configurationValue
+		FROM configuration_values
+		WHERE parent_id = (SELECT id
+		FROM configuration_values
+		WHERE
+		configuration_key = 'news_configuration')
+		AND configuration_key =
+		'pic_square_location' LIMIT 1), fi.pic_square) as
+		pictureSquare,
+		CONCAT((SELECT configuration_value as configurationValue
+		FROM
+		configuration_values
+		WHERE parent_id = (SELECT id
+		FROM
+		configuration_values
+		WHERE configuration_key = 'news_configuration')
+		AND configuration_key = 'pic_thumbnail_location' LIMIT 1),
+		fi.pic_thumbnail) as pictureThumbnail,
+		CONCAT((SELECT
+		configuration_value as configurationValue
+		FROM configuration_values
+		WHERE parent_id = (SELECT id
+		FROM configuration_values
+		WHERE
+		configuration_key = 'news_configuration')
+		AND configuration_key =
+		'picture_location' LIMIT 1), fi.picture) as
+		pictureFullImage,
+		fi.deleted as
+		isFeedImageDeleted,
+		(SELECT COUNT(*)
+		FROM
+		news_interaction_status nis
+		WHERE interaction_type = 'l'
+		AND nf.id =
+		nis.news_feed_id AND nis.is_deleted = '0') AS likeCount,
+		(SELECT
+		COUNT(*)
+		FROM news_interaction_status nis
+		WHERE interaction_type = 'i'
+		AND nf.id = nis.news_feed_id AND nis.is_deleted = '0') AS
+		interestCount
+		FROM news_feeds nf
+		LEFT JOIN news_feed_read_status nfrs
+		ON
+		nf.id = nfrs.news_feed_id
+		LEFT JOIN feeds_images fi
+		ON fi.id =
+		nf.file_upload_id
+		LEFT JOIN feed_schedule fs
+		ON fs.news_feed_id = nf.id
+		LEFT JOIN news_categories category
+		ON nf.section_id = category.id
+		WHERE
+		nf.section_id = #sectionId#
+		AND status = 'p'
+		AND fs.date_expired &gt;=
+		CURRENT_DATE()
+		AND nf.deleted = '0'
+		GROUP BY nf.id
+		ORDER BY
+		fs.date_publish
+		LIMIT #firstNode#, #lastNode#;
+	</select>
+	<select id="newsFeedsMessages" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.dto.NewsFeedMessageDTO">
+		SELECT DISTINCT (nf.id) as newsFeedId,
+		DATE_FORMAT(nf.start_datetime,'%d-%m-%Y') as startDate,
+		DATE_FORMAT(nf.end_datetime,'%d-%m-%Y') as endDate,
+		DATE_FORMAT(fs.date_publish,'%d-%m-%Y') as publishedDate,
+		DATE_FORMAT(fs.date_expired,'%d-%m-%Y') as expireDate,
+		CASE WHEN
+		((SELECT id FROM news_feed_read_status WHERE news_feed_id =
+		nf.id AND
+		feed_received_by = #empId# AND is_deleted = 0) IS
+		NULL || is_readed IS
+		NULL ) THEN FALSE ELSE is_readed END as isFeedReed,
+		nf.description as
+		feedDescription,
+		nf.location as venueDetails,
+		nf.start_time as
+		startTime,
+		nf.end_time as endTime,
+		nf.section_id as sectionId,
+		category.name as sectionName,
+		nf.feed_type as feedType,
+		nf.interaction_type as interactionType,
+		nf.title as feedTitle,
+		nf.deleted as isFeedDeleted,
+		nf.date_created as feedCreatedDate,
+		nf.date_updated as feedUpdatedDate,
+		(SELECT COUNT(*)
+		FROM
+		news_interaction_status nis
+		WHERE interaction_type =
+		nf.interaction_type
+		AND nf.id = nis.news_feed_id
+		AND interacted_by =
+		#empId# AND nis.is_deleted = '0') AS
+		interActionCount,
+		CONCAT(#pictureSquareLocation#, fi.pic_square) as pictureSquare,
+		CONCAT(#pictureThumbnailLocation#, fi.pic_thumbnail) as
+		pictureThumbnail,
+		CONCAT(#pictureLocation#, fi.picture) as
+		pictureFullImage, fi.deleted as
+		isFeedImageDeleted,
+		(SELECT COUNT(*)
+		FROM news_interaction_status nis
+		WHERE interaction_type = 'l'
+		AND nf.id
+		= nis.news_feed_id AND nis.is_deleted = '0') AS likeCount,
+		(SELECT
+		COUNT(*)
+		FROM news_interaction_status nis
+		WHERE interaction_type = 'i'
+		AND nf.id = nis.news_feed_id AND nis.is_deleted = '0') AS
+		interestCount
+		FROM news_feeds nf
+		LEFT JOIN news_feed_read_status nfrs
+		ON
+		nf.id = nfrs.news_feed_id
+		LEFT JOIN feeds_images fi
+		ON fi.id =
+		nf.file_upload_id
+		LEFT JOIN feed_schedule fs
+		ON fs.news_feed_id = nf.id
+		LEFT JOIN news_categories category
+		ON nf.section_id = category.id
+		WHERE
+		nf.section_id = #sectionId#
+		AND status = 'p'
+		AND fs.date_expired &gt;=
+		CURRENT_DATE()
+		AND nf.deleted = '0'
+		GROUP BY nf.id
+		ORDER BY
+		fs.date_publish
+		LIMIT #firstNode#, #lastNode#;
+	</select>
+
+	<insert id="insertEmployeeFeedHistory" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO">
+		INSERT INTO news_feed_read_status (news_feed_id, feed_category_id,
+		is_readed, feed_received_by, feed_sent_by,
+		received_date, viewed_date,
+		is_deleted)
+		VALUES (#feedId#, #sectionId#, 1, #empId#, #publisherId#,
+		now(), now(), 0)
+		<selectKey keyProperty="id" resultClass="int">
+			SELECT
+			last_insert_id() as id
+		</selectKey>
+	</insert>
+	<update id="isFeedUpdate" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO">
+		UPDATE
+		news_feed_read_status
+		SET is_readed = 1
+		AND viewed_date = now()
+		WHERE
+		feed_received_by = #empId#
+		AND news_feed_id = #feedId#
+		AND is_readed = 0
+		AND is_deleted = 0;
+	</update>
+	<select id="isFeedEmployeeHistoryExistOrNot" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="java.lang.Integer">
+		SELECT count(*)
+		FROM news_feed_read_status
+		WHERE
+		news_feed_id = #feedId#
+		AND feed_received_by = #empId#
+		AND is_deleted =
+		0
+	</select>
+	<select id="isFeedExistOrNot" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="java.lang.Integer">
+		SELECT count(*)
+		FROM news_feeds
+		WHERE id = #feedId#
+	</select>
+	<select id="getNewsFeedConfiguration" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.entitiy.ConfigurationValuesEntity">
+		SELECT id, parent_id as parentId, configuration_key as
+		configurationKey,
+		configuration_value as
+		configurationValue
+		FROM
+		configuration_values
+		WHERE parent_id = (SELECT id
+		FROM
+		configuration_values
+		WHERE configuration_key = 'news_configuration');
+	</select>
+	<select id="getNewsAndUpdateUnreadMessageCount" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.dto.DashBoardCountsDto">
+		SELECT count(*) as sendBackEntryCount,
+		(SELECT
+		COUNT(DISTINCT(nf.id))
+		FROM news_feeds nf
+		LEFT JOIN
+		news_feed_read_status n
+		ON nf.id = n.news_feed_id
+		LEFT JOIN
+		feed_schedule fs
+		ON nf.id = fs.news_feed_id
+		LEFT JOIN news_categories ns
+		ON nf.section_id = ns.id
+		WHERE status = 'p'
+		AND fs.date_expired &gt;=
+		CURRENT_DATE()
+		AND nf.deleted = '0'
+		AND ns.parent_id IS NOT NULL
+		AND
+		nf.id NOT IN (SELECT news_feed_id
+		FROM news_feed_read_status
+		WHERE
+		feed_received_by = #empId#
+		AND is_deleted = 0)) as newsUpdateCount
+		FROM
+		timesheet_entries te
+		LEFT JOIN timesheet_entry_projects tep
+		ON
+		tep.timesheet_entry_id = te.id
+		LEFT JOIN employees emp
+		ON emp.id =
+		te.employee_id
+		WHERE timesheet_date &gt;= DATE_SUB(NOW(),INTERVAL 1
+		YEAR)
+		AND tep.status = 'r'
+		AND tep.deleted = 0
+		AND emp.id = #empId#;
+	</select>
+	<insert id="newsFeedSocialInteraction" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO">
+		INSERT INTO news_interaction_status (news_feed_id, interaction_type,
+		interacted_by, interacted_date, is_deleted)
+		VALUES (#feedId#,
+		#interactionType#, #empId#, now(), 0)
+		<selectKey keyProperty="id" resultClass="int">
+			SELECT
+			last_insert_id() as id
+		</selectKey>
+	</insert>
+	<update id="updateNewsFeedSocialInteraction" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO">
+		UPDATE news_interaction_status SET interaction_type = 1
+		AND
+		interacted_date = now()
+		WHERE interacted_by = #empId#
+		AND id = #feedId#;
+	</update>
+	<select id="isFeedSocialInteractionExists" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="java.lang.Integer">
+		SELECT COUNT(*)
+		FROM news_interaction_status
+		WHERE
+		news_feed_id = #feedId#
+		AND interacted_by = #empId#
+		AND is_deleted = 0
+	</select>
+	<select id="getSocialInteractionType" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.dto.NewsFeedsDTO">
+		SELECT id, section_id as sectionId, title, description,
+		interaction_type as
+		interactionType, feed_type as
+		feedType, location,
+		deleted as isDeleted, status, employee_id as publisherId
+		FROM
+		news_feeds
+		WHERE id = #feedId# AND deleted = 0;
+	</select>
+	<select id="getSocialInteractionDetails" parameterClass="com.mycompany.employee.dto.NewsAndUpdateDTO"
+		resultClass="com.mycompany.employee.dto.SocialInteractionDTO">
+		SELECT news_feed_id as feedId, interaction_type as
+		interactionType,
+		interacted_by as interactedBy,
+		DATE_FORMAT(interacted_date,'%d-%m-%Y') as interactedDate
+		FROM
+		news_interaction_status
+		WHERE news_feed_id =#feedId# and is_deleted =
+		0;
+	</select>
+</sqlMap>

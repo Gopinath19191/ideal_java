@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context antiJARLocking="true" path="/ideal_aa" privileged="true">
+  <Resource auth="Container" driverClassName="com.mysql.jdbc.Driver" maxActive="100" maxIdle="30" maxWait="10000" name="ideal_aa" password="admin" type="javax.sql.DataSource" url="jdbc:mysql://localhost:3306/ideal_aafinaltest" username="root"/>
+  <!--  <Resource auth="Container" maxActive="100" maxIdle="30" maxWait="10000" name="ideal_demo" type="javax.sql.DataSource"/>-->
+  <!--  <Resource auth="Container" maxActive="100" maxIdle="30" maxWait="10000" name="ideal" type="javax.sql.DataSource"/>-->
+</Context>

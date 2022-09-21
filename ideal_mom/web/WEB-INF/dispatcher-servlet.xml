@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <!--<prop key="index.htm">indexController</prop>-->
+                <prop key="myActionPointList.htm">indexController</prop>
+                <!--<prop key="minutesOfMeeting.htm">indexController</prop>-->
+                <prop key="authentication.htm">AuthenticationController</prop>
+                <prop key="addMoM.htm">momController</prop>
+                <prop key="insertMom.htm">momController</prop>
+                <prop key="getAllDetails.htm">momController</prop>
+                <prop key="editMoM.htm">momController</prop>
+                <prop key="updateMom.htm">momController</prop>
+                <prop key="updateMomwithSave.htm">momController</prop>
+                <prop key="ajaxsearch.htm">momController</prop>
+                <prop key="actionajaxsearch.htm">momController</prop>		
+                <prop key="getMyMomActionPoints.htm">momController</prop>
+                <prop key="updateMyMomActionItems.htm">momController</prop>
+                <prop key="ajaxsearchMomName.htm">momController</prop>
+                <prop key="getActionListDetails.htm">momController</prop>
+                <prop key="editActionPoints.htm">momController</prop>
+                <prop key="updateActionPoints.htm">momController</prop>
+                <prop key="viewMomList.htm">momController</prop>
+                <prop key="viewMomDetails.htm">momController</prop>
+                <prop key="viewActionMomDetails.htm">momController</prop>
+                <prop key="minutesOfMeeting.htm">momController</prop>
+                <prop key="getMomXL.htm">momController</prop>
+                <prop key="getActionXL.htm">momController</prop>
+                <prop key="duplicateMom.htm">momController</prop>
+                <prop key="editMomActionPoints.htm">momController</prop>
+                <prop key="updateMomActionPoints.htm">momController</prop>
+                 <prop key="getActionMomXL.htm">momController</prop> 
+                 <prop key="getEmployeeName.htm">momController</prop> 
+                <prop key="updateMomwithDraft.htm">momController</prop>   
+                <prop key="getTimevalues.htm">momController</prop>
+                 <prop key="displayTimeSlots.htm">momController</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="myActionPointList" />
+            <!--p:viewName="myActionPointlist" />-->
+    <bean name="AuthenticationController" class="com.htl.ideal.mom.controller.AuthenticationController"/>
+    <bean name="momController" class="com.htl.ideal.mom.controller.MomController"/>
+</beans>

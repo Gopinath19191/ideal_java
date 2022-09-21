@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.1.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+  
+    
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+<!--    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="index.htm">indexController</prop>
+                <prop key="Register.htm">RegisterController</prop>
+                <prop key="adddetails.htm">adddetailsController</prop>
+                <prop key="login.htm">adddetailsController</prop>
+                <prop key="List.htm">adddetailsController</prop>
+                <prop key="Delete.htm">adddetailsController</prop>
+                <prop key="edit.htm">adddetailsController</prop>
+                <prop key="update.htm">adddetailsController</prop>
+            </props>
+        </property>
+    </bean>-->
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/>
+
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    
+    
+
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="joineraddstepone.htm">loginController</prop>
+                <prop key="validate.htm">loginController</prop>
+                <prop key="begin.htm">loginController</prop>
+                <prop key="logout.htm">logOutController</prop>
+                <prop key="joinerFormAddOrUpdateStepTwo.htm">loginController</prop>
+                <prop key="vendordetails.htm">vendorController</prop>                
+                <prop key="vendorsave.htm">vendorController</prop>
+                <prop key="updateparticularvendor.htm">vendorController</prop>
+                <prop key="deleteparticularvendor.htm">vendorController</prop>
+                <prop key="newEmployeeAdd.htm">loginController</prop>
+                <prop key="getCompanyStructureX.htm">loginController</prop>
+                <prop key="getCompanyStructure.htm">loginController</prop>
+                <prop key="getSubDetails.htm">loginController</prop>
+                <prop key="getEmployeeName.htm">loginController</prop>
+                <prop key="getEmployeeNamebyContract.htm">loginController</prop>
+                <prop key="loadRRF.htm">loginController</prop> 
+                <prop key="addOrUpdateEmployee.htm">loginController</prop>
+                <prop key="joinerFormAddOrUpdateStepTwo.htm">loginController</prop>
+                <prop key="loadState.htm">loginController</prop>
+                <prop key="fileDownload.htm">loginController</prop>
+                <prop key="changeskill.htm">loginController</prop>
+                <prop key="joinerFormAddOrUpdateStepThree.htm">loginController</prop>
+                <prop key="joinerFormAddOrUpdateStepFour.htm">loginController</prop>
+                <prop key="finalSubmit.htm">loginController</prop>
+                <prop key="getEmployeeNamebyhr1.htm">loginController</prop> 
+                <prop key="getEmployeeNameOfHr.htm">loginController</prop>
+                <prop key="checkWorkEmailAddress.htm">loginController</prop>
+                <prop key="applicantsList.htm">loginController</prop>
+                 
+                 
+                <prop key="printAllPages.htm">loginController</prop>
+                <prop key="revertRRF.htm">loginController</prop>                
+                <prop key="joinerReportPrint.htm">loginController</prop>
+                <prop key="groupMedical.htm">loginController</prop>
+                <prop key="lifeInsurance.htm">loginController</prop>
+                <prop key="paymentOfGratuityOne.htm">loginController</prop>
+                <prop key="paymentOfGratuityTwo.htm">loginController</prop>
+                <prop key="payrollDetails.htm">loginController</prop>
+                <prop key="empIdCard.htm">loginController</prop>
+                <prop key="empDetailsPageOne.htm">loginController</prop>
+                <prop key="empDetailsPageTwo.htm">loginController</prop>
+                <prop key="empDetailsPageThree.htm">loginController</prop>
+                <prop key="empDetailsPageFour.htm">loginController</prop>                
+                <prop key="requestForEmail.htm">loginController</prop>
+                <prop key="defianceWorkDetails.htm">loginController</prop>
+                <prop key="personalUndertaking.htm">loginController</prop>
+                <prop key="pfNominationForm.htm">loginController</prop>  
+                <prop key="ojfStart.htm">loginController</prop> 
+                <prop key="SyncStatusCheck.htm">loginController</prop> 
+                <prop key="editApplicantInOjf.htm">loginController</prop> 
+                <prop key="triggerJoiningMail.htm">loginController</prop> 
+                 
+            </props>
+        </property>
+    </bean>
+     <bean name="loginController" class="com.defiance.ideal.ojf.controller.UserController" />
+  <bean name="vendorController" class="com.defiance.ideal.ojf.controller.VendorController" />  
+
+      <bean name="logOutController" class="com.defiance.ideal.ojf.controller.LogoutController" /> 
+  
+       
+      
+      
+      </beans>

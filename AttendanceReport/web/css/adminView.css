@@ -1,0 +1,195 @@
+body
+{ 
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    background: #EEF2F8;
+    color: #666;
+    margin: 0px;
+    padding: 0px;
+}
+#main-container
+{
+    width: 1096px;
+    display: table;
+    margin: 0px auto;
+}
+.main{
+    width: 1060px;
+    display: table;
+    margin: 0px auto;
+}
+.main h3
+{
+    margin: 0px;
+    padding: 15px 5px 5px 5px;
+}
+.filter-container{
+    width: 1030px;
+    display: table;
+    margin: 0px auto;
+    background-color: #e2e8ec;
+    padding: 15px;
+}
+.filter-container label
+{
+    margin-right: 10px;
+}
+.filter1
+{
+    width: 30%;
+    display: table;
+    float: left;
+}
+.filter2
+{
+    width: 15%;
+    display: table;
+    float: left;
+}
+.filter3
+{
+    width: 15%;
+    display: table;
+    float: left;
+}
+.filter-sub
+{
+    width: 100%;
+}
+.bottom
+{
+    padding-top: 15px;
+}
+.employee-box
+{
+    width: 180px;
+    height: 20px;
+    padding-left: 20px;
+    background: url(../css/images/username_icon.png) no-repeat 2px 3px;
+    background-color: white;
+    border-style: groove;
+}
+.department-unit
+{
+    width: 100px;
+    /*height: 25px;*/
+}
+.location-unit
+{
+    width: 114px;
+    /*height: 25px;*/
+}
+.rm-select
+{
+    width: 115px;
+    /*height: 25px;*/
+}
+.calender-field
+{
+    width: 80px;
+    height: 20px;
+    background: url(../css/images/calender_icon.png) no-repeat 5px 3px;
+    background-color: #FFF;
+    border-style: groove;
+    font-family: calibri;
+    font-size: 13px;
+    padding-left: 30px;
+}
+.button-container
+{
+    width: 50%;
+    float: left;
+    padding-top: 15px;
+}
+.go-button
+{
+    background: none repeat scroll 0 0 #316ca8;
+    border: 1px solid #BCCFEA;
+    color: #FFF;
+    width: 45px;
+    font-weight: bold;
+    height: 30px;
+    padding-top: 2px;
+    margin: 0px 0px 0px 5px;
+    border-radius: 15px;
+    cursor: pointer;
+}
+.export-button
+{
+    padding-left: 20px;
+    background: url(../css/images/export-to-excel-button-icon.png) no-repeat 8px 8px #316CA8;
+    width: 80px;
+    height: 32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+    border-radius: 15px;
+    float: right;
+    cursor: pointer;
+}
+.table-container{
+    width: 1060px;
+    display: table;
+    margin: 0px auto;
+    margin-top: 10px;
+}
+#rmView
+{
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    text-align: center;
+    border-collapse: collapse;
+    border: 1px solid #cedff1;
+}
+#rmView thead th, #rmView tr td
+{
+    border: 1px solid #cedff1;
+}
+#rmView thead
+{
+    background: url(../css/images/table-header-strip.jpg) repeat-x scroll top center #EFF4FB;
+}
+#rmView td, th
+{
+    padding: 7px 5px;
+}
+#rmView .empID {	width: 50px;}
+#rmView .empName { width: 100px;}
+#rmView .rmName { width: 100px;}
+#rmView .unit { width: 60px;}
+#rmView .date{ width: 80px;}
+#rmView .status{	width: 70px;}
+#rmView .inTime { width: 80px;}
+#rmView .outTime { width: 80px;}
+#rmView .timeDuration { width: 80px;}
+#rmView .swipeLocation { width: 100px;}
+#rmView .workLocation {	width: 150px;}
+.odd
+{
+    background-color: #eff4fa;
+}
+.even
+{
+    background-color: white;
+}
+/********Pagination for Demo**********/
+.pagination
+{
+    width: 1060px;
+    margin: 0px auto;
+    margin-top: 10px;
+}
+.pagination img 
+{
+    width: 1060px;
+}
+.mandat{
+    color: red;
+    width: 2px;
+    padding-left: 5px;
+}

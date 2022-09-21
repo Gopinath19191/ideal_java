@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AuthenticationMap">
+
+    <select id="getUserDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.LoginDTO">
+            SELECT id as userAccountId,username,password,group_id as groupId,employee_id as empId from users where username=#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.defiance.ideal.reports.dto.LoginDTO"  resultClass="com.defiance.ideal.reports.dto.LoginDTO">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="authenticateGroup" parameterClass="com.defiance.ideal.reports.dto.LoginDTO"  resultClass="com.defiance.ideal.reports.dto.LoginDTO">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="loginCheck" parameterClass="com.defiance.ideal.reports.dto.LoginDTO"  resultClass="com.defiance.ideal.reports.dto.LoginDTO">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#userName#;
+    </select>
+
+    <select id="getDebtorsAuthenticatorList" resultClass="com.defiance.ideal.reports.dto.LoginDTO" >
+        SELECT
+            child.configuration_value as authenticatorName
+        FROM configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id and child.configuration_key='employee_id')
+        WHERE
+            pt.configuration_key = 'Debtors_Report_Authenticators'
+        ORDER BY child.configuration_value ASC ;
+    </select>
+
+    <select id="getBandName" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT band_id FROM employees WHERE id = #key#;
+    </select>
+
+    <select id="fetchBusinessLeader" resultClass="com.defiance.ideal.reports.dto.LoginDTO">
+   <!--    SELECT DISTINCT emp.id AS business_leader_id
+       FROM employees AS emp
+       INNER JOIN customers as cust ON (cust.business_leader_id = emp.id AND cust.customer_code != '' )
+       WHERE emp.employment_status NOT IN ('r','t','b','q','o')
+       ORDER BY emp.first_name,last_name ASC -->        
+        select conf.configuration_value  AS business_leader_id  from configuration_values as conf 
+        where conf.configuration_key='business_leader_id' and conf.parent_id=523 
+        
+    </select>
+    <insert id="insertLog" parameterClass="map">
+        INSERT INTO user_access_module_logs(employee_id,date,module_name)
+        VALUES(#emp_id#,#unixTime#,#module_name#)
+    </insert>
+    
+</sqlMap>

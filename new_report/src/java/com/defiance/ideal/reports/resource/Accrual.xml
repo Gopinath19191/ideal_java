@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AccrualMap">
+
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.AccrualFilterDTO">
+    SELECT id as sbuId, name as sbuName 
+    FROM company_structures
+    WHERE parent_id = #employeeId#
+    </select>
+
+    <select id="fetchAccrualData" parameterClass="com.defiance.ideal.reports.dto.AccrualFilterDTO" resultClass="com.defiance.ideal.reports.dto.AccrualDataDTO">
+    SELECT prj.project_code as projectCode,
+    prj.project_name as projectName,
+    CONCAT(emp.first_name,' ',emp.last_name) as pmName,
+    CASE WHEN COUNT(ba.id) > 0 THEN "Submitted" ELSE "Not Submitted" END AS accrualStatus,ba.status as billingStatus,
+    cmp.name AS sbu,
+    cmpStructs.name AS subSbu,
+    COUNT(distinct(ba.emp_id)) As accrualCount,
+    (select count(pta.id) as "tcnt" from project_team_allocations as pta
+    WHERE pta.deleted = 0
+    AND CONCAT(#yearFilter#,#monthFilter#) BETWEEN EXTRACT(YEAR_MONTH FROM pta.start_date) AND EXTRACT(YEAR_MONTH FROM pta.end_date)
+    AND prj.id = pta.project_id ) as totalTeamCount
+    FROM projects as prj
+    LEFT JOIN employees as emp ON (prj.project_manager = emp.id)
+    LEFT JOIN company_structures cmp ON (cmp.id=prj.project_sbu)
+    LEFT JOIN company_structures cmpStructs ON (cmpStructs.id=prj.project_sbu_subgroup)
+    LEFT JOIN accrual_consolidations as ba ON (ba.project_id = prj.id AND ba.billing_month = #monthFilter# AND ba.billing_year = #yearFilter# AND ba.status IN ('m','a'))
+    WHERE
+    prj.project_sbu = #sbuFilter#
+    AND prj.project_model = 'wpo'
+    AND CONCAT(#yearFilter#,#monthFilter#) BETWEEN EXTRACT(YEAR_MONTH FROM prj.planned_start_date) AND EXTRACT(YEAR_MONTH FROM prj.planned_end_date)
+    AND prj.billable = 'e'
+        <dynamic prepend="AND">
+            <isEqual property="statsFilter" compareValue="e">
+            prj.project_status = 'e'
+            </isEqual>
+            <isEqual property="statsFilter" compareValue="c">
+            prj.project_status = 'c' AND ba.id IS NOT NULL
+            </isEqual>
+            <isEqual property="statsFilter" compareValue="d">
+            prj.project_status = 'd' AND ba.id IS NOT NULL
+            </isEqual>
+        </dynamic>
+    AND prj.status = 'a'
+
+    GROUP BY prj.id
+    </select>
+
+</sqlMap>

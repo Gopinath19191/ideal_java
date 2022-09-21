@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1">
+        <file>
+            <url>src/java/com/defiance/ideal/application/controller/CustomerController.java</url>
+            <line>329</line>
+        </file>
+    </editor-bookmarks>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0">
+        <file>
+            <url>src/java/com/defiance/ideal/application/controller/CustomerController.java</url>
+            <bookmark id="0">
+                <name/>
+                <line>613</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/src/java/com/defiance/ideal/application/controller/AuthenticationController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/src/java/com/defiance/ideal/application/controller/OJFSurveyController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/src/java/com/defiance/ideal/application/util/CommonConfigurations.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/web/WEB-INF/jsp/OJFSurveyInfo.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/web/redirect.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/src/java/com/defiance/ideal/application/controller/CustomerController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/web/WEB-INF/jdbc.properties</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_application/src/java/com/defiance/ideal/application/util/Config.java</file>
+    </open-files>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/ideal_application/web/redirect.jsp</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/ideal_application/web/WEB-INF/jsp/customersAdd.jsp</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/ideal_application/web/WEB-INF/jsp/customersEdit.jsp</file>
+        </group>
+    </open-files>
+</project-private>

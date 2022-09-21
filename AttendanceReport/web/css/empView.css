@@ -1,0 +1,160 @@
+body
+{ 
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    background: #EEF2F8;
+    color: #666;
+    margin: 0px;
+    padding: 0px;
+}
+#main-container
+{
+    width: 924px;
+    display: table;
+    margin: 0px auto;
+}
+.main{
+    width: 780px;
+    display: table;
+    margin: 0px auto;
+}
+.main h3
+{
+    margin: 0px;
+    padding: 15px 5px 5px 5px;
+}
+.main-header
+{
+    width: 780px;
+    margin: 0px auto;
+}
+.filter-container{
+    width: 750px !important;
+    display: table;
+    margin: 0px auto;
+    background-color: #e2e8ec;
+    padding: 15px;
+}
+.date-filter{
+    width: 65%;
+    float: left;
+    display: table;
+}
+.date-container1{
+    width: 30%;
+    float: left;
+    display: table;
+}
+.date-container2{
+    width: 50%;
+    float: left;
+    display: table;
+}
+.first
+{
+    padding-top: 3px;
+}
+.date-filter label
+{
+    margin-right: 10px;
+}
+.calender-field
+{
+    width: 80px;
+    height: 20px;
+    background: url(../css/images/calender_icon.png) no-repeat 5px 3px;
+    background-color: #FFF;
+    border-style: groove;
+    font-family: calibri;
+    font-size: 13px;
+    padding-left: 30px;
+}
+.go-button
+{
+    background: none repeat scroll 0 0 #316ca8;
+    border: 1px solid #BCCFEA;
+    color: #FFF;
+    width: 45px;
+    font-weight: bold;
+    height: 30px;
+    padding-top: 2px;
+    margin: 0px 0px 0px 30px;
+    border-radius: 15px;
+    cursor: pointer;
+}
+.export-container{
+    width: 35%;
+    float: left;
+    display: table;
+    padding-top: 15px;
+}
+.export-button
+{
+    padding-left: 20px;
+    background: url(../css/images/export-to-excel-button-icon.png) no-repeat 8px 8px #316CA8;
+    width: 80px;
+    height: 32px;
+    font-family: Arial;
+    font-weight: bold;
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: center;
+    border: 1px solid #4492BF;
+    border-radius: 15px;
+    float: right;
+    cursor: pointer;
+}
+.table-container{
+    width: 780px;
+    display: table;
+    margin: 0px auto;
+    margin-top: 10px;
+}
+#empView
+{
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    text-align: center;
+    border-collapse: collapse;
+    border: 1px solid #cedff1;
+}
+#empView thead th, #empView tr td
+{
+    border: 1px solid #cedff1;
+}
+#empView thead
+{
+    background: url(../css/images/table-header-strip.jpg) repeat-x scroll top center #EFF4FB;
+}
+#empView td, th
+{
+    padding: 7px 5px;
+}
+#empView .date{ width: 70px;}
+#empView .status { width: 70px;}
+#empView .inTime { width: 80px;}
+#empView .outTime { width: 80px;}
+#empView .timeDuration {	width: 80px;}
+#empView .swipeLocation { width: 100px;}
+#empView .workLocation {	width: 150px;}
+.odd
+{
+    background-color: #eff4fa;
+}
+.even
+{
+    background-color: white;
+}
+/********Pagination for Demo**********/
+.pagination
+{
+    width: 780px;
+    margin: 0px auto;
+    margin-top: 10px;
+}
+.pagination img 
+{
+    width: 780px;
+}

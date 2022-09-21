@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="PurchaseProcurement">
+
+    <select id="getProcurementType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT configuration_key AS procurement_type_id, configuration_value AS procurement_type_name FROM configuration_values WHERE parent_id = 793;
+    </select>
+    
+    <select id="getProcurementList" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementDto">
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CAST(pp.total AS CHAR) AS total,
+        pp.procurement_status AS status,
+        sta.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+        WHERE pp.requester_id = #employee_id#
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeeDetailsDto">
+        SELECT emp.id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(CURDATE(),"%d-%m-%Y") AS request_date,
+        emp.structure_name AS sbu_id,
+        emp.structure_name_subgroup AS sub_sbu_id,
+        cmpsbu.name AS sbu_name,
+        cmpsubsbu.name AS sub_sbu_name
+        FROM employees AS emp
+        LEFT JOIN company_structures AS cmpsbu ON cmpsbu.id = emp.structure_name
+        LEFT JOIN company_structures AS cmpsubsbu ON cmpsubsbu.id = emp.structure_name_subgroup
+        WHERE emp.id=#employee_id#
+    </select>
+    
+    <select id="getBillableType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT configuration_key AS billable_id, configuration_value AS billable_name FROM configuration_values WHERE parent_id = 796;
+    </select>
+    
+    <select id="getServiceType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT configuration_key AS service_id, configuration_value AS service_type FROM configuration_values WHERE parent_id = 799;
+    </select>
+    
+    <select id="getOrderType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT configuration_key AS order_id, configuration_value AS order_name FROM configuration_values WHERE parent_id = 803;
+    </select>
+    
+    <select id="getDocumentType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT configuration_key AS document_id, configuration_value AS document_type FROM configuration_values WHERE parent_id = 788;
+    </select>
+    
+    <select id="getCurrencytType" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT id AS currency_id, currency_code AS currency_name FROM currencies;
+    </select>
+    
+    <select id="getdeliveryLocation" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT cl.id AS location_id,
+        CONCAT('HT - ',cty.country,' - ', cti.city) AS location_name,
+        CONCAT(address_line1,' ', IFNULL(address_line2,' '),'-',cty.country,'-',reg.region,'-',cti.city) AS delivery_address
+        FROM company_locations AS cl
+        LEFT JOIN countries AS cty ON cl.country_id = cty.id
+        LEFT JOIN regions AS reg ON cl.region_id = reg.id
+        LEFT JOIN cities AS cti ON cl.city_id = cti.id
+        WHERE cl.deleted = 0
+    </select>
+    <select id="getProcurementDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementDto">
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        emp.id AS employee_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        emp.structure_name AS sbu_id,
+        emp.structure_name_subgroup AS sub_sbu_id,
+        cmpsbu.name AS sbu_name,
+        pp.procurement_type AS procurement_type_id,
+        pp.billable AS billable_id,
+        pp.service_type AS service_id,
+        pp.order_type AS order_id,
+        pp.currency_id AS currency_id,
+        cmpsubsbu.name AS sub_sbu_name,
+        pp.contact_number AS recipient_contact_number,
+        DATE_FORMAT(pp.expected_delivery_date,"%d-%m-%Y") AS expected_delivery_date,
+        pp.delivery_location AS delivery_location_id,
+        CONCAT('HTL - ',cty.country,' - ', cti.city) AS delivery_location_name,
+        pp.delivery_address AS delivery_address,
+        CAST(pp.total AS CHAR) AS total,
+        pp.remarks as remarks,
+        pp.procurement_status AS status
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN employees AS emp ON emp.id = pp.requester_id
+        LEFT JOIN company_structures AS cmpsbu ON cmpsbu.id = emp.structure_name
+        LEFT JOIN company_structures AS cmpsubsbu ON cmpsubsbu.id = emp.structure_name_subgroup
+        LEFT JOIN company_locations AS cml ON pp.delivery_location = cml.id
+        LEFT JOIN countries AS cty ON cml.country_id = cty.id
+        LEFT JOIN cities AS cti ON cml.city_id = cti.id
+        WHERE pp.id = #procurement_id#
+    </select>
+    
+    <select id="getIteamDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT pit.id AS iteam_id,
+        pit.description AS iteam_description,
+        pit.quantity AS iteam_quantity,
+        CAST(pit.amount AS CHAR) AS iteam_amount
+        FROM procurement_items AS pit
+        WHERE pit.pp_id = #procurement_id#
+        AND pit.deleted=0;
+    </select>
+    
+    <select id="getAttachmentDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT pa.id AS attachment_id,
+        pa.document_type AS attachment_type,
+        dt.configuration_value AS document_type,
+        pa.document_name AS attachment_name,
+        pa.description AS attachment_description,
+        pa.file_upload_id AS file_upload_id,
+        fu.file_type AS file_type,
+        fu.file_name AS file_name
+        FROM procurement_attachments pa
+        LEFT JOIN file_uploads AS fu ON (pa.file_upload_id = fu.id AND fu.ref_id = 743)
+        LEFT JOIN configuration_values AS dt ON (dt.configuration_key = pa.document_type AND dt.parent_id = 788)
+        WHERE pa.pp_id = #procurement_id# AND pa.deleted = 0 AND fu.reference_name != 'PO'
+    </select>
+    
+    <select id="getPoDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto">
+        SELECT pa.id AS attachment_id,
+        pa.document_type AS attachment_type,
+        pa.document_name AS attachment_name,
+        pa.description AS attachment_description,
+        pa.file_upload_id AS file_upload_id,
+        fu.file_type AS file_type,
+        fu.file_name AS file_name
+        FROM procurement_attachments pa
+        LEFT JOIN file_uploads AS fu ON (pa.file_upload_id = fu.id AND fu.ref_id = 743)
+        WHERE pa.pp_id = #procurement_id# AND pa.deleted = 0 AND fu.reference_name = 'PO'
+    </select>
+    
+    <insert id="insertProcurementDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" >
+        INSERT INTO purchase_procurement_master SET
+        procurement_code = #pp_code#,
+        requester_id = #requestor_id#,
+        requested_date = CURDATE(),
+        sbu_id = #sbu_id#,
+        sub_sbu_id = #sub_sbu_id#,
+        procurement_type = #procurement_type_id#,
+        billable = #billable_id#,
+        service_type = #service_id#,
+        order_type = #order_id#,
+        currency_id = #currency_id#,
+        delivery_location = #delivery_location_name#,
+        delivery_address = #delivery_address#,
+        contact_number = #recipient_contact_number#,
+        expected_delivery_date = STR_TO_DATE(#expected_delivery_date#,"%d-%m-%Y"),
+        remarks = #remarks#,
+        procurement_status = #status#,
+        total = #total#
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    
+    <select id="getMaxProcurementCode" resultClass="java.lang.String">
+        SELECT MAX(procurement_code) FROM purchase_procurement_master;
+    </select>
+    
+    <insert id="insertProcurementIteams" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" >
+        INSERT INTO procurement_items SET
+        pp_id = #lastInsertId#,
+        description = #iteam_description#,
+        quantity = #iteam_quantity#,
+        amount = #iteam_amount#,
+        deleted = 0
+    </insert>
+    
+    <insert id = "addFileDb" parameterClass = "Map">
+        INSERT into file_uploads(file_name,file_type,reference_name,ref_id,module_name)
+           values (#fileName#,#fileType#,#referenceName#,#referenceId#,#moduleName#);
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+                    select last_insert_id() as lastFileInsertId
+        </selectKey>
+    </insert>
+        
+    <insert id="insertProcurementAttachmentDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" >
+        INSERT INTO procurement_attachments SET
+        pp_id = #lastInsertId#,
+        document_type = #attachmentType#,
+        document_name = #attachment_name#,
+        description = #attachment_description#,
+        file_upload_id = #file_upload_id#,
+        deleted = 0
+    </insert>
+    
+    <update id="updateProcurementDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto">
+        UPDATE purchase_procurement_master SET
+        procurement_code = #pp_code#,
+        requester_id = #requestor_id#,
+        requested_date = STR_TO_DATE(#requested_date#,"%d-%m-%Y"),
+        sbu_id = #sbu_id#,
+        sub_sbu_id = #sub_sbu_id#,
+        procurement_type = #procurement_type_id#,
+        billable = #billable_id#,
+        service_type = #service_id#,
+        order_type = #order_id#,
+        currency_id = #currency_id#,
+        delivery_location = #delivery_location_name#,
+        delivery_address = #delivery_address#,
+        contact_number = #recipient_contact_number#,
+        expected_delivery_date = STR_TO_DATE(#expected_delivery_date#,"%d-%m-%Y"),
+        remarks = #remarks#,
+        procurement_status = #status#,
+        total = #total#
+        WHERE id = #id#
+    </update>
+    
+    <update id="updateProcurementIteams" parameterClass="com.ideal.hrMaster.dto.ProcurementDto">
+        UPDATE procurement_items SET
+        pp_id = #lastInsertId#,
+        description = #iteam_description#,
+        quantity = #iteam_quantity#,
+        amount = #iteam_amount#,
+        deleted = #iteam_deleted#
+        where id = #iteam_id#
+    </update>
+    
+    <select id="getProcurementDetailsView" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementDto">
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        emp.id AS requestorId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE_FORMAT(pp.rm_approved_date,"%d-%m-%Y") AS rm_approved_date,
+        pp.rm_comments AS rm_comments,
+        CONCAT(buh.employee_number,'-',buh.first_name,' ',buh.last_name) AS buh_name,
+        DATE_FORMAT(pp.buh_approved_date,"%d-%m-%Y") AS buh_approved_date,
+        pp.buh_comments AS buh_comments,
+        cmpsbu.name AS sbu_name,
+        cmpsubsbu.name AS sub_sbu_name,
+        pt.configuration_value AS procurement_type_name,
+        bt.configuration_value AS billable_name,
+        st.configuration_value AS service_type,
+        ot.configuration_value AS order_name,
+        ct.currency_code AS currency_name,
+        pp.contact_number AS recipient_contact_number,
+        DATE_FORMAT(pp.expected_delivery_date,"%d-%m-%Y") AS expected_delivery_date,
+        pp.delivery_location AS delivery_location_id,
+        CONCAT('HTL - ',cty.country,' - ', cti.city) AS delivery_location_name,
+        pp.delivery_address AS delivery_address,
+        CAST(pp.total AS CHAR) AS total,
+        pp.remarks AS remarks,
+        pp.procurement_status AS status,
+        pps.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN employees AS emp ON emp.id = pp.requester_id
+        LEFT JOIN employees AS rm ON rm.id = pp.rm_approver_id
+        LEFT JOIN employees AS buh ON buh.id = pp.buh_approver_id
+        LEFT JOIN company_structures AS cmpsbu ON cmpsbu.id = emp.structure_name
+        LEFT JOIN company_structures AS cmpsubsbu ON cmpsubsbu.id = emp.structure_name_subgroup
+        LEFT JOIN configuration_values AS pt ON (pp.procurement_type = pt.configuration_key AND pt.parent_id = 793)
+        LEFT JOIN configuration_values AS bt ON (pp.billable = bt.configuration_key AND bt.parent_id = 796)
+        LEFT JOIN configuration_values AS st ON (pp.service_type = st.configuration_key AND st.parent_id = 799)
+        LEFT JOIN configuration_values AS ot ON (pp.order_type = ot.configuration_key AND ot.parent_id = 803)
+        LEFT JOIN configuration_values AS pps ON (pp.procurement_status = pps.configuration_key AND pps.parent_id = 781)
+        LEFT JOIN company_locations AS cml ON pp.delivery_location = cml.id
+        LEFT JOIN currencies AS ct on pp.currency_id = ct.id
+        LEFT JOIN countries AS cty ON cml.country_id = cty.id
+        LEFT JOIN cities AS cti ON cml.city_id = cti.id
+        WHERE pp.id = #pp_id#
+    </select>
+    
+    <select id="getRMEmployeeList" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT(id) FROM employees WHERE manager = #filterData# AND employment_status NOT IN ('r','t','b','q','y','o');
+    </select>
+    
+    <select id="getProcurementRMList" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" resultClass="com.ideal.hrMaster.dto.ProcurementDto">        
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CAST(pp.total AS CHAR) AS total,
+        pp.procurement_status AS status,
+        sta.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+        LEFT JOIN employees AS emp ON (pp.requester_id = emp.id)
+        WHERE emp.manager = #rm_id# AND pp.procurement_status = #status#
+        ORDER BY pp.id DESC
+    </select>
+    
+    <select id="getProcurementRMProcessedList" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" resultClass="com.ideal.hrMaster.dto.ProcurementDto">        
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CAST(pp.total AS CHAR) AS total,
+        pp.procurement_status AS status,
+        sta.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+        LEFT JOIN employees AS emp ON (pp.requester_id = emp.id)
+        WHERE emp.manager = #rm_id# AND pp.procurement_status in ('a','r','e','j','c')
+        ORDER BY pp.id DESC
+    </select>
+    
+    <update id="approveRMProcurementDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto">
+        UPDATE purchase_procurement_master SET
+        rm_approver_id = #rm_id#,
+        rm_approved_date = CURDATE(),
+        rm_comments = #remarks#,
+        total = #total#,
+        procurement_status = #status#
+        WHERE id = #id#;
+    </update>
+    
+    <select id="getProcurementBUHList" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" resultClass="com.ideal.hrMaster.dto.ProcurementDto">            
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CAST(pp.total AS CHAR) AS total,
+        pp.procurement_status AS STATUS,
+        sta.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+        LEFT JOIN employees AS emp ON (pp.requester_id = emp.id)
+        LEFT JOIN procurement_buh_approver_list AS buh ON buh.buh_id = #buh_id#
+        WHERE pp.sbu_id = buh.sbu_id AND pp.procurement_status = #status#
+        ORDER BY pp.id DESC
+    </select>
+    
+    <select id="getProcurementBUHProcessedList" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" resultClass="com.ideal.hrMaster.dto.ProcurementDto">            
+        SELECT pp.id AS id,
+        pp.procurement_code AS pp_code,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        CAST(pp.total AS CHAR) AS total,
+        pp.procurement_status AS STATUS,
+        sta.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+        LEFT JOIN employees AS emp ON (pp.requester_id = emp.id)
+        LEFT JOIN procurement_buh_approver_list AS buh ON buh.buh_id = #buh_id#
+        WHERE pp.sbu_id = buh.sbu_id AND pp.procurement_status in ('e','j','c')
+        ORDER BY pp.id DESC
+    </select>
+    
+    <select id="getProcurementAdminList" parameterClass="com.ideal.hrMaster.dto.ProcurementDto" resultClass="com.ideal.hrMaster.dto.ProcurementDto">            
+        SELECT pp.id AS id,
+	pp.procurement_code AS pp_code,
+	CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+	DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+	RupeeFormat(pp.total) AS total,
+	pp.procurement_status AS status,
+	sta.configuration_value AS status_name,
+        paa.description AS iteam_description
+	FROM purchase_procurement_master AS pp
+	LEFT JOIN configuration_values AS sta ON (sta.configuration_key = pp.procurement_status AND sta.parent_id = 781)
+	LEFT JOIN employees AS emp ON (pp.requester_id = emp.id)
+        LEFT JOIN procurement_attachments AS paa ON(pp.id = paa.pp_id AND paa.document_type='PO')           
+	WHERE pp.procurement_status = #status#
+        ORDER BY pp.id DESC
+    </select>
+      
+    <update id="approveBUHProcurementDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto">
+        UPDATE purchase_procurement_master SET
+        buh_approver_id = #buh_id#,
+        buh_approved_date = CURDATE(),
+        buh_comments = #remarks#,
+        total = #total#,
+        procurement_status = #status#
+        WHERE id = #id#;
+    </update>
+    
+    <update id="approveAdminProcurementDetails" parameterClass="com.ideal.hrMaster.dto.ProcurementDto">
+        UPDATE purchase_procurement_master SET
+        procurement_status = #status#
+        WHERE id = #id#;
+    </update>
+    
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    
+    <select id="getApproverDetails" parameterClass="String" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto" >
+        SELECT CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        emp.work_email_address AS employee_email_id,
+        CONCAT(rm.first_name,' ',rm.last_name) AS rm_name,
+        rm.work_email_address AS rm_email_id,
+        CONCAT(buh.first_name,' ',buh.last_name) AS buh_name,
+        buh.work_email_address AS buh_email_id
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON emp.manager  = rm.id
+        LEFT JOIN procurement_buh_approver_list AS buhlis ON buhlis.sbu_id = emp.structure_name
+        LEFT JOIN employees AS buh ON buhlis.buh_id = buh.id
+        WHERE emp.id = #emp_id#;
+    </select>
+    
+    <select id="getEmployeeId" parameterClass="String" resultClass="String" >
+        SELECT requester_id FROM purchase_procurement_master WHERE id = #emp_id#;
+    </select>
+    
+    <select id="getProcurementCode" parameterClass="String" resultClass="String" >
+        SELECT procurement_code FROM purchase_procurement_master WHERE id = #id#;
+    </select>
+    
+    <select id="getBuhId" parameterClass="String" resultClass="String" >
+        SELECT pba.buh_id 
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN procurement_buh_approver_list AS pba ON pba.sbu_id = pp.sbu_id
+        WHERE pp.id = #id#;
+    </select>
+    
+    <select id="getPrAdminDetails" resultClass="com.ideal.hrMaster.dto.ProcurementPackagesDto" >
+        SELECT GROUP_CONCAT(emp.work_email_address) AS employee_email_id
+        FROM aros_acos AS arcos         
+        LEFT JOIN aros AS aroG ON (aroG.id=arcos.aro_id AND aroG.model ='Group')         
+        LEFT JOIN aros AS aroU ON (aroU.id=arcos.aro_id AND aroU.model ='User')         
+        LEFT JOIN users AS USER ON (user.group_id=aroG.foreign_key OR user.id=aroU.foreign_key)         
+        LEFT JOIN employees AS emp ON (emp.id=user.employee_id)       
+        WHERE arcos._create=1 AND arcos._read=1 AND arcos._update=1 AND arcos._delete=1 AND emp.employment_status NOT IN ('r','b','t','q','o','y')         
+        AND  arcos.aco_id IN(746);
+    </select>
+    
+    <select id="getMngId" parameterClass="String" resultClass="String" >
+        SELECT manager FROM employees WHERE id = #emp_id#;
+    </select>
+    
+    <select id="getProcurementReport" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.ProcurementDto">
+        SELECT pp.procurement_code AS pp_code,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        pp.contact_number AS recipient_contact_number,
+        cmpsbu.name AS sbu_name,
+        cmpsubsbu.name AS sub_sbu_name,
+        pt.configuration_value AS procurement_type_name,
+        st.configuration_value AS service_type,
+        bt.configuration_value AS billable_name,
+        ot.configuration_value AS order_name,
+        CONCAT('HTL - ',cty.country,' - ', cti.city) AS delivery_location_name,
+        pp.delivery_address AS delivery_address,
+        DATE_FORMAT(pp.requested_date,"%d-%m-%Y") AS requested_date,
+        DATE_FORMAT(pp.expected_delivery_date,"%d-%m-%Y") AS expected_delivery_date,
+        pp.remarks AS remarks,
+        ct.currency_code AS currency_name,
+        RupeeFormat(pp.total) AS total,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm_name,
+        DATE_FORMAT(pp.rm_approved_date,"%d-%m-%Y") AS rm_approved_date,
+        pp.rm_comments AS rm_comments,
+        CONCAT(buh.employee_number,'-',buh.first_name,' ',buh.last_name) AS buh_name,
+        DATE_FORMAT(pp.buh_approved_date,"%d-%m-%Y") AS buh_approved_date,
+        pp.buh_comments AS buh_comments,
+        paa.description AS iteam_description,
+        pps.configuration_value AS status_name
+        FROM purchase_procurement_master AS pp
+        LEFT JOIN employees AS emp ON emp.id = pp.requester_id
+        LEFT JOIN employees AS rm ON rm.id = pp.rm_approver_id
+        LEFT JOIN employees AS buh ON buh.id = pp.buh_approver_id
+        LEFT JOIN company_structures AS cmpsbu ON cmpsbu.id = emp.structure_name
+        LEFT JOIN company_structures AS cmpsubsbu ON cmpsubsbu.id = emp.structure_name_subgroup
+        LEFT JOIN configuration_values AS pt ON (pp.procurement_type = pt.configuration_key AND pt.parent_id = 793)
+        LEFT JOIN configuration_values AS bt ON (pp.billable = bt.configuration_key AND bt.parent_id = 796)
+        LEFT JOIN configuration_values AS st ON (pp.service_type = st.configuration_key AND st.parent_id = 799)
+        LEFT JOIN configuration_values AS ot ON (pp.order_type = ot.configuration_key AND ot.parent_id = 803)
+        LEFT JOIN configuration_values AS pps ON (pp.procurement_status = pps.configuration_key AND pps.parent_id = 781)
+        LEFT JOIN company_locations AS cml ON pp.delivery_location = cml.id
+        LEFT JOIN currencies AS ct ON pp.currency_id = ct.id
+        LEFT JOIN countries AS cty ON cml.country_id = cty.id
+        LEFT JOIN cities AS cti ON cml.city_id = cti.id
+        LEFT JOIN procurement_attachments AS paa ON(pp.id = paa.pp_id AND paa.document_type='PO')
+        WHERE pp.procurement_status = #status#
+    </select>
+    
+</sqlMap>

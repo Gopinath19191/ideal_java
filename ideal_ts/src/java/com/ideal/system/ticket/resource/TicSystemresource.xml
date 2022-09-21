@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="TicSystemMap">
+    <select id="getTicRequest" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT  
+        emp.employee_number AS empNumber,
+        CONCAT( emp.first_name," ", emp.last_name ) AS empName,
+        emp.work_email_address AS mailId,
+        fedreq.id,ref_no,
+        priority,SUBJECT,fedreq.created_date,
+        fedreq.feedback_unit_id,
+        fedreq.feedback_sub_unit_id,
+        fedreq.replied_date,
+<!--        CONCAT((DATEDIFF(replied_date,fedreq.created_date)),'day(s) ',
+                MOD(HOUR(TIMEDIFF(fedreq.created_date,replied_date)),24),'hour(s) ',
+                MINUTE(TIMEDIFF(fedreq.created_date,replied_date)),'minute(s) ',
+                SECOND(TIMEDIFF(fedreq.created_date,replied_date)),'second(s) ') AS time_taken,-->
+        TIME_FORMAT(TIMEDIFF(fedreq.replied_date, fedreq.created_date), '%H Hrs %i Min')AS time_taken,
+        location,contact_no,
+        sys.configuration_value AS system,
+        unit.structure_name AS supportName,
+        subunit.sub_structure_name AS sub_Unit_Name,
+        sta.configuration_value AS STATUS,
+        reqtype.request_name AS issue_type,
+        fedreq.ip_address as ip_address,         
+        CONCAT(aemp.employee_number,'-',aemp.first_name,' ',aemp.last_name) AS assignEngineerName,
+        reqarea.request_area_name AS application_area
+        FROM feedback_requests AS fedreq
+        LEFT JOIN configuration_values AS sys ON (fedreq.system = sys.configuration_key AND sys.parent_id = '507')
+        LEFT JOIN feedback_unit_master AS unit ON (fedreq.feedback_unit_id = unit.id)
+        LEFT JOIN feedback_sub_unit_master AS subunit ON(fedreq.feedback_sub_unit_id = subunit.id)
+        LEFT JOIN configuration_values AS sta ON (fedreq.status = sta.configuration_key AND sta.parent_id = '100')
+        LEFT JOIN feedback_request_type AS reqtype ON (fedreq.issue_type = reqtype.id)
+        LEFT JOIN feedback_request_area AS reqarea ON(fedreq.application_area = reqarea.id)
+        LEFT JOIN employees AS emp ON (fedreq.created_by = emp.id)
+        LEFT JOIN employees AS aemp ON (fedreq.assigned_employee_id = aemp.id)
+        WHERE fedreq.created_by=#id#
+        <dynamic>
+            <isNotNull prepend="AND" property="ref_no">
+                fedreq.ref_no=#ref_no#
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty property="issue_type">
+                <isNotNull prepend="AND" property="issue_type">
+                    fedreq.issue_type=#issue_type#
+                </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property="status">
+                fedreq.status=#status#
+            </isNotNull>
+        </dynamic>
+        order by fedreq.created_date desc ,fedreq.replied_date desc 
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#
+            </isNotEqual>                 
+        </dynamic>
+    </select>
+      
+    <select id="fetchTicRequestListCount" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="java.lang.Integer">
+        select count(*) as recordCount from feedback_requests as F
+        where
+        F.created_by=#id#
+        <dynamic>
+            <isNotEmpty property="ref_no">
+            <isNotNull prepend="AND" property="ref_no">
+                F.ref_no=#ref_no#
+            </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty property="issue_type">
+            <isNotNull prepend="AND" property="issue_type">
+                F.issue_type=#issue_type#
+            </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty property="status">
+            <isNotNull prepend="AND" property="status">
+                F.status=#status#
+            </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+    </select>
+     
+    <select id="searchFeedback_user" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT  
+        emp.employee_number AS empNumber,
+        CONCAT( emp.first_name," ", emp.last_name ) AS empName,
+        emp.work_email_address AS mailId,
+        fedreq.id,
+        fedreq.ref_no,
+        fedreq.priority,
+        fedreq.subject,
+        fedreq.created_date,
+        fedreq.feedback_unit_id,
+        fedreq.feedback_sub_unit_id,
+        fedreq.replied_date,
+<!--        CONCAT((DATEDIFF(fedreq.replied_date,fedreq.created_date)),'day(s) ',
+                MOD(HOUR(TIMEDIFF(fedreq.created_date,fedreq.replied_date)),24),'hour(s) ',
+                MINUTE(TIMEDIFF(fedreq.created_date,fedreq.replied_date)),'minute(s) ',
+                SECOND(TIMEDIFF(fedreq.created_date,fedreq.replied_date)),'second(s) ') AS time_taken,-->
+        TIME_FORMAT(TIMEDIFF(fedreq.replied_date, fedreq.created_date), '%H Hrs %i Min')AS time_taken,
+        fedreq.location,
+        fedreq.contact_no,
+        sys.configuration_value AS system,
+        unit.structure_name AS supportName,
+        subunit.sub_structure_name AS sub_Unit_Name,
+        sta.configuration_value AS STATUS,
+        reqtype.request_name AS issue_type,
+        fedreq.ip_address as ip_address,         
+        CONCAT(aemp.employee_number,'-',aemp.first_name,' ',aemp.last_name) AS assignEngineerName,
+        reqarea.request_area_name AS application_area
+        FROM feedback_requests AS fedreq
+        LEFT JOIN configuration_values AS sys ON (fedreq.system = sys.configuration_key AND sys.parent_id = '507')
+        LEFT JOIN feedback_unit_master AS unit ON (fedreq.feedback_unit_id = unit.id)
+        LEFT JOIN feedback_sub_unit_master AS subunit ON(fedreq.feedback_sub_unit_id = subunit.id)
+        LEFT JOIN configuration_values AS sta ON (fedreq.status = sta.configuration_key AND sta.parent_id = '100')
+        LEFT JOIN feedback_request_type AS reqtype ON (fedreq.issue_type = reqtype.id)
+        LEFT JOIN feedback_request_area AS reqarea ON(fedreq.application_area = reqarea.id)
+        LEFT JOIN employees AS emp ON (fedreq.created_by = emp.id)
+        LEFT JOIN employees AS aemp ON (fedreq.assigned_employee_id = aemp.id)      
+        WHERE fedreq.created_by=#id#
+        <dynamic>
+            <isNotNull prepend="AND" property="ref_no">
+                fedreq.ref_no=#ref_no#
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotEmpty property="issue_type">
+                <isNotNull prepend="AND" property="issue_type">
+                    fedreq.issue_type=#issue_type#
+                </isNotNull>
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property="status">
+                fedreq.status=#status#
+            </isNotNull>
+        </dynamic>
+        order by fedreq.created_date desc ,fedreq.replied_date desc 
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#
+            </isNotEqual>                 
+        </dynamic>   
+    </select>       
+    <select id = "getRefIds" parameterClass = "java.lang.String" resultClass = "com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT  id,ref_no as refId  FROM feedback_requests WHERE ref_no LIKE #refVal#;
+    </select> 
+       
+    <insert id="insertRequest" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" >
+        INSERT INTO feedback_requests(ref_no,priority,issue_type,feedback_unit_id,feedback_sub_unit_id,application_area,created_by,mail_cc,created_date,SUBJECT,STATUS,location,contact_no,system,ip_address) VALUES
+        (#ref_no#,#priority#,#issue_type#,#support_type#,#sub_unit#,#application_area#,#id#,#mail_cc_id#,now(),#subject#,#status#,#location#,#contact_no#,#system#,#ip_address#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+                    select last_insert_id() as lastFileInsertId
+        </selectKey>
+    </insert>
+    <select id="getCcMailNames" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT GROUP_CONCAT(CONCAT(employee_number,' - ',first_name,' ',last_name),'') AS employeeCcEmailName FROM employees WHERE  employment_status NOT IN('r','b','t')
+    </select> 
+    <select id="getTicRequestByRef" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT  fed.id,
+        fres.id AS responseId,
+        fed.mail_cc AS mail_cc_id,
+        fed.ref_no,
+        fed.priority,
+        fed.subject,
+        fed.created_date,
+        fed.rating AS rating,
+        fres.created_date AS replied_date,
+<!--        CONCAT(
+                (DATEDIFF(fed.replied_date,fed.created_date)),'day(s) ',
+                MOD(HOUR(TIMEDIFF(fed.created_date,fed.replied_date)),24),'hour(s) ',
+                MINUTE(TIMEDIFF(fed.created_date,fed.replied_date)),'minute(s) ',
+                SECOND(TIMEDIFF(fed.created_date,fed.replied_date)),'second(s) ') AS time_taken,-->
+        TIME_FORMAT(TIMEDIFF(fed.replied_date, fed.created_date), '%H Hrs %i Min')AS time_taken,
+        fed.location,
+        fed.contact_no,
+        sys.configuration_value AS system,
+        fed.feedback_unit_id AS supportUnit,
+        fed.feedback_sub_unit_id AS sub_unit,
+        unit.structure_name AS supportName,
+        subunit.sub_structure_name AS sub_Unit_Name,
+        finstatus.configuration_value AS finalStatus,
+        statuses.configuration_value AS STATUS,
+        statuses.configuration_key AS userStatus,
+        fed.issue_type AS statusValue,
+        issuetypes.request_name AS issue_type,
+        apptypes.request_area_name AS application_area,
+        fed.ip_address as ip_address,
+        emp.employee_number AS empNumber, 
+        CONCAT( emp.first_name," ", emp.last_name ) AS empName,
+        CONCAT( asg.first_name," ", asg.last_name ) AS assignEngineerName,
+        SUBSTRING_INDEX(fres.attachment_file_path ,'~~',-1) AS attachment_file_path,
+        fres.attachment_file_path AS fullFileName,
+        fres.response
+        FROM feedback_requests AS fed
+        LEFT JOIN employees AS emp ON fed.created_by = emp.id
+        LEFT JOIN feedback_responses AS fres ON (fed.id = fres.parent_id)
+        LEFT JOIN employees asg ON (asg.id=fed.assigned_employee_id)        
+        LEFT JOIN feedback_unit_master AS unit ON (unit.id=fed.feedback_unit_id )
+        LEFT JOIN feedback_sub_unit_master AS subunit ON (subunit.id=fed.feedback_sub_unit_id )                                                           
+        LEFT JOIN configuration_values AS finstatus ON (finstatus.configuration_key = fed.status AND finstatus.parent_id = '100')
+        LEFT JOIN feedback_request_type AS issuetypes ON (issuetypes.id = fed.issue_type)
+        LEFT JOIN configuration_values AS statuses ON (statuses.configuration_key = fres.status AND statuses.parent_id = '100')
+        LEFT JOIN configuration_values AS sys ON (fed.system = sys.configuration_key AND sys.parent_id = '507')
+        LEFT JOIN feedback_request_area AS apptypes ON (apptypes.id = fed.application_area)
+        WHERE fed.ref_no=#ref_no#
+    </select>
+    <update id="updateRequest" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        update feedback_requests freq
+        set freq.status = #status#, freq.mail_cc=#mail_cc_id#,freq.rating=#rating#,
+        freq.replied_date = #replied_date# , freq.closed_date = #closed_date# 
+        where
+        freq.id = #uniqueReqId#
+    </update>
+    <update id="updateRequestWithOutStatus" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        update feedback_requests freq
+        set freq.mail_cc=#mail_cc_id#,
+        freq.replied_date = #replied_date# , freq.closed_date = #closed_date# 
+        where
+        freq.id = #uniqueReqId#
+    </update>
+    <insert id="insertResponse" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" >
+        insert into feedback_responses(parent_id,response,attachment_file_path,created_by,created_date,status) values
+        (#parent_id#,#response#,#attachment_file_path#,#id#,now(),#status#);
+    </insert>
+    <insert id="insertResponseEdit" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" >
+        insert into feedback_responses(parent_id,response,attachment_file_path,created_by,created_date,status) values
+        (#uniqueReqId#,#response#,#attachment_file_path#,#id#,#created_date#,#status#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+                    select last_insert_id() as lastFileInsertId
+        </selectKey>
+    </insert>
+    <select id="getHighestRefNo" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="java.lang.Integer">
+        SELECT SUBSTR(ref_no, 4 ) as highest_ref FROM feedback_requests ORDER BY SUBSTR(ref_no, 3) DESC LIMIT 1;
+    </select>
+    <select id="getHighestReqId" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="java.lang.String">
+        SELECT max(id) as maxId FROM feedback_requests ;
+    </select>
+<!--    <select id="getStatusList" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT id AS statusKey,configuration_value AS statusValue FROM feedback_issues_status WHERE parent_id in(#issue_type#)
+    </select>-->
+    <select id="getStatusList" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key AS statusKey,configuration_value AS statusValue FROM configuration_values WHERE parent_id in('100')
+    </select>
+    <select id="getSystemList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key ,configuration_value  FROM configuration_values WHERE parent_id=507
+    </select>
+    <select id="getAppAreaList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key ,configuration_value  FROM configuration_values WHERE parent_id=230 order by configuration_value
+    </select>
+<!--    <select id="getIssueTypeList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT id as configuration_key ,configuration_value  FROM feedback_issues_status WHERE parent_id=0
+    </select>-->
+    <select id="getIssueTypeList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key ,configuration_value  FROM configuration_values WHERE parent_id='225'
+    </select>
+    <select id="getSupportTypeList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT id AS supportId,structure_name AS supportName FROM feedback_unit_master WHERE deleted = 0;
+    </select>
+    <select id="getAdminList" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key ,configuration_value  FROM access_configurations WHERE parent_id=521
+    </select>
+    
+    <select id = "getEmpIds" parameterClass = "java.lang.String" resultClass = "com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT  id as employee_idd,
+        work_email_address as mailId, 
+        concat(emp.first_name," ", emp.last_name ) AS requestorName, 
+        concat(emp.first_name," ",emp.last_name," - ",emp.employee_number) AS empName 
+        FROM Employees emp  
+        WHERE 
+        (emp.employee_number LIKE $refVal$ 
+        OR emp.first_name LIKE $refVal$ 
+        OR concat( emp.employee_number, "-", emp.first_name," ", emp.last_name) LIKE $refVal$) AND emp.employment_status NOT IN('r','b','t','q','o','y');
+    </select> 
+   
+    <select id = "getEmpMail" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        SELECT  work_email_address as mailId,
+                
+        concat( emp.employee_number, "-", emp.first_name," ", emp.last_name ) AS empName
+        FROM Employees emp  
+        WHERE id = #refVal# AND emp.employment_status NOT IN('r','b','t'); 
+    </select>
+    <update id = "removeFile" parameterClass = "java.lang.String" >
+        UPDATE feedback_responses SET attachment_file_path = null where id = #fileParentId#
+    </update> 
+    <select id = "getFreqC" parameterClass = "com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass = "com.ideal.system.ticket.dto.TicSystemDataDTO">
+        select fis.configuration_value as status,F.replied_date from feedback_requests as F 
+        left join configuration_values as fis on (fis.configuration_key = F.status and parent_id = '100')
+        where ref_no=#ref_no#
+    </select>
+    <select id = "getEmpName" parameterClass = "com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass = "java.lang.String">
+        select  concat( emp.first_name," ", emp.last_name ) AS empNameSession from employees as emp where id=#id#
+    </select>
+    <select id="getEmployeeDetailsFromId" parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT CONCAT(first_name,' ',last_name) AS employeeName,employee_number As employeeNumber, id As empId FROM employees 
+        WHERE  employment_status NOT IN('r','b','t')
+    </select>
+    <select id="getCcMail" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT( work_email_address ) AS employeeCcEmail FROM 
+        employees WHERE id IN ($empIds$) AND employment_status NOT IN('r','b','t')
+    </select>    
+    <select id="getVerifedCcMailNamesList" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT(CONCAT(employee_number,' - ',first_name,' ',last_name),'') AS employeeCcEmailName FROM 
+        employees WHERE id IN ($empIds$) AND employment_status NOT IN('r','b','t')
+    </select>
+    <select id="getVerifedCcMailNames" parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO" >
+        SELECT concat(first_name," ",last_name) AS empName,employee_number As employeeNumber, id As employee_idd FROM employees 
+        WHERE id IN ($empIds$) AND employment_status NOT IN('r','b','t')
+    </select>
+    <select id = "getResponseStatusList" parameterClass = "java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        select configuration_key as statusKey, configuration_value as statusValue from configuration_values
+        where parent_id = '100' and configuration_key IN ('w','c','o')
+    </select>
+    
+    <select id = "getOpenStatus" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select configuration_key as statusKey from configuration_values
+        where parent_id = '100' and configuration_key = 'o'
+    </select>
+    
+    <select id="getSubUnitList"  parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT id AS subUnitId,sub_structure_name AS sub_Unit_Name  FROM feedback_sub_unit_master WHERE feedback_unit_id=#support_unit_id#
+    </select>
+     <select id="getRequestTypes"  parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+       SELECT id as configuration_key, request_name as configuration_value FROM feedback_request_type where feedback_unit_id = #support_unit_id#;
+    </select>
+     <select id="getRequestAreas"  parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT id AS configuration_key, request_area_name AS configuration_value FROM feedback_request_area
+        WHERE feedback_sub_unit_id = #subUnitId# and feedback_request_type_id = #issue_type#
+    </select>
+    
+    <select id="getTomailAddress"  parameterClass="java.lang.String" resultClass="java.lang.String"> 
+        SELECT dl_mail AS dl
+        FROM dl_master AS dla
+        LEFT JOIN feedback_sub_unit_master AS sub ON dla.id = sub.dl_id
+        WHERE sub.id = #id#
+    </select>
+    <select id="getStatus" parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key AS statusKey,configuration_value AS statusValue FROM configuration_values
+       WHERE parent_id = 100
+       AND configuration_value IN ($status$)        
+    </select> 
+    
+    <select id="getMailDetails" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key AS configuration_key, configuration_value AS configuration_value FROM configuration_values
+        WHERE parent_id = 10
+    </select>
+    <select id="getTicketDetails" parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT issue_type AS issue_type, status AS status FROM feedback_requests WHERE id = #id#;
+    </select>
+    <select id="getStatusKey" parameterClass="com.ideal.system.ticket.dto.TicSystemDataDTO" resultClass="java.lang.String">
+        SELECT next_status as status FROM feedback_status_config WHERE current_status = #status# AND request_type_id = #issue_type#;
+    </select>
+    <select id="getNextStatusList" parameterClass="java.lang.String" resultClass="com.ideal.system.ticket.dto.TicSystemDataDTO">
+        SELECT configuration_key AS statusKey,configuration_value AS statusValue FROM configuration_values WHERE parent_id = 100 and configuration_key in ($nxt_status$);
+    </select>
+</sqlMap>

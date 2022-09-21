@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!--
+    Document   : requestor.xml
+    Created on : March 8, 2012, 12:36 PM
+    Author     : 14355
+    Description:
+        Purpose of the document follows.
+-->
+<sqlMap namespace="Requestor">
+    <select id='empDetails' parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT employee_number as employeeId,CONCAT(first_name,'   ',last_name) as employeeName,cmplct.address_line1 as empLocation, emp.current_location_id As empCurrentLocation
+        FROM employees AS emp
+        LEFT JOIN company_locations AS cmplct ON(cmplct.id=emp.current_location_id)
+         WHERE emp.id=#empId#;
+    </select>
+    
+    <insert id="insertRequestDetails" parameterClass="com.defiance.ideal.application.dto.RequestorDTO" >
+        INSERT INTO quality_request(empId,reference_no,location,request_date,feedback_type,description,request_type,process_area,focus_area,justification,root_cause_analysis)
+        VALUES(#employeeId#,#referenceId#,#empCurrentLocation#,#reqDate#,#feedbackType#,#description#,#improvementRequest#,#processArea#,#focusArea#,#justification#,#rootCauseAnalysis#);
+    </insert>
+    
+    <select id="configValues" parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT configuration_key AS configKey,configuration_value As configValue,id as parentId FROM configuration_values c WHERE parent_id=#parentId#;
+    </select>
+    
+    <select id="dashBoardList" parameterClass="com.defiance.ideal.application.dto.RequestorDTO" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT qr.id AS id,qr.reference_no as referenceId,qr.qual_Id AS qualityId,emp.employee_number AS employeeId,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,qr.feedback_type as feedbackType,qr.request_date AS reqDate,qr.request_type As improvementRequest,qr.process_area as processArea,
+        qr.focus_area AS focusArea,qr.description AS description,qr.justification as justification,CONCAT(cmplct.address_line1,'',cmplct.address_line2,' , ',cty.city)  as empLocation,
+        qr.evaluation_status AS evalStatus,qr.evaluation_description AS evalDescription,qr.expected_date_of_closure AS expClosureDate,
+        qr.request_status AS reqStatus,qr.request_closure_date AS reqClosedDate,qr.qual_closed_date AS qualClosedDate,qr.remarks AS qualtyRemarks,qr.root_cause_analysis AS rootCauseAnalysis
+        FROM quality_request qr
+        LEFT JOIN employees emp ON(emp.id=qr.empId)
+        LEFT JOIN company_locations AS cmplct ON(cmplct.id=emp.current_location_id)
+        LEFT JOIN cities AS cty ON(cty.id = cmplct.city_id) WHERE 1=1
+        <dynamic>
+            <isEqual prepend="AND" property="moduleId" compareValue="569" >
+               qr.empId=#empId# ORDER BY qr.id DESC;
+            </isEqual>
+            <isEqual prepend="AND" property="moduleId" compareValue="571" >
+                <isNotNull property="selectedValue" >
+                    1=1  $selectedValue$ ORDER BY qr.id DESC; 
+                </isNotNull>
+                <isNull property="selectedValue" >
+                  1=1 ORDER BY qr.id DESC;
+                </isNull>
+            </isEqual>
+            <isEqual prepend="AND" property="moduleId" compareValue="570" >
+                <isEqual prepend="" property="list" compareValue="processed" >
+                    qr.qual_Id IS NOT NULL AND ((qr.evaluation_status='a' AND qr.request_status='c') || (qr.feedback_type IN ('c','q') ))
+                    AND qr.qual_closed_date IS NOT NULL ORDER BY qr.id DESC;
+                </isEqual>
+                <isEqual prepend="" property="list" compareValue="pending" >
+                      qr.qual_Id IS NULL OR qr.qual_Id IS NOT NULL AND qr.evaluation_status IN('a','r','d') AND qr.request_status IN('d','h','0') ORDER BY qr.id AND qr.qual_Id ASC;
+                </isEqual>
+            </isEqual>
+        </dynamic>
+    </select>
+    
+    <insert id="insertFile" parameterClass="com.defiance.ideal.application.dto.RequestorDTO" >
+        INSERT INTO file_uploads (file_name,file_type,reference_name,ref_id,module_name)
+        VALUES (#file#,#contentType#,#referenceName#,#requestId#,#moduleName#)
+    </insert>
+    
+    <select id="getRequestDetails" parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT qr.id AS id,qr.reference_no as referenceId,qr.qual_Id AS qualityId,emp.employee_number AS employeeId,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,qr.feedback_type AS feedbackType,qr.request_type AS improvementRequest,qr.request_date AS reqDate,qr.process_area AS processArea,
+        qr.focus_area AS focusArea,qr.description AS description,qr.justification AS justification,qr.location,CONCAT(cmplct.address_line1,'',cmplct.address_line2,' , ',cty.city) as empLocation,
+        qr.evaluation_status AS evalStatus,qr.evaluation_description AS evalDescription,qr.expected_date_of_closure AS expClosureDate,
+        qr.request_status AS reqStatus,qr.request_closure_date AS reqClosedDate,qr.remarks AS qualtyRemarks,qr.root_cause_analysis AS rootCauseAnalysis,qr.empId As requestorEmployeeID
+        FROM quality_request qr
+        LEFT JOIN employees emp ON(emp.id=qr.empId)
+        LEFT JOIN company_locations AS cmplct ON(cmplct.id=emp.current_location_id)
+        LEFT JOIN cities AS cty ON(cty.id = cmplct.city_id)
+        WHERE qr.reference_no=#refId#;
+    </select>
+    
+    <select id="getLastInsert" resultClass="integer">
+        SELECT MAX(id) FROM quality_request;
+    </select>
+    
+    <select id="getFileName" parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT file_name as originalFileName FROM file_uploads WHERE ref_id=#referenceId# AND module_name='QF';
+    </select>
+    
+    <select id="getEmployeeList"   resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        SELECT
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employeeName
+        FROM employees AS Employee
+        WHERE Employee.employment_status not in ('r','t','b','q') AND 
+        Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+    <update id="updateReferenceId" parameterClass="com.defiance.ideal.application.dto.RequestorDTO">
+     UPDATE quality_request SET reference_no=#referenceId# WHERE id=#refId#;
+    </update>
+     
+    <select id="getEmailAddress" parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+    SELECT emp.work_email_address AS empWorkMail,
+    CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+    rm.work_email_address AS rmWorkMail,
+    CONCAT(rm.first_name,' ',rm.last_name) AS rmName
+    FROM employees AS emp LEFT JOIN employees AS rm ON(rm.id=emp.manager) WHERE emp.id=#empId#;
+    </select>
+    
+    <update id="updateQualityData" parameterClass="com.defiance.ideal.application.dto.RequestorDTO">
+    UPDATE quality_request qr
+    SET 
+    qr.qual_Id = #qualityId#,
+    qr.evaluation_description = #evalDescription# ,
+    qr.evaluation_status =#evalStatus#,
+    qr.request_status =#reqStatus#,
+    expected_date_of_closure=#expClosureDate#,
+    request_closure_date=#reqClosedDate#,
+    qr.qual_closed_date=#qualClosedDate#,
+    qr.remarks =#qualtyRemarks#,
+    qr.root_cause_analysis =#rootCauseAnalysis#
+    WHERE qr.id=#id#
+    </update>   
+    
+    <select id="qualityAdminDetails" parameterClass="String" resultClass="com.defiance.ideal.application.dto.RequestorDTO">
+        Select emp.employee_number AS employeeId,CONCAT(emp.first_name,' ',emp.last_name) AS employeeName 
+        FROM employees emp WHERE emp.id=#empId#;
+    </select>
+
+
+</sqlMap>

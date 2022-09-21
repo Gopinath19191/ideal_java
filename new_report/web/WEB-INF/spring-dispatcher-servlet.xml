@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="index.htm">indexController</prop>
+                <prop key="timesheetreport.htm">ReportsController</prop>
+                <prop key="fetch.htm">ReportsController</prop>
+                <prop key="excelexport.htm">ReportsController</prop>
+
+                <prop key="accrualreport.htm">AccrualController</prop>
+                <prop key="accrualexport.htm">AccrualController</prop>
+                
+                
+                <prop key="associatetimesheetreport.htm">AssociateTimesheetController</prop>
+                <prop key="associateTimeSheetChart.htm">AssociateTimesheetController</prop>
+                <prop key="associatetimesheetreportexport.htm">AssociateTimesheetController</prop>
+
+                <prop key="billablereport.htm">BillableStatusController</prop>
+                <prop key="billableexport.htm">BillableStatusController</prop>
+
+
+                <prop key="benchReport.htm">BenchReportController</prop>
+                <prop key="getBenchReportXL.htm">BenchReportController</prop>
+
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="projectlist.htm">ReportsController</prop>
+                <prop key="filter.htm">ReportsController</prop>
+                <prop key="getDataXL.htm">ReportsController</prop>
+                <prop key="phasetasklist.htm">ReportsController</prop>
+                <prop key="filterPhaseTask.htm">ReportsController</prop>
+                <prop key="timesheethoursreport.htm">ReportsController</prop>
+                <prop key="getPhaseTaskDataXL.htm">ReportsController</prop>
+                <prop key="associatelist.htm">AssociateController</prop>
+                <prop key="excelexportAssociate.htm">AssociateController</prop>
+                <prop key="billablehoursreport.htm">BillableHoursController</prop>
+                <prop key="billablehoursexport.htm">BillableHoursController</prop>
+                <prop key="getsbuajax.htm">BillableHoursController</prop>
+                <prop key="getprjajax.htm">ReportsController</prop>
+                <prop key="getempajax.htm">ReportsController</prop>
+                <prop key="getEmployeeExperienceReportXL.htm">ReportsController</prop>
+                <prop key="getEmployeeExperienceReportDownload.htm">ReportsController</prop>
+                <prop key="timesheethoursexport.htm">ReportsController</prop>
+                <prop key="projectcompletion.htm">ProjectCompletionController</prop>
+                <prop key="getProjectCompletionXL.htm">ProjectCompletionController</prop>
+                <prop key="monthlyleavereport.htm">MonthlyLeaveReportController</prop>
+                <prop key="getMonthlyLeaveXL.htm">MonthlyLeaveReportController</prop>
+                <prop key="earnedleave.htm">EarnedLeaveReportController</prop>
+                <prop key="getEarnedLeaveXL.htm">EarnedLeaveReportController</prop>
+                <prop key="encashment.htm">EarnedLeaveReportController</prop>
+                <prop key="getEncashXL.htm">EarnedLeaveReportController</prop>
+                <prop key="variance.htm">VarianceReportController</prop>
+                <prop key="getEmployeeList.htm">VarianceReportController</prop>
+                <prop key="getVarianceXL.htm">VarianceReportController</prop>
+                <prop key="lop.htm">EarnedLeaveReportController</prop>
+                <prop key="getLopXL.htm">EarnedLeaveReportController</prop>
+                <prop key="ajaxsearch.htm">EarnedLeaveReportController</prop>
+                <prop key="CustagingReport.htm">CustagingReportController</prop>
+                <prop key="CollectionReport.htm">CollectionReportController</prop>
+                <prop key="invoiceAgingReport.htm">CollectionReportController</prop>
+                <prop key="invoiceAgingReportXL.htm">CollectionReportController</prop>
+                <prop key="reimbursementReport.htm">CollectionReportController</prop>
+                <prop key="reimbursementReportXL.htm">CollectionReportController</prop>
+                <prop key="updateInvoiceDates.htm">CustagingReportController</prop>
+                <prop key="CustagingReportXL.htm">CustagingReportController</prop>
+                <prop key="getCustomerList.htm">CustagingReportController</prop>
+                <prop key="getBdmList.htm">CustagingReportController</prop>
+                <prop key="CollectionReportXL.htm">CollectionReportController</prop>
+                <prop key="getSubPracticeGroup.htm">AssociateController</prop>
+                <prop key="projectReport.htm">ProjectReportController</prop>
+                <prop key="project_search.htm">ProjectReportController</prop>
+                <prop key="projectReportExport.htm">ProjectReportController</prop>
+                <prop key="travelReport_search.htm">TravelReportController</prop>
+                <prop key="travelReport.htm">TravelReportController</prop>
+                <prop key="travelReportXL.htm">TravelReportController</prop>
+                <prop key="getSubSbuList.htm">TravelReportController</prop>
+                
+                <prop key="projectFinanceReport_search.htm">ProjectFinanceReportController</prop>
+                <prop key="projectFinanceReport.htm">ProjectFinanceReportController</prop>
+                <prop key="projectFinanceReportXL.htm">ProjectFinanceReportController</prop>
+                <prop key="projectFinanceReport_customer_search.htm">ProjectFinanceReportController</prop>                
+                <prop key="getSubSbuList.htm">ProjectFinanceReportController</prop>     
+                <prop key="getSubRbuList.htm">ProjectFinanceReportController</prop>                
+                <prop key="projectFinanceReport_pm_search.htm">ProjectFinanceReportController</prop>      
+                <prop key="effortAnalysisChart.htm">ERPEffortAnalysisController</prop>
+                <prop key="showEffortAnalysisFilter.htm">ERPEffortAnalysisController</prop> 
+                <prop key="purchaseOrderReport.htm">PurchaseOrderReportController</prop>
+                <prop key="purchaseOrderReportXL.htm">PurchaseOrderReportController</prop>
+                <prop key="rolloutlist.htm">RollOutController</prop>
+                <prop key="getrolloutSubSbuList.htm">RollOutController</prop>
+                <prop key="exportRollout.htm">RollOutController</prop>
+                <prop key="exitReport.htm">ExitReportController</prop>
+                <prop key="exportExitReport.htm">ExitReportController</prop>
+                <prop key="getBirthdayAnniversary.htm">BirthdayAnniversary</prop>
+                <prop key="excelexportBirthday_Anniversary.htm">BirthdayAnniversary</prop>
+                <prop key="annualAppraisalReport.htm">annualAppraisalReport</prop>
+                <prop key="annualAppraisalExport.htm">annualAppraisalReport</prop>
+                <prop key="ajaxGetManager.htm">annualAppraisalReport</prop>
+                <prop key="ajaxGetReviewer.htm">annualAppraisalReport</prop>
+                <prop key="ajaxGetNormalizer.htm">annualAppraisalReport</prop>
+                <prop key="subordinateLeaveSummeryReport.htm">SubordinateLeaveSummery</prop>
+                <prop key="subordinateLeaveSummeryExport.htm">SubordinateLeaveSummery</prop>
+                <prop key="employeesearch.htm">SubordinateLeaveSummery</prop>
+                <prop key="billingInvoiceReport.htm">BillingInvoiceReport</prop>
+                <prop key="billingInvoiceReportExport.htm">BillingInvoiceReport</prop>
+                <prop key="baEmpAjaxsearch.htm">BillingInvoiceReport</prop>
+                <prop key="projectAjaxsearch.htm">BillingInvoiceReport</prop>
+                <prop key="customerAjaxsearch.htm">BillingInvoiceReport</prop>
+
+                <prop key="addressReport.htm">AddressController</prop>
+                <prop key="addressajaxsearch.htm">AddressController</prop>
+                <prop key="getAddressXL.htm">AddressController</prop>
+
+                <prop key="teamAllocationReport.htm">TeamAllocationReportController</prop>
+                <prop key="exportTeamAllocationReport.htm">TeamAllocationReportController</prop>
+                <prop key="getteamallocationSubSbuList.htm">TeamAllocationReportController</prop>
+                <prop key="loadProjectList.htm">TeamAllocationReportController</prop>
+                
+                <prop key="pmApproval.htm">ApprovalController</prop>
+                <prop key="filterData.htm">ApprovalController</prop>
+                <prop key="filterDataExport.htm">ApprovalController</prop>
+                <prop key="employeeTimesheetReport.htm">RMNonComplianceController</prop>
+                <prop key="delinquencyReportList.htm">RMNonComplianceController</prop>
+                <prop key="exEmployeeList.htm">EmployeeBasicReportController</prop>
+                <prop key="EmployeeExcelexport.htm">EmployeeBasicReportController</prop>
+                
+                <prop key="effortsLeakage.htm">EffortsLeakageController</prop>
+                <prop key="effortsLeakageSearch.htm">EffortsLeakageController</prop>
+                <prop key="effortsLeakageDownload.htm">EffortsLeakageController</prop>
+                <prop key="projectUnbilledReport.htm">EffortsLeakageController</prop>
+                <prop key="projectLeakageSearch.htm">EffortsLeakageController</prop>
+                <prop key="projectLeakageDownload.htm">EffortsLeakageController</prop>
+                <prop key="effortsLeakageMonthly.htm">EffortsLeakageController</prop>
+                <prop key="effortsLeakageMonthlySearch.htm">EffortsLeakageController</prop>
+                <prop key="effortsLeakageMonthlyDownload.htm">EffortsLeakageController</prop>
+                <prop key="getSUbUnit.htm">EffortsLeakageController</prop>
+                
+                <prop key="vendorContractExport.htm">vendorContractTimesheetReportController</prop>
+                <prop key="vendorContractTimesheetDetails.htm">vendorContractTimesheetReportController</prop>
+                <prop key="searchEmployee.htm">vendorContractTimesheetReportController</prop>
+                <prop key="exportAllTimesheet.htm">vendorContractTimesheetReportController</prop>
+                <prop key="vendorConsolidateExport.htm">vendorContractTimesheetReportController</prop>
+                <prop key="exportConsolidateTimesheet.htm">vendorContractTimesheetReportController</prop>
+                
+                <prop key="exportEmployeeReport.htm">UnBillableHoursController</prop>
+                <prop key="exportMonthReport.htm">UnBillableHoursController</prop>
+                <prop key="projectsUnbilledReport.htm">UnBillableHoursController</prop>
+                <prop key="monthlyBillReport.htm">UnBillableHoursController</prop>
+                <prop key="exportdataunBilledReport.htm">UnBillableHoursController</prop>
+                <prop key="singleMonthReport.htm">UnBillableHoursController</prop>                
+                <prop key="employeeReport.htm">UnBillableHoursController</prop>                
+                <prop key="monthlyLeaveReport.htm">LeaveReportController</prop>
+                <prop key="getSubPractice.htm">LeaveReportController</prop>
+                <prop key="exportLeaveReport.htm">LeaveReportController</prop>
+                <prop key="getPersonalDetails.htm">getPersonalDetails</prop>
+                <prop key="getPersonalGroup.htm">getPersonalDetails</prop>
+                <prop key="hrFilter.htm">getPersonalDetails</prop>
+                <prop key="getPersonalDataXL.htm">getPersonalDetails</prop>
+                <prop key="getSkillDomainDetails.htm">getSkillsDomains</prop> 
+                <prop key="SkillDomainFilter.htm">getSkillsDomains</prop>
+                <prop key="getSkillDomainGroup.htm">getSkillsDomains</prop>
+                <prop key="getSkillDomainDataXL.htm">getSkillsDomains</prop>
+                <prop key="franceLeaveReport.htm">FranceLeaveReportController</prop>  
+                <prop key="ajaxsearchFranceEmp.htm">FranceLeaveReportController</prop>  
+                <prop key="getfranceLeaveReportXL.htm">FranceLeaveReportController</prop>  
+                <prop key="timesheetAttendanceReport.htm">TimesheetAttendanceReportController</prop>
+                <prop key="gettimesheetAttendanceReportXL.htm">TimesheetAttendanceReportController</prop>  
+                <prop key="getTimesheetlekageCustomerList.htm">PrTimesheetLekageReportController</prop>               
+                <prop key="getTimesheetlekageProjectList.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getTimesheetLekageReportXL.htm">PrTimesheetLekageReportController</prop>                 
+                <prop key="timesheetLekageReportDownload.htm">PrTimesheetLekageReportController</prop>
+                
+                <prop key="getUtilizationReport.htm">PrTimesheetLekageReportController</prop>               
+                <prop key="utilizationReportSearch.htm">PrTimesheetLekageReportController</prop>
+                <prop key="utilizationReportDownload.htm">PrTimesheetLekageReportController</prop>                 
+                <prop key="getOJSSurveyReport.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getOJFSurveryReportDownload.htm">PrTimesheetLekageReportController</prop>               
+                <prop key="getInvoiceAnnexureCustomerList.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getInvoiceAnnexureProjectList.htm">PrTimesheetLekageReportController</prop>                 
+                <prop key="getInvoiceAnnexureReportXL.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getInvoiceAnnexureReportDownload.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getWorkLocationReportXL.htm">PrTimesheetLekageReportController</prop>                 
+                <prop key="workLocationReportDownload.htm">PrTimesheetLekageReportController</prop>
+                <prop key="getPrLastBilledReportXL.htm">PrTimesheetLekageReportController</prop>
+                <prop key="prLastBilledReportDownload.htm">PrTimesheetLekageReportController</prop>
+                
+            </props>
+        </property>
+    </bean>
+
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+<bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="index" />
+
+    <bean name="ReportsController" class="com.defiance.ideal.reports.controller.ReportsController" />
+    <bean name="BillableStatusController" class="com.defiance.ideal.reports.controller.BillableStatusController" />
+    <bean name="AccrualController" class="com.defiance.ideal.reports.controller.AccrualController" />
+    <bean name="AssociateTimesheetController" class="com.defiance.ideal.reports.controller.AssociateTimesheetController" />
+    <bean name="AuthenticationController" class="com.defiance.ideal.reports.controller.AuthenticationController" />
+    <bean name="AssociateController" class="com.defiance.ideal.reports.controller.AssociateController" />
+    <bean name="BillableHoursController" class="com.defiance.ideal.reports.controller.BillableHoursController" />
+    <bean name="ProjectCompletionController" class="com.defiance.ideal.reports.controller.ProjectCompletionController" />
+    <bean name="MonthlyLeaveReportController" class="com.defiance.ideal.reports.controller.MonthlyLeaveReportController" />
+    <bean name="EarnedLeaveReportController" class="com.defiance.ideal.reports.controller.EarnedLeaveReportController" />
+    <bean name="VarianceReportController" class="com.defiance.ideal.reports.controller.VarianceController" />
+    
+    <bean name="BenchReportController" class="com.defiance.ideal.reports.controller.BenchReportController" />
+    <bean name="CustagingReportController" class="com.defiance.ideal.reports.controller.CustagingReportController" />
+    <bean name="CollectionReportController" class="com.defiance.ideal.reports.controller.CollectionReportController" />
+    <bean name="ProjectReportController" class="com.defiance.ideal.reports.controller.ProjectReportController" />
+    <bean name="TravelReportController" class="com.defiance.ideal.reports.controller.TravelReportController" />
+    <bean name="ProjectFinanceReportController" class="com.defiance.ideal.reports.controller.ProjectFinanceReportController" />
+    <bean name="ERPEffortAnalysisController" class="com.defiance.ideal.reports.controller.ERPEffortAnalysisController" /> 
+    <bean name="PurchaseOrderReportController" class="com.defiance.ideal.reports.controller.PurchaseOrderReportController" />
+    <bean name="RollOutController" class="com.defiance.ideal.reports.controller.RolloutController" />
+    <bean name="ExitReportController" class="com.defiance.ideal.reports.controller.ExitReportController" />
+    <bean name="BirthdayAnniversary" class="com.defiance.ideal.reports.controller.Birthday_AnniversaryController" />
+    <bean name="annualAppraisalReport" class="com.defiance.ideal.reports.controller.AnnualAppraisalReportController" />
+    <bean name="SubordinateLeaveSummery" class="com.defiance.ideal.reports.controller.SubordinateLeaveSummeryController" />
+    <bean name="BillingInvoiceReport" class="com.defiance.ideal.reports.controller.BillingInvoiceReportController" />
+    <bean name="AddressController" class="com.defiance.ideal.reports.controller.AddressController" />
+    <bean name="TeamAllocationReportController" class="com.defiance.ideal.reports.controller.TeamAllocationReportController" />
+    <bean name="ApprovalController" class="com.defiance.ideal.reports.controller.ApprovalController" />
+    <bean name="RMNonComplianceController" class="com.defiance.ideal.reports.controller.RMNonComplianceController" />
+    <bean name="EmployeeBasicReportController" class="com.defiance.ideal.reports.controller.EmployeeBasicReportController"/>
+    <bean name="EffortsLeakageController" class="com.defiance.ideal.reports.controller.EffortsLeakageController"/>
+    <bean name="vendorContractTimesheetReportController" class="com.defiance.ideal.reports.controller.vendorContractTimesheetReportController"/>
+    <bean name="UnBillableHoursController" class="com.defiance.ideal.reports.controller.UnBillabelHoursController"/> 
+    <bean name="LeaveReportController" class="com.defiance.ideal.reports.controller.LeaveReportController"/> 
+    <bean name="getPersonalDetails" class="com.defiance.ideal.reports.controller.HrPersonalController"/> 
+    <bean name="getSkillsDomains" class="com.defiance.ideal.reports.controller.SkillsDomainsController"/>
+    <bean name="FranceLeaveReportController" class="com.defiance.ideal.reports.controller.FranceLeaveReportController" /> 
+    <bean name="TimesheetAttendanceReportController" class="com.defiance.ideal.reports.controller.TimesheetAttendanceReportController" /> 
+    <bean name="PrTimesheetLekageReportController" class="com.defiance.ideal.reports.controller.PrTimesheetLekageReportController" /> 
+</beans>

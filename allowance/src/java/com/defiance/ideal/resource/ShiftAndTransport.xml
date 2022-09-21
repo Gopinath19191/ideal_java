@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ShiftAndTransport">
+    <select id="getCustomerList" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.ShiftAndTransportDto" >
+        select cus.id AS cus_id,CONCAT(cus.customer_code,'-',cus.customer_name) AS customer_name from customers cus        
+        LEFT JOIN projects p ON (cus.id=p.customer_id)
+        LEFT JOIN Project_team_allocations as pta on(pta.project_id=p.id)
+        LEFT JOIN employees as emp on (emp.id=pta.employee_id)
+        where cus.status='a' and cus.customer_code!= 'NULL' AND p.status IN('a') AND p.project_model='wpo' AND p.project_status NOT IN('d') 
+        AND (p.planned_start_date<![CDATA[ <= ]]>#endDate# AND p.planned_end_date<![CDATA[ >= ]]>#startDate#)
+        AND (pta.start_date <![CDATA[ <= ]]> #endDate# and pta.end_date <![CDATA[ >= ]]> #startDate#)
+        AND emp.employment_status in ('p')
+        <dynamic>
+            <isNotEmpty property="created_by" prepend="AND">
+                p.project_manager=#created_by#
+            </isNotEmpty>
+        </dynamic>
+        group by cus.id order by customer_name 
+    </select>
+    <select id="getProjectList" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        SELECT project.id AS project_id,CONCAT(Project.project_code,'-' ,Project.project_name) AS project_name
+        FROM projects AS Project    
+        LEFT JOIN customers AS cus ON (Project.customer_id=cus.id)
+        LEFT JOIN Project_team_allocations as pta on(pta.project_id=Project.id)
+        LEFT JOIN employees as emp on (emp.id=pta.employee_id)
+        WHERE Project.status IN('a') AND Project.project_model='wpo' AND Project.project_status NOT IN('d')
+        AND (Project.planned_start_date<![CDATA[ <= ]]>#endDate# AND Project.planned_end_date<![CDATA[ >= ]]>#startDate#)
+        AND (pta.start_date <![CDATA[ <= ]]> #endDate# and pta.end_date <![CDATA[ >= ]]> #startDate#)
+        AND emp.employment_status in ('p')
+        <dynamic>
+            <isNotEmpty property="cus_id" prepend="AND">
+                Project.customer_id=#cus_id# 
+            </isNotEmpty>
+            <isNotEmpty property="created_by" prepend="AND">
+                Project.project_manager=#created_by#
+            </isNotEmpty>
+        </dynamic>
+        group by pta.project_id
+    </select>
+    <select  id="getEmployeeDetails" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        select DISTINCT emp.id AS id,
+        pta.id AS team_allo_id,
+        emp.employee_number AS emp_id,
+        CONCAT(emp.first_name,'-',emp.last_name) AS emp_name,
+        p.id AS project_id, CONCAT(p.project_code,'-' ,p.project_name) AS project_name, 
+        p.project_code AS prj_code,
+        p.project_name AS prj_name,
+        CONCAT(cus.customer_code,'-',cus.customer_name) As customer_name,
+        cus.customer_code AS cus_code,
+        cus.customer_name AS cus_name,
+        cus.id AS cus_id,
+        emp.joined_date AS DOJ,
+        cs.name AS SBU_Name,
+        cities.city  AS city,
+        p.planned_start_date AS projectStartDate,
+        CASE 
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '1' THEN 'Jan'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '2' THEN 'Feb'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '3' THEN 'Mar'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '4' THEN 'Apr'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '5' THEN 'May'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '6' THEN 'Jun'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '7' THEN 'Jul'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '8' THEN 'Aug'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '9' THEN 'Sep'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '10' THEN 'Oct'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '11' THEN 'Nov'
+        WHEN MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) = '12' THEN 'Dec'
+        END AS monthInText,
+        MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) AS month,
+        YEAR(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) AS year,
+        pta.start_date AS start_date,pta.end_date AS end_date,
+        SUM(weekdaydiff(if(pta.start_date <![CDATA[ <= ]]> #startDate#,#startDate#,pta.start_date),if(pta.end_date <![CDATA[ >= ]]> #endDate#,#endDate#,pta.end_date),
+        #startYear#,#startMonth#,emp.id)) AS allocation_days,
+        weekdaydiff(#startDate#,#endDate#,#startYear#,#startMonth#,emp.id) AS working_days,
+        am.employee_id AS emp_id, 
+        am.project_id AS project_id, 
+        am.month AS month, 
+        am.year AS year, 
+        am.location AS location, 
+        FLOOR(am.general) AS general, 
+        FLOOR(am.shift1) AS shift1_days, 
+        FLOOR(am.shift2) AS shift2_days,	
+        FLOOR(am.shift3) AS shift3_days, 
+        am.way AS way, 
+        am.shift_allowance AS shift_amount, 
+        am.hardship_allowance AS hardship_amount,	
+        am.hs_allowance AS hs_amount ,
+        am.transport_allowance AS transport_amount,
+        am.total_amount AS total_amount,
+        am.remarks AS remarks,
+        am.status AS status
+        from project_team_allocations pta
+        LEFT JOIN projects p  ON (pta.project_id = p.id)
+        LEFT JOIN employees emp ON (emp.id = pta.employee_id)
+        LEFT JOIN customers cus ON (p.customer_id = cus.id)
+        LEFT JOIN company_locations cl ON (emp.company_location_id = cl.id)
+        LEFT JOIN cities cities ON (cl.city_id = cities.id)
+        LEFT JOIN company_structures cs ON(emp.structure_name_subgroup = cs.id)
+        LEFT JOIN allowance_maintanence am ON(pta.id=am.allocation_id AND am.month = #month# AND am.year = #year#)    
+        where 1=1 AND pta.deleted=0 AND emp.employment_status IN ('p') AND
+            (pta.start_date<![CDATA[ <= ]]>#endDate# AND pta.end_date<![CDATA[ >= ]]> #startDate#)
+        <dynamic>
+            <isNotNull property="project_id" prepend="AND">
+                pta.project_id=#project_id#
+            </isNotNull>
+            <isNotNull property="cus_id" prepend="AND">
+                p.customer_id = #cus_id#
+            </isNotNull>
+            <isNotEmpty property="created_by" prepend="AND">
+                p.project_manager=#created_by#
+            </isNotEmpty>
+            <isNotNull property="SBU_Id" prepend="AND">
+                emp.structure_name=#SBU_Id#
+            </isNotNull>
+            <isNotNull property="SBU_SUB_Id" prepend="AND">
+                emp.structure_name_subgroup=#SBU_SUB_Id#
+            </isNotNull>
+            <isNotNull property="status" prepend="AND">
+                am.status=#status#
+            </isNotNull>
+        </dynamic>
+        group by emp.id
+        order by am.status, emp.employee_number
+    </select>
+    <select  id="getShiftDetails"  resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        SELECT type_of_allowance AS type, shift_timings AS shifts, eligible_amount AS amount
+        FROM allowance_master
+    </select>
+    <insert id="insertDetails" parameterClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        insert into allowance_maintanence (employee_id,customer_id,project_id,allocation_id,month,year,location,general,shift1,shift2,shift3,way,shift_allowance,hardship_allowance,hs_allowance,transport_allowance,total_amount,remarks,created_by,created_date,modified_date,status)
+        values(#emp_id#,#customer#,#project#,#team_allo_id#,#month#,#year#,#location#,#general#,#shift1_days#,#shift2_days#,#shift3_days#,#way#,#shift_amount#,#hardship_amount#,#hs_amount#,#transport_amount#,#total_amount#,#remarks#,#created_by#,#created_date#,#modified_date#,#status#)
+    </insert>
+    <update id="updateDetails" parameterClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        UPDATE allowance_maintanence SET 
+        location=#location#,general=#general#,shift1=#shift1_days#,shift2=#shift2_days#,shift3=#shift3_days#,way=#way#,shift_allowance=#shift_amount#,hardship_allowance=#hardship_amount#,hs_allowance=#hs_amount#,transport_allowance=#transport_amount#,total_amount=#total_amount#,remarks=#remarks#,created_by=#created_by#,modified_date=#modified_date#,status=#status#
+        where employee_id=#emp_id# AND allocation_id=#team_allo_id#;
+    </update>
+    <select id="submittedCount" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        select count(id) AS submittedCount from allowance_maintanence where status='1' AND project_id=#project_id# AND year=#year# AND month=#month#
+    </select>
+    <select id="detailsCount" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        select count(*) AS detailsCount from(
+        select pta.id AS team_allo_id,
+        cus.customer_code AS cus_code,
+        cus.customer_name AS cus_name,
+        cus.id AS cus_id,
+        MONTH(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) AS month,
+        YEAR(if(pta.start_date <![CDATA[ > ]]> #startDate#,pta.start_date,#startDate#)) AS year,
+        pta.start_date AS start_date,pta.end_date AS end_date,
+        weekdaydiff(if(pta.start_date <![CDATA[ <= ]]> #startDate#,#startDate#,pta.start_date),if(pta.end_date <![CDATA[ >= ]]> #endDate#,#endDate#,pta.end_date),
+        #startYear#,#startMonth#,emp.id) AS allocation_days,
+        am.employee_id AS emp_id, 
+        am.project_id AS project_id, 
+        am.location AS location, 
+        FLOOR(am.general) AS general, 
+        FLOOR(am.shift1) AS shift1_days, 
+        FLOOR(am.shift2) AS shift2_days,	
+        FLOOR(am.shift3) AS shift3_days, 
+        am.way AS way, 
+        am.shift_allowance AS shift_amount, 
+        am.hardship_allowance AS hardship_amount,	
+        am.hs_allowance AS hs_amount ,
+        am.transport_allowance AS transport_amount,
+        am.total_amount AS total_amount,
+        am.remarks AS remarks,
+        am.status AS status
+        from project_team_allocations pta
+        LEFT JOIN projects p  on(pta.project_id=p.id)
+        LEFT JOIN employees emp on(emp.id=pta.employee_id)
+        LEFT JOIN customers cus on(p.customer_id=cus.id)
+        LEFT JOIN allowance_maintanence am ON(pta.id=am.allocation_id AND am.month=#month# AND am.year=#year#)    
+        where 1=1 AND pta.deleted=0 AND emp.employment_status IN ('p') AND
+            (pta.start_date<![CDATA[ <= ]]>#endDate# AND pta.end_date<![CDATA[ >= ]]>#startDate#)
+        <dynamic>
+            <isNotNull property="project_id" prepend="AND">
+                pta.project_id=#project_id#
+            </isNotNull>
+            <isNotNull property="status" prepend="AND">
+                am.status=#status#
+            </isNotNull>
+        </dynamic>
+        ) AS TEMP
+    </select>
+    <select id="getSBU_List" resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        select id AS SBU_Id, name AS SBU_Name from company_structures where  parent_id=1
+    </select>
+    <select id="getSBU_SUB_List" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.ShiftAndTransportDto">
+        select id AS SBU_SUB_Id, name AS SBU_SUB_Name from company_structures 
+        where  1=1
+        <dynamic>
+            <isNotNull property="SBU_Id" prepend="AND">
+                parent_id=#SBU_Id#
+            </isNotNull>
+        </dynamic>
+    </select>
+</sqlMap>

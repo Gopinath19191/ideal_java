@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Agencymap">
+
+    <select id="fetchAgencyList" parameterClass="com.defiance.ideal.application.dto.AgencyDTO" resultClass="com.defiance.ideal.application.dto.AgencyDTO">
+        SELECT a.id AS agencyId, 
+        a.agency_name AS agencyName, 
+        a.agency_code AS agencyCode, 
+        a.agency_category AS agencyCategory, 
+        a.agency_url AS agencyUrl, 
+        a.status AS status 
+        FROM agencies AS a 
+<!--        WHERE a.deleted =0 AND a.creator_id =#creatorId# ORDER BY a.id DESC;-->
+        WHERE a.deleted =0 ORDER BY a.id DESC;
+    </select>
+    
+    <select id="getAgencyDetails" parameterClass="com.defiance.ideal.application.dto.AgencyDTO" resultClass="com.defiance.ideal.application.dto.AgencyDTO">
+        SELECT a.id AS agencyId, 
+        a.agency_name AS agencyName, 
+        a.agency_code AS agencyCode, 
+        a.about_agency AS abtAgency,
+        a.agency_contact_phone AS agencyContactPhone,
+        a.agency_address AS agencyAddress,
+        a.agency_email AS agencyEmail,
+        a.agency_contact_person AS agencyContactPerson, 
+        a.agency_category AS agencyCategory, 
+        a.agency_url AS agencyUrl, 
+        a.creator_id AS creatorId,
+        a.status AS status 
+        FROM agencies AS a 
+        WHERE a.deleted =0 AND a.id =#agencyId#;
+    </select>
+    
+    <update id="updateAgency" parameterClass="com.defiance.ideal.application.dto.AgencyDTO">
+        UPDATE agencies SET agency_name=#agencyName#,
+        about_agency=#abtAgency#,
+        agency_contact_phone=#agencyContactPhone#,
+        agency_address=#agencyAddress#,
+        agency_email=#agencyEmail#,
+        agency_contact_person=#agencyContactPerson#,
+        agency_category=#agencyCategory#,
+        agency_url=#agencyUrl#
+        WHERE deleted =0 AND id =#agencyId#;
+    </update>
+
+</sqlMap>

@@ -1,0 +1,85 @@
+.tableStructure {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CADFF2;
+    clear: both;
+    color: #666666;
+    border-collapse: collapse;
+    margin: 20px 20px 20px 20px;
+}
+
+.tableStructure tr th {
+    background: url(../images/table-header-strip.jpg) repeat-x scroll top center #EFF4FB;
+    border: 1px solid #CEDFF1;
+    font-weight: bolder;
+    font-size: 11px;
+    padding: 5px 10px;
+}
+
+.tableStructure tr td {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CEDFF1;
+    padding: 5px;
+    font-size: 11px;
+}
+
+.tableStructure tr.altrow td {
+    background: none repeat scroll 0 0 #EFF4FA;
+}
+
+.tableStructure tr.evenrow td {
+    display: none;
+}
+
+.tableStructure tr.selectedEditRow td {
+    background: none repeat scroll 0 0 #FFFFCC;
+}
+
+.tableStructure .inputbox {
+    height:20px;
+    border:1px solid #c4d1e0;
+    background:#FFF url("images/text-bg.gif") repeat-x top;
+    font-family: arial;
+    font-size: 12px;
+    width: 95%;
+}
+
+.tableStructure .inputbox_small {
+    height:20px;
+    border:1px solid #c4d1e0;
+    background:#FFF url("images/text-bg.gif") repeat-x top;
+    font-family: arial;
+    font-size: 12px;
+}
+
+.tableStructure .filebox {
+    height:25px;
+    border:1px solid #c4d1e0;
+    background:#FFF url("images/text-bg.gif") repeat-x top;
+    font-family: arial;
+    font-size: 12px;
+}
+
+.tableStructureView {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 0px solid #CADFF2;
+    clear: both;
+    color: #666666;
+    border-collapse: collapse;
+}
+
+.tableStructureView tr td {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #CEDFF1;
+    font-size: 11px;
+    border-collapse: collapse;
+}
+
+.error {
+    color:red;
+}
+
+#formContent .conveyance_details td{
+    word-break: break-all;
+    max-width: 150px;
+    padding-right: 7px;
+}

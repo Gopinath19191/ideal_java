@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TicMasterMap" >
+    <select id="getTikmaster" resultClass = "com.ideal.master.ticket.dto.FeedbackMasterDto">
+        select id,parent_id,configuration_value from feedback_issues_status where parent_id='0';
+    </select>
+    
+    <insert id="insertissue" parameterClass="com.ideal.master.ticket.dto.FeedbackMasterDto" >
+        insert into feedback_issues_status(
+		parent_id,
+		configuration_value)
+		values(
+		#parent_id#,
+		#configuration_value#);
+		
+		 <selectKey resultClass="String" keyProperty="id">
+            select last_insert_id() as id
+        </selectKey>;
+		
+    </insert>
+    <insert id="insertStatus" parameterClass="com.ideal.master.ticket.dto.FeedbackMasterDto" >
+        insert into feedback_issues_status(
+		parent_id,
+		configuration_value)
+		values(
+		#parent_id#,
+		#configuration_value#);
+    </insert>
+    <select id="getSingleIssue" parameterClass = "java.lang.String" resultClass="com.ideal.master.ticket.dto.FeedbackMasterDto">
+        SELECT id,parent_id ,configuration_value  FROM feedback_issues_status WHERE id=#id#
+    </select>
+     <select id="getStatusList" parameterClass = "java.lang.String" resultClass="com.ideal.master.ticket.dto.FeedbackMasterDto">
+        SELECT id,parent_id,configuration_value  FROM feedback_issues_status WHERE parent_id=#parent_id#
+    </select>
+    
+    <delete id = "deleteIssue" parameterClass = "java.lang.String">
+        DELETE FROM feedback_issues_status WHERE id = #id#
+    </delete>
+    <delete id = "deleteStatus" parameterClass = "java.lang.String">
+        DELETE FROM feedback_issues_status WHERE parent_id = #id#        
+    </delete>
+    <update id = "updateStatus" parameterClass="com.ideal.master.ticket.dto.FeedbackMasterDto">
+        update feedback_issues_status
+        set configuration_value=#configuration_value#
+        where
+        id=#id#;
+        
+    </update>
+    <update id = "updateIssue" parameterClass="com.ideal.master.ticket.dto.FeedbackMasterDto">
+        update feedback_issues_status
+		set configuration_value=#configuration_value#
+		where
+		id=#id#;
+    </update>
+    
+</sqlMap>

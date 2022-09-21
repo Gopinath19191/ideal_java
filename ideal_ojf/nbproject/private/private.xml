@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jdbc.properties</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/joineraddsteptwo.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/javascript/steptwo.js</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/joineraddstepthree.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/javascript/stepthree.js</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/controller/UserController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/joiningForm/dao/JoinerFormImpl.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/resources/Login.xml</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/joiningForm/dto/JoinerFormDTO.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/joineraddstepone.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/controller/SendMailTLS.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/shared/SendMail.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/shared/CommonConfigurations.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/empDetailsPageOne.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/joiningReport.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/empDetailsPageTwo.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/empDetailsPageThree.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/empDetailsPageFour.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/groupMedical.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/lifeInsurance.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/paymentOfGratuityOne.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/paymentOfGratuityTwo.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/payrollDetails.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/printHeader.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/empIdCard.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/defianceWorkDetails.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/personalUndertaking.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/jflist.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/joineraddstepfour.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/shared/CommonFunctions.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/shared/MailMessages.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/log4j.properties</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/web/WEB-INF/jsp/allInOnePage.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/ideal_ojf/src/java/com/defiance/ideal/ojf/controller/VendorController.java</file>
+    </open-files>
+</project-private>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="EmployeeCompetency">
+    <select id="getEmployeeDetails" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto" >
+        SELECT CONCAT(emp.employee_number,' ',emp.first_name, ' ',emp.last_name) AS employee_name,
+        CONCAT(rm.employee_number,' ',rm.first_name, ' ',rm.last_name) AS reporting_manger,
+        band.name as band, des.designation as designation,cs.name as sbu,css.name as sub_sbu,
+        cs.parent_id as sbu_id,csss.name as sub_sub_sbu,
+        cv.configuration_value as category
+        FROM employees AS emp 
+        inner join employees as rm  on emp.manager=rm.id
+        inner join bands as band on band.id=emp.band_id
+        inner join designations as des on des.id=emp.designation_id
+        inner join company_structures as cs on cs.id=emp.structure_name 
+        inner join company_structures as css on css.id=emp.structure_name_subgroup
+        left join company_structures as csss on csss.id=emp.structure_name_subpractice
+        inner join configuration_values as cv on cv.configuration_key=emp.billable and cv.parent_id="52"
+        where emp.id=#employee_id#    LIMIT 1;
+    </select>
+    
+    <select id="getUnitList" parameterClass="java.lang.Integer" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select id as unit_id,name as unit_name from employee_competency_company_structures
+        where parent_id=#parent_id#;
+    </select>
+    <select id="getCompetencyList" parameterClass="java.lang.Integer" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select csm.id as competency_id, cm.competency_name as competency_name from competency_structure_mapping as csm inner join
+        competency_master cm on cm.id=csm.competency_master_id
+        where csm.sub_sbu_id=#sub_sbu_id# and cm.deleted=0 GROUP BY cm.id;
+    </select>
+    <select id="getSkillList" parameterClass="java.lang.Integer" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select csm.id as skill_id, skill_name as skill_name from competency_structure_mapping as cstm inner join
+        competency_skill_mapping as csm on cstm.id=csm.competency_structure_mapping_id inner join
+        skill_master as sm on sm.id=csm.skill_master_id
+        where cstm.id=#competency_id# and sm.deleted=0;
+    </select>
+    
+    <insert id="insertCompetency" parameterClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        insert into employee_competency_master (employee_id,status,created_on,created_by) values(#employee_id#,#status#,NOW(),#employee_id#);
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    
+    <select id="getProficiencyList" parameterClass="java.lang.Integer" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select pn.id as proficiency_name_id ,sp.experience as experience_month
+        from competency_skill_mapping as csm
+        inner join proficiency_masters as pm on pm.id=csm.proficiency_masters_id
+        inner join skill_proficiency as sp on sp.proficiency_master_id=pm.id
+        inner join proficiency_names as pn on sp.proficiency_name_id=pn.id
+        where csm.id=#skill_id#
+        order by sp.experience
+    </select>
+    
+    <insert id="insertSkill" parameterClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        insert into employee_skill_set(employee_competency_master_id,competency_skill_mapping_id,experience_month,employee_proficiency)
+        values(#employee_competency_master_id#,#skill_id#,#experience_month#,#employee_proficiency#)
+    </insert>
+    
+    <select id="getEmployeeCompetencyMappingDetail" parameterClass="String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        
+        SELECT ecm.status AS STATUS, ecm.id AS employee_com_master_id, ess.id AS employee_skill_set_id, sm.skill_name AS skill_name, pn.proficiency_name AS proficiency_name,rpn.proficiency_name AS manager_proficiency, ess.experience_month AS experience_month, cm.competency_name AS competency_name, eccs.name AS sub_sbu_name
+        FROM employee_competency_master AS ecm 
+        INNER JOIN employee_skill_set AS ess ON (ecm.id=ess.employee_competency_master_id)
+        INNER JOIN competency_skill_mapping AS csm ON (csm.id=ess.competency_skill_mapping_id)
+        INNER JOIN competency_structure_mapping AS cstm ON(cstm.id=csm.competency_structure_mapping_id)
+        INNER JOIN skill_master AS sm ON(sm.id=csm.skill_master_id)
+        INNER JOIN proficiency_names AS pn ON  (pn.id=ess.employee_proficiency)
+        LEFT JOIN proficiency_names AS rpn ON  (rpn.id=ess.manager_proficiency)
+        INNER JOIN competency_master AS cm ON (cm.id=cstm.competency_master_id)
+        INNER JOIN employee_competency_company_structures AS eccs ON(eccs.id=cstm.sub_sbu_id)
+        WHERE ecm.employee_id=#employee_id#
+        ORDER BY cm.id DESC;
+        
+    </select>
+    
+    <select id="getEmployeeProficiencyList" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select id as proficiency_name_id,proficiency_name as proficiency_name from proficiency_names where deleted=0;
+    </select>
+    <select id="getEmployeeCompetencyList" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select id as proficiency_name_id,proficiency_name as proficiency_name from proficiency_names where deleted=0;
+    </select>
+    <update id="updateCompetencySkill" parameterClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        update employee_skill_set set manager_proficiency=#proficiency_name_id# 
+        where id=#employee_skill_set_id#
+    </update>
+    <update id="updateStatus" parameterClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        update employee_competency_master set status=#status#,approved_by=#employee_id#,approved_on=Now() 
+        where id=#employee_competency_master_id#
+    </update>
+    <select id="getReporteeSkill" parameterClass="String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select  CONCAT(emp.employee_number,' ',emp.first_name, ' ',emp.last_name) AS employee_name,
+        ecm.status as status,date_format(ecm.created_on,'%d-%m-%Y') as submitted_on,ecm.employee_id as employee_id
+        from employees as emp inner join employee_competency_master as ecm
+        on(ecm.employee_id=emp.id) where emp.manager=#employee_id#
+    </select>
+    <select id="getEmployeeExperience" parameterClass="String" resultClass="String">
+        select MIN(start_date) as start_date from dtl_employee_workexperience where employee_id=#employee_id#
+    </select>
+    <select id="getEmployeeExperienceAll" parameterClass="String" resultClass="String">
+        SELECT dew.end_date as end_date FROM employees AS emp LEFT JOIN dtl_employee_workexperience dew ON emp.id=dew.employee_id WHERE dew.employee_id=#employee_id# AND 
+        dew.start_date=(SELECT MAX(start_date) FROM  dtl_employee_workexperience 
+        WHERE employee_id=#employee_id#);
+    </select>
+    <select id="getEmployeeJoinedDate" parameterClass="String" resultClass="String">
+        SELECT emp.joined_date as joined_date FROM employees AS emp where emp.id=#employee_id#
+    </select>
+    <select id="getJobList" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        SELECT jm.id as job_id,jm.job_code as job_code,jm.job_name as job_name,CONCAT(emp.employee_number,' ',emp.first_name, ' ',emp.last_name) AS posted_by
+        ,date_format(jm.created_on,'%d-%m-%Y') as posted_on,eccs.name as unit_name
+        FROM jobs_master as jm inner join employee_competency_company_structures eccs
+        on eccs.id=jm.sbu_id
+        INNER JOIN employees AS emp ON emp.id=jm.created_by
+        where jm.status='o' and jm.deleted=0;
+    </select>
+    <select id="getEmployeeMappingDetail" parameterClass="String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        SELECT cstm.competency_master_id as competency_id,csm.skill_master_id as skill_id,rpn.proficiency_name AS manager_proficiency, ess.experience_month AS experience_month,rpn.proficiency_order as proficiency_order
+        FROM employee_competency_master AS ecm 
+        INNER JOIN employee_skill_set AS ess ON (ecm.id=ess.employee_competency_master_id)
+        INNER JOIN competency_skill_mapping AS csm ON (csm.id=ess.competency_skill_mapping_id)
+        INNER JOIN competency_structure_mapping AS cstm ON(cstm.id=csm.competency_structure_mapping_id)
+        INNER JOIN proficiency_names AS rpn ON  (rpn.id=ess.manager_proficiency)
+        WHERE ecm.employee_id=#employee_id#
+        ORDER BY cstm.competency_master_id,csm.skill_master_id DESC; 
+    </select>
+    <select id="getJobDetail" parameterClass="String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        SELECT jm.job_code AS job_code, jm.job_name AS job_name, jm.job_description AS job_description,
+        cm.id AS competency_id, cm.competency_name AS competency_name,eccs.name AS sub_sbu_name,
+        sm.id AS skill_id, sm.skill_name AS skill_name,
+        pn.proficiency_name AS proficiency_name ,pn.proficiency_order AS proficiency_order,
+        CONCAT(emp.employee_number,' ',emp.first_name, ' ',emp.last_name) AS posted_by
+        FROM jobs_master AS jm 
+        INNER JOIN jobs_competency_skill_mappings AS jcsm ON (jm.id=jcsm.jobs_master_id)
+        INNER JOIN proficiency_names AS pn ON  (pn.id=jcsm.proficiency_names_id)
+        INNER JOIN employees AS emp ON (emp.id=jm.created_by)
+        INNER JOIN skill_master AS sm ON(sm.id=jcsm.skill_id)
+        INNER JOIN competency_master AS cm ON (cm.id=jcsm.competency_id)
+        INNER JOIN employee_competency_company_structures AS eccs ON(eccs.id=jm.sbu_id)
+        WHERE jm.id=#job_id#
+        ORDER BY jcsm.competency_id,jcsm.skill_id DESC; 
+    </select>
+    <select id="login" parameterClass="String" resultClass="com.ideal.hrMaster.dto.EmployeeCompetencyMappingDto">
+        select employee_id as employee_id from users where username=#employee_number# and password=md5(#password#) limit 1;
+    </select>
+</sqlMap>

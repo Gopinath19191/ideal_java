@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="OJFSurvey">
+
+    <select id="getSurveyQuestionsAndAnswers" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+     SELECT ques.id as "questionId", ques.parent_id as "parentId", ques.question as "name",
+     ques.question_hint as "questionDescription", ques.answer_type as "answerType",
+     map.emp_answer as "empAnswer"
+     from dtl_survey_questions AS ques
+     LEFT JOIN dtl_survey_mapping AS map on (ques.id = map.question_id AND map.emp_id = #exitEmpId#)
+     WHERE ques.category = 'O' and ques.parent_id != '0'
+     group by ques.id order by ques.parent_id ;
+    </select>
+
+    <select id="getSurveyQuestionsParent" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+     SELECT ques.id as "questionId", ques.parent_id as "parentId",
+     ques.question as "name", ques.question_hint as "questionDescription", ques.answer_type as "answerType"
+     from dtl_survey_questions AS ques
+     WHERE ques.category = 'O' and ques.parent_id = '0'
+     group by ques.id
+     order by ques.id ;
+    </select>
+
+    <select id="getSurveyAnswers" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+       SELECT id, question_id as "questionId",
+       answer_key as "answerKey", answer_value as "answerValue" from dtl_survey_answers order by answer_key ;
+    </select>
+
+    <insert id="insertSurveyData" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO" >
+       INSERT INTO dtl_survey_mapping (emp_Id,question_id,emp_answer)
+        VALUES(#exitEmpId#, #questionId#, #empAnswer#);
+    </insert>
+
+    <update id="updateSurveyData" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO" >
+        UPDATE dtl_survey_mapping SET emp_answer =#empAnswer#
+        WHERE emp_id= #exitEmpId# and question_id=#questionId#;
+    </update>
+
+    <update id="updateSurveyStatus" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO" >
+       UPDATE employees SET
+       ojf_survey_status = #ojf_survey_status#
+       <dynamic>
+           <isNotEmpty prepend="," property="ojf_survey_rating">
+            ojf_survey_rating = #ojf_survey_rating#
+           </isNotEmpty>
+       </dynamic>
+       WHERE id= #exitEmpId#;
+    </update>
+
+    <select id="checkSavedData" parameterClass="String"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+       SELECT * FROM dtl_survey_mapping WHERE emp_id =#exitEmpId#;
+    </select>
+
+    <select id="getOjfEmployeeData" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+       SELECT e.id as "exitEmpId",
+       e.employee_number as "employee_code",
+       DATE_FORMAT(e.joined_date,"%d-%m-%Y") as "joined_date",
+       concat_ws(" ",e.first_name,e.last_name) as "employee_name",
+       e.ojf_survey_status as "ojf_survey_status",
+       e.ojf_survey_rating as "ojf_survey_rating",
+       sbu.name as "sbu_name",
+       concat_ws(" ",pm.first_name,pm.last_name) as "pm_name"
+       FROM employees as e
+       LEFT JOIN company_structures as sbu on sbu.id = e.structure_name
+       LEFT JOIN employees as pm on pm.id = e.manager
+       WHERE e.id =#exitEmpId#;
+    </select>
+
+    <select id="getOjfSurveyList" parameterClass="com.defiance.ideal.application.dto.OJFSurveyDTO"  resultClass="com.defiance.ideal.application.dto.OJFSurveyDTO">
+       SELECT e.id as "exitEmpId",
+       e.employee_number as "employee_code",
+       DATE_FORMAT(e.joined_date,"%d-%m-%Y") as "joined_date",
+       concat_ws(" ",e.first_name,e.last_name) as "employee_name",
+       e.ojf_survey_status as "ojf_survey_status",
+       e.ojf_survey_rating as "ojf_survey_rating",
+       sbu.name as "sbu_name",
+       concat_ws(" ",pm.first_name,pm.last_name) as "pm_name"
+       FROM employees as e
+       LEFT JOIN company_structures as sbu on sbu.id = e.structure_name
+       LEFT JOIN employees as pm on pm.id = e.manager
+       WHERE e.ojf_survey_status = 1;
+    </select>
+    
+</sqlMap>

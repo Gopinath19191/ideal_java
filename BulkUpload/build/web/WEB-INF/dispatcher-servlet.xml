@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+
+    <!--
+    Most controllers will use the ControllerClassNameHandlerMapping above, but
+    for the index controller we are using ParameterizableViewController, so we must
+    define an explicit mapping for it.
+    -->
+    <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <property name="mappings">
+            <props>
+                <prop key="authenticate.htm">AuthenticationController</prop>
+                <prop key="updateEmployeeBandDesigByExcel.htm">BulkUploadController</prop> 
+                <prop key="updateEmployeeMangerByExcel.htm">BulkUploadController</prop>
+                <prop key="uploadOjfDetailsByExcel.htm">BulkUploadController</prop>
+                <prop key="downloadFile.htm">BulkUploadController</prop>
+                <prop key="showAuditList.htm">BulkUploadController</prop>
+                <prop key="downloadAuditExcel.htm">BulkUploadController</prop>
+                <prop key="searchAuditList.htm">BulkUploadController</prop>
+                <prop key="salesRevenueView.htm">BulkUploadController</prop>
+                <prop key="salesRevenueUnitView.htm">BulkUploadController</prop>
+                <prop key="salesRevenueRshView.htm">BulkUploadController</prop>
+                <prop key="exportDetails.htm">BulkUploadController</prop>
+                <prop key="pcList.htm">PcController</prop>
+                <prop key="pcListNs.htm">PcController</prop>
+                <prop key="add_pc.htm">PcController</prop>
+                <prop key="editConsultant.htm">PcController</prop>
+                <prop key="saveConsultant.htm">PcController</prop>
+                <prop key="updateConsultant.htm">PcController</prop>
+                <prop key="getSubPracticeGroups.htm">PcController</prop>
+                <prop key="getRegions.htm">PcController</prop>
+                <prop key="getCities.htm">PcController</prop>
+                <prop key="project_search.htm">PcController</prop>
+                <prop key="pc_search_user.htm">PcController</prop>
+                <prop key="pc_search_userns.htm">PcController</prop>
+                <prop key="search_consultant.htm">PcController</prop>
+                <prop key="search_consultantns.htm">PcController</prop>
+                <prop key="excelexportPcList.htm">PcController</prop>
+                <prop key="excelexportPcListns.htm">PcController</prop>
+                <prop key="employee_search_user.htm">PcController</prop>
+                <prop key="downloadFileRF.htm">PcController</prop>
+            </props>
+        </property>
+    </bean>
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="1000000"/>
+    </bean>
+    <bean id="viewResolver"
+          class="org.springframework.web.servlet.view.InternalResourceViewResolver"
+          p:prefix="/WEB-INF/jsp/"
+          p:suffix=".jsp" />
+
+    <!--
+    The index controller.
+    -->
+    <bean name="indexController"
+          class="org.springframework.web.servlet.mvc.ParameterizableViewController"
+          p:viewName="index" >
+    </bean>
+    <bean name="AuthenticationController" 
+      class="com.ideal.hrMaster.controller.AuthenticationController" > 
+    </bean>
+    <bean name="BulkUploadController" 
+      class="com.ideal.hrMaster.controller.BulkUploadController" > 
+    </bean>
+    <bean name="PcController"
+       class="com.ideal.pc.ticket.controller.PcController"/>
+</beans>

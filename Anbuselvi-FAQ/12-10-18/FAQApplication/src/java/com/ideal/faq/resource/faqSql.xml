@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="faqMap">
+    <select id="getFunctionUnits" resultClass="com.ideal.faq.dto.FaqDto">       
+        SELECT id as faq_unit_id, faq_unit FROM faq_function_unit
+    </select>
+    <select id="getFunctionUnit" parameterClass="String" resultClass="String">       
+        SELECT faq_unit FROM faq_function_unit WHERE id=#faq_unit_id#
+    </select>
+    <select id="getQuestioncategory" parameterClass="String" resultClass="String">       
+        SELECT question_category FROM faq_question_category WHERE id=#question_category_id#
+    </select>
+    
+    <select id="getQuestionCategory" parameterClass="String" resultClass="com.ideal.faq.dto.FaqDto">
+        SELECT id AS question_category_id,question_category AS question_category FROM faq_question_category WHERE unit_id=#faq_unit_id# 
+    </select>
+    <select id="listQuestionAnswer" parameterClass="com.ideal.faq.dto.FaqDto" resultClass="com.ideal.faq.dto.FaqDto">
+        SELECT id AS question_answer_id,question,answer FROM faq_question_answer WHERE unit_id=#faq_unit_id# AND category_id=#question_category_id# AND deleted=#deleted#
+    </select>
+    
+    <select id="getFaqFeedback" parameterClass="com.ideal.faq.dto.FaqDto" resultClass="com.ideal.faq.dto.FaqDto">       
+        SELECT id AS feedback_id, feedback_rating_comments,is_sastisfied AS is_satisfied,created_by,created_date FROM faq_feedback WHERE unit_id=#faq_unit_id# AND category_id=#question_category_id# 
+    </select>
+    
+    <insert id="insertFaq" parameterClass="com.ideal.faq.dto.FaqDto">
+        insert into faq_question_answer(question,answer,answer_path,unit_id,category_id,created_date,created_by) 
+        values(#question#,#answer#,#answer_path#,#faq_unit_id#,#question_category_id#,NOW(),#created_by#)        
+    </insert>
+    <update id="updateFaq" parameterClass="com.ideal.faq.dto.FaqDto">
+        UPDATE faq_question_answer SET question=#question#,answer=#answer#, 
+        modified_by=#modified_by#, modified_date=NOW() 
+        WHERE id=#question_answer_id#        
+    </update>
+    <insert id="insertQuestionCategory" parameterClass="com.ideal.faq.dto.FaqDto">
+        insert into faq_question_category(question_category,unit_id,created_date,created_by) 
+        values(#question_category#,#faq_unit_id#,NOW(),#created_by#)        
+    </insert>
+    <insert id="insertFeedback" parameterClass="com.ideal.faq.dto.FaqDto">
+        INSERT INTO faq_feedback(feedback_rating_comments,is_sastisfied,unit_id,category_id,created_date,created_by) 
+        VALUES(#feedback_rating_comments#,#is_satisfied#,#faq_unit_id#,#question_category_id#,NOW(),#created_by#)        
+    </insert>
+    <update id="updateFaqFlag" parameterClass="com.ideal.faq.dto.FaqDto">
+        UPDATE faq_question_answer SET deleted=#deleted#,modified_date=NOW(),modified_by=#modified_by# 
+        where id=#question_answer_id#
+    </update>
+    
+    <select id="getEmployeeName" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT CONCAT(employee_number,' - ',first_name,' ',last_name) AS empName FROM employees WHERE id=#employee_id#
+    </select>
+    
+        
+</sqlMap>

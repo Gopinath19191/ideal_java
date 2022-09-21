@@ -1,0 +1,21 @@
+<!DOCTYPE sqlMapConfig     PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN" "file:///D:/sql-map-config-2.dtd">
+
+<!--
+    Document   : sqlMapConfig.xml
+    Created on : June 25, 2010, 2:53 PM
+    Author     : Mohan
+    Description:
+                Purpose of the document follows.
+                To map The All xml Files
+-->
+
+<sqlMapConfig>
+    <settings enhancementEnabled="true" useStatementNamespaces="true" />
+  
+
+    <sqlMap resource="com/defiance/ideal/ojf/resources/Login.xml"/>
+    
+</sqlMapConfig>
+
+
+

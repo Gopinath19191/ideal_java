@@ -1,0 +1,941 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "file:///D:/sql-map-2.dtd">
+<sqlMap namespace="LoginMap">
+      
+    
+
+    <select id="getLoginDTO" parameterClass="com.defiance.ideal.ojf.dto.LoginDTO" resultClass="com.defiance.ideal.ojf.dto.LoginDTO">
+        select user.id as userAccountId,user.username,user.password,user.group_id as groupId,user.employee_id as empId,
+        jf.current_status as empStatus from users as user LEFT JOIN dtl_online_joining_formalities as jf ON(user.employee_id=jf.id) where username=#userName# AND password=#userPassword#
+    </select> 
+    <select id="getauthenticateUser" parameterClass="com.defiance.ideal.ojf.dto.LoginDTO" resultClass="com.defiance.ideal.ojf.dto.LoginDTO">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete  FROM aros_acos as arcos,aros as aro 
+        WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId# AND arcos.aco_id = #moduleId#
+    </select> 
+    <select id="getGroupAuthentication" parameterClass="com.defiance.ideal.ojf.dto.LoginDTO" resultClass="com.defiance.ideal.ojf.dto.LoginDTO">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete  FROM aros_acos as arcos,aros as aro
+        WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId# AND arcos.aco_id = #moduleId#
+    </select> 
+     
+    <select id="getJoinerFormDTO" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT jf.id as jfId,jf.first_name as firstName,cs.name as structureName,jf.middle_name as middleName,
+        jf.last_name as lastName,pg.name as practiceGroup,jf.personal_email_id as personalEmailId1,jf.alternate_email_id as personalEmailId2,
+        jf.reporting_manager as reportingManager,jf.date_of_birth as dateOfBirth,
+        jf.pan_no as panNo,jf.current_status as status,jf.track_number as trackNumber,jf.employee_type as employeeType,emp.employee_number AS joinerEmpId,
+        CONCAT('DTL','/',jf.candidate_reference_number,'/',cs.name,'-',pg.name,'/',jf.id) AS refnumber,jf.rrf_id AS rrfRes FROM dtl_online_joining_formalities as jf 
+        LEFT JOIN company_structures as cs ON(cs.id=jf.company_structure) 
+        LEFT JOIN company_structures as pg ON(pg.id=jf.practice_group) 
+        LEFT JOIN employees as emp ON(emp.id=jf.employee_id)
+        WHERE jf.first_name LIKE #candidateNameSearch# 
+        AND jf.company_structure LIKE #structureNameSearch# AND jf.practice_group LIKE #practiceGroupSearch# AND jf.current_status LIKE #statusSearch# AND
+        (jf.candidate_reference_number LIKE #candidateRefNumberSearch# OR jf.id LIKE #candidateRefNumberSearch#) ORDER BY jf.id ASC;
+    </select> 
+    
+    
+    <select id="getMasterDataDTO"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT name AS structureName,id AS structureId FROM company_structures WHERE parent_id = #parentId#
+    </select> 
+    
+    <select id="getTokenAuthentication" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.dto.LoginDTO">
+        SELECT username,login_time as loginTime from request_management_sessions WHERE token_id=#tokenRcvd#
+    </select>
+    <select id="getTrackNumber" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        Select count(*) As dataCount,id As jfId,first_name as firstName,last_name as lastName,
+        middle_name as middleName,practice_group as practiceGroup,personal_email_id as personalEmailId1,alternate_email_id as personalEmailId2,
+        reporting_manager as reportingManager,
+        date_format(date_of_birth,'%d-%m-%Y') as dateOfBirth,
+        pan_no as panNo,current_status as status,track_number as trackNumber from dtl_online_joining_formalities Where track_number = #trackNumber# group by id
+    </select>
+    
+    <select id="getJfEmpData" parameterClass="com.defiance.ideal.ojf.shared.CommonConfigurations" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT jfEmp.id as jfEmpId,gender,father_name as fatherName,marital_status as maritalStatus,
+        date_format(date_married,'%d-%m-%Y') as dateOfMarriage,spouse_name as spouseName,place_of_birth as placeOfBirth,religion,
+        mother_tongue as motherTongue,nationality,present_address as presentAddress,
+        phone_present_address as phoneNumberPresent,permanent_address as permanentAddress,
+        phone_permanent_address as phoneNumberPermanent,previous_pf_number as previousPfNumber,
+        name_in_bank_records as nameInBankRecords,bank_acc_type AS bankAccType,bank_name as bankName,bank_branch as branch,bank_city AS bankCity,
+        bank_account_number as accountNumber,rrf_id as rrfRes,
+        license_number AS dlNumber,date_format(license_date_issue ,'%d-%m-%Y') AS dlDateOfIssue,license_place_issue AS dlPlaceOfIssue,
+        date_format(license_date_expire ,'%d-%m-%Y') AS dlDateOfExpiry,bpfu.file_name AS bankFileName,bpfu.file_type AS bankFileType,
+        bpfu.id AS bankFileId,dlfu.file_name AS dlFileName,dlfu.file_type AS dlFileType,dlfu.id AS dlFileId,empfu.file_name AS empFileName,
+        empfu.file_type AS empFileType,empfu.id AS empFileId,empAddfu.file_name AS empAddPfFileName,empAddfu.file_type AS empAddPfFileType,empAddfu.id AS empAddPfFileId,jf.current_status AS status,
+        jf.personal_email_id AS personalEmailId1,jf.first_name AS firstName,jf.last_name AS lastName,jf.last_name AS middleName,jf.data_verified_mail_cc AS dataVerifiedMailCc,jf.send_back_reason as sendBackReason,
+        reporting_manager as reportingManager,practice_group as practiceGroup,sub_practice_group AS subPracticeGroup,band_id AS band,designation_id AS designation,pan_no as panNo,
+        date_format(jf.expected_date_of_joining,'%d-%m-%Y') AS doj,jfEmp.bloodgroup as bloodGroup,jf.employee_type as employeeType,jf.data_approved_by as dataApprovedBy,jf.employee_id as joinerEmpId,jf.date_of_birth AS dateOfBirth,jf.employee_category AS empCategory FROM dtl_online_joining_formalities as jf 
+        LEFT JOIN dtl_ojf_employees AS jfEmp ON (jf.id=jfEmp.ojf_id) 
+        LEFT JOIN file_uploads AS bpfu ON (bpfu.ref_id=jfEmp.ojf_id AND bpfu.reference_name=#JF_BANK_PROOFNAME# AND bpfu.module_name=#JF_MODULE_CODE#) 
+        LEFT JOIN file_uploads AS dlfu ON (dlfu.ref_id=jfEmp.ojf_id AND dlfu.reference_name=#JF_DL_PROOFNAME# AND dlfu.module_name=#JF_MODULE_CODE#) 
+        LEFT JOIN file_uploads AS empfu ON (empfu.ref_id=jfEmp.ojf_id AND empfu.reference_name=#JF_JOINERPHOTO_PROOFNAME# AND empfu.module_name=#JF_MODULE_CODE#) 
+        LEFT JOIN file_uploads AS empAddfu ON (empAddfu.ref_id=jfEmp.ojf_id AND empAddfu.reference_name=#JF_JOINERADDRESS_PROOFNAME# AND empAddfu.module_name=#JF_MODULE_CODE#) 
+        WHERE jf.id=#id#
+    </select>  
+    
+    <select id="getMaritalStatuslist"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        SELECT child.configuration_key as maritalstatusId,child.configuration_value as maritalstatusName from configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id) 
+        WHERE pt.configuration_key = 'marital_status_list'
+    </select>
+    
+    <select id="getNationalitylist" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        SELECT distinct nationality as nationalityname,id as nationalityid  from countries where nationality!='' order by nationality
+    </select>
+    
+    <select id="getCountryList" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        SELECT id as countryId,country as countryName from countries
+    </select>
+    <select id="getRegionData" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select country_id as bankCountry,region_id as bankRegion from cities WHERE id = #id#
+    </select>
+    
+    <select id="getRegionDetails" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select id as regionId,region as regionName from regions WHERE country_id = #id#
+    </select>
+    
+    <select id="getCityDetails" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select id as regionId,city as regionName from cities WHERE region_id = #id#
+    </select>
+    
+    <select id="getJfPrevEmpData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT id as jfPreEmpIdDb, name AS namePrevEmpDb, address AS nameAddPrevEmpDb, date_format(date_joining,'%d-%m-%Y') AS dateOfJoinDb, 
+        designation_joining AS desigOnJoinDb, salary_joining AS salaryOnJoinDb, date_format(date_relieving,'%d-%m-%Y') AS dateOfRelDb, 
+        designation_relieving AS desigOnRelDb, salary_relieving AS salOnRelDb FROM dtl_ojf_pre_employer 
+        WHERE ojf_id =#id# and deleted=0
+    </select> 
+    
+    <select id="getEducationData" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT 
+        CASE Education.degree WHEN '10' THEN 'X STD' 
+        WHEN '12' THEN '+2' 
+        WHEN 'd' THEN 'Diploma' 
+        WHEN 'ug' THEN 'Graduate' 
+        WHEN 'pg' THEN 'Post Graduate' END AS degreeVal,
+        Education.id AS educationIdX,Education.degree AS degreeX,Education.qualification AS qualificationX,Education.year_of_passing as year_of_passingX,
+        Education.institution AS institutionX,Education.university AS universityX,Education.percentage AS percentageX,Education.remarks AS remarksX,Education.attachment_path AS attachmentX,
+        University.university_name AS universityName,Institute.institute_name AS instituteName,course.course_name AS qualificationName
+        FROM dtl_ojf_education AS Education
+        LEFT JOIN universities AS University ON University.id = Education.university 
+        LEFT JOIN institutes AS Institute ON Institute.id = Education.institution 
+        LEFT JOIN courses AS Course ON Course.id = Education.qualification 
+        WHERE Education.ojf_id =#id# AND Education.degree != 'c' AND Education.deleted= 0 
+    </select> 
+    
+    <select id="getCertificationData" parameterClass="int" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT id AS certificationIdX, qualification AS cert_qualificationX, year_of_passing as cert_year_of_passingX,
+        institution AS cert_institutionX, percentage AS cert_percentageX, remarks AS cert_remarksX, attachment_path AS cert_attachmentX
+        FROM dtl_ojf_education
+        WHERE ojf_id =#id# AND degree = 'c' AND deleted= 0 
+    </select> 
+    
+    <select id="getSkillData" parameterClass="int" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT jf_sk.id AS skillIdX, jf_sk.skill_category AS skill_categoryX, jf_sk.stream_id as streamX,
+        jf_sk.skill_id AS skillX, jf_sk.skill_type AS skill_typeX, jf_sk.exp_years AS skill_yearX, jf_sk.exp_months AS skill_monthX,
+        sk.skill_name AS skillName, st.stream_name AS streamName 
+        FROM dtl_ojf_skills AS jf_sk 
+        INNER JOIN dtl_skills AS sk ON sk.skill_id = jf_sk.skill_id
+        INNER JOIN dtl_streams AS st ON st.id = jf_sk.stream_id
+        WHERE jf_sk.ojf_id =#id# AND jf_sk.deleted= 0  
+    </select> 
+    
+    <select id="getInstitutionDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+<!--        SELECT jf_sk.id AS skillIdX, jf_sk.skill_category AS skill_categoryX, jf_sk.stream_id as streamX,
+        jf_sk.skill_id AS skillX, jf_sk.skill_type AS skill_typeX, jf_sk.exp_years AS skill_yearX, jf_sk.exp_months AS skill_monthX,
+        sk.skill_name AS skillName, st.stream_name AS streamName 
+        FROM dtl_ojf_skills AS jf_sk 
+        INNER JOIN dtl_skills AS sk ON sk.skill_id = jf_sk.skill_id
+        INNER JOIN dtl_streams AS st ON st.id = jf_sk.stream_id
+        WHERE jf_sk.ojf_id =#id# AND jf_sk.deleted= 0  -->
+        select id as instituteId,institute_name as instituteName from institutes ORDER BY institute_name ASC
+    </select> 
+    
+    <select id="getUniversityDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select id as universityId,university_name as universityName from universities ORDER BY university_name ASC  
+    </select> 
+    
+    <select id="getQualificationDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select id as courseId,course_name as CourseName from courses ORDER BY course_name ASC  
+    </select> 
+    
+    <select id="getDegreeDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select child.configuration_key as degreeId,child.configuration_value as degreeName from configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id) 
+        WHERE pt.configuration_key = 'education_degree' AND child.configuration_key != 'c'   
+    </select>  
+    
+    <select id="getStreamDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+        select id as streamId,stream_name as streamName from dtl_streams ORDER BY stream_name ASC   
+    </select> 
+    
+    <select id="getJfEduQualifiProofData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+       SELECT id as jfEduProofIdDb,file_name as fileName,file_type as fileType FROM  file_uploads WHERE ref_id = #id# and module_name='JF' and reference_name LIKE '%otherProof%'  
+    </select> 
+    
+    <select id="getvendorDetaillist" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT vendor_Id as vendorId,vendor_Name as vendorName from dtl_ojf_vendors order by vendor_Name   
+    </select>
+    
+    <select id="getCheckexistsvenname" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT vendor_Id from dtl_ojf_vendors where vendor_Name=#vendname#
+    </select> 
+    
+    <insert id="getSavevendorinfo" parameterClass="java.lang.String">
+        insert into dtl_ojf_vendors(vendor_Name) values(#vendorname#)
+    </insert>
+    <update id="getUpdatepartvendorinfo" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.VenderIdNameDTO">
+        update dtl_ojf_vendors set vendor_Name=#venname# where vendor_Id=#venid#
+    </update>
+    <select id="getpartvendetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT vendor_Id as vendorId,vendor_Name as vendorName from dtl_ojf_vendors where vendor_Id=#venid#
+    </select>   
+    <delete id="getDeletepartvendorinfo" parameterClass="java.lang.String">
+        delete from dtl_ojf_vendors where vendor_Id=#venid#
+    </delete>
+    
+    <select id="getStructureDetails" parameterClass="java.lang.Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT name AS structureName,id AS structureId FROM company_structures WHERE parent_id = #parentId# 
+    </select>
+    
+    <select id="getBandDetails" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT name AS bandName,id AS bandId FROM bands WHERE 1=1 and parent_id IS NULL 
+    </select>
+    <select id="getBandDetails1" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT name AS bandName,id AS bandId FROM bands WHERE 1=1 and parent_id= #parentId# 
+    </select>
+    
+    <select id="getDesignationDetails"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT designation AS desigName,id AS desigId FROM designations ORDER by designation ASC
+    </select>
+     
+    <select id="getCandidateDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT jf.id AS jfId,jf.first_name AS firstName,jf.middle_name AS middleName,jf.last_name AS lastName,jf.source_of_hire AS sourceofhire,jf.source_reference AS empref,
+    cs.name AS structureName,cs.id AS structureId,pg.id AS practiceGroupId,spg.id AS subPracticeGroupId,spg.name AS subPracticeGroup,
+    band.id AS bandId,band.name AS bandName,subBand.id AS subBandId,subBand.name AS subBandName,designation.id AS desigId,designation.designation AS desigName,
+    pg.name AS practiceGroup,jf.personal_email_id AS personalEmailId1,jf.alternate_email_id AS personalEmailId2,
+    jf.reporting_manager AS reportingManager,DATE_FORMAT(jf.date_of_birth,'%d-%m-%Y') AS dateOfBirth,jf.pan_no AS panNo,
+    jf.current_status AS status,jf.track_number AS trackNumber,jf.employee_type AS employeeType,
+    CONCAT(#CandidateRefPrefix#,'/',jf.candidate_reference_number,'/',cs.name,'-',pg.name,'/',jf.id) AS refnumber,jf.mail_cc AS mailCc,jf.mail_triggered_by AS mailTriggeredBy,jf.send_back_reason AS sendBackReason,jf.employee_id AS contract_employee_id,jf.employee_category AS employeeCategory,jf.rrf_id AS rrfRes 
+    FROM dtl_online_joining_formalities AS jf 
+    LEFT JOIN company_structures AS cs ON(cs.id=jf.company_structure) LEFT JOIN company_structures AS pg ON(pg.id=jf.practice_group) 
+    LEFT JOIN company_structures AS spg ON(spg.id=jf.sub_practice_group) 
+    LEFT JOIN bands AS subBand ON(subBand.id=jf.band_id) 
+    LEFT JOIN bands AS band ON(band.id=subBand.parent_id) 
+    LEFT JOIN designations AS designation ON(designation.id=jf.designation_id) 
+    WHERE jf.id=#jfId#;
+    </select>  
+    
+    <select id="getPassportNumber" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT id AS passportIdX,passport_number AS passportNumberX FROM dtl_ojf_passport WHERE ojf_id =#id# AND deleted=0 LIMIT 0,1  
+    </select>
+    
+    <select id="getPracticeGroup" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT pg.id AS practiceGroupId,pg.name AS practiceGroup FROM company_structures AS pg WHERE pg.parent_id=#structureId#
+    </select>
+    
+    <select id="getSubPracticeGroup" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT spg.id AS subPracticeGroupId,spg.name AS subPracticeGroup FROM company_structures AS spg WHERE spg.parent_id=#practiceGroupId#  
+    </select>
+    <select id="getEmployeeDetailsFromId" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT CONCAT(first_name,' ',last_name) AS employeeName,employee_number As employeeNumber, id As empId FROM employees 
+        WHERE id IN (#reportingManager#) AND employment_status NOT IN('r','b','t')
+    </select>
+    
+  <select id="getCcMailNames" parameterClass="java.lang.String" resultClass="java.lang.String">
+     SELECT GROUP_CONCAT(CONCAT(employee_number,' - ',first_name,' ',last_name),'') AS employeeCcEmailName FROM employees WHERE id IN (#dataVerifiedMailCc#) AND employment_status NOT IN('r','b','t')
+    </select> 
+    
+    <select id="getsourcehirelisstbyname" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from configuration_values where configuration_key=#sourcename#  
+    </select>
+    
+    <select id="getsourcehirelisst" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.SourcehireDTO">
+        select configuration_key as sorceconfkey,configuration_value as sourceconfval from configuration_values where parent_id=#sourceid#
+    </select> 
+    <select id="getportalidbyname" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        select id from configuration_values where configuration_key=#portalname#
+    </select>
+    <select id="getjobportallist" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.SourcehireDTO">
+        select configuration_key as jobconfkey,configuration_value as jobconfval from configuration_values where parent_id=#portalid#
+    </select>
+    
+    
+    <select id="getEmployeeName" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT id as empId,employee_number As employeeNumber,CONCAT(first_name,' ',last_name) as employeeName 
+        FROM employees WHERE (first_name LIKE '%$searchString$%' OR last_name LIKE '%$searchString$%' OR employee_number 
+        LIKE '%$searchString$%') AND employment_status NOT IN('r','b','t') ORDER BY first_name,last_name,employee_number
+
+    </select> 
+    
+    <select id="getEmployeeNameOfHr" parameterClass="Map" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT id as empId,employee_number As employeeNumber,CONCAT(first_name,' ',last_name) as employeeName 
+        FROM employees WHERE (first_name LIKE '%$searchString$%' OR last_name LIKE '%$searchString$%' OR employee_number 
+        LIKE '%$searchString$%') AND employment_status NOT IN('r','b','t') AND structure_name = #structureName# ORDER BY first_name,last_name,employee_number
+
+    </select>
+    
+    <select id="getEmployeeNamebyContract" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+        SELECT
+        emp.id as empId,emp.employee_number As employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) as employeeName
+        FROM employees emp
+        LEFT JOIN dtl_online_joining_formalities AS jf ON (jf.employee_id = emp.id AND employee_category = 'e')
+        WHERE (emp.first_name LIKE '%$searchString$%' OR emp.last_name LIKE '%$searchString$%' OR emp.employee_number
+        LIKE '%$searchString$%') AND emp.employment_status IN ('v','d') AND jf.id IS NULL
+        ORDER BY emp.first_name,emp.last_name,emp.employee_number
+    </select>  
+    <select id="getRRFDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT
+        rrf.id as rrfId,
+        CONCAT('RRF/',cs.name,'/',rrf.request_id,'-',rrf.child_request_id) AS rrfName
+        FROM dtl_rrf_split_request_master as rrf
+        INNER JOIN dtl_rrf_master as master ON(master.id=rrf.request_id)
+        LEFT JOIN dtl_online_joining_formalities as jf ON (jf.rrf_id = rrf.id)
+        LEFT JOIN company_structures as cs ON(cs.id=master.practice_group) 
+        WHERE jf.id IS NULL AND rrf.status = 10 AND rrf.recruitment_type = 'e' AND master.practice_group = #practiceGroup# OR jf.id = #jfId#
+    </select> 
+    
+   <!-- <select id="getRRFDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        SELECT
+        rrf.id as rrfId,
+        CONCAT('RRF/',cs.name,'/',rrf.request_id,'-',rrf.child_request_id) AS rrfName
+        FROM dtl_rrf_split_request_master as rrf
+        INNER JOIN dtl_rrf_master as master ON(master.id=rrf.request_id)
+        LEFT JOIN company_structures as cs ON(cs.id=master.practice_group) 
+        WHERE rrf.status = 10 AND rrf.employeeId IS NULL AND rrf.recruitment_type = 'e' AND master.practice_group = #practiceGroup#
+    </select>-->
+    
+    <select id = "getRrfId" parameterClass = "java.lang.Integer" resultClass = "java.lang.String">
+        select CONCAT('RRF/',jf.company_structure,'/',rrf.request_id,'-',rrf.child_request_id) AS rrfName
+        FROM dtl_rrf_split_request_master as rrf LEFT JOIN dtl_online_joining_formalities as jf ON (jf.rrf_id = rrf.id)
+        where jf.rrf_id = #rrf_no#;
+    </select>
+    
+    <select id="getCcMail" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT( work_email_address ) AS employeeCcEmail FROM 
+        employees WHERE id IN (#empIds#) AND employment_status NOT IN('r','b','t')
+    </select>
+   
+    <insert id="addNewEmployeeDetail" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO"> 
+        INSERT INTO dtl_online_joining_formalities (first_name, middle_name, 
+        last_name, practice_group,sub_practice_group,band_id,designation_id,personal_email_id,alternate_email_id,reporting_manager, 
+        date_of_birth, pan_no, track_number,company_structure,employee_type,candidate_reference_number,source_of_hire,source_reference,employee_category,rrf_id,current_status,employee_id) VALUES (#firstName#,
+        #middleName#,#lastName#,#practiceGroup#,#subPracticeGroup#,#subBand#,#designation#,#personalEmailId1#,#personalEmailId2#,
+        #reportingManager#,#dateOfBirth#, 
+        #panNo#,#trackNumber#,#structureName#,#employeeType#,#refnumber#,#sourceofhire#,#empref#,#contract_type#,#rrf_id#,#statusToInt#,#empContract#)
+
+    </insert>
+    
+<!--    <update id = "updateRrfStatus" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        update dtl_rrf_split_request_master set status = 15 where id = #rrf_id#
+    </update>-->
+    
+    <select id="getLastInsertId"  resultClass="java.lang.Integer">
+        SELECT MAX(id) from dtl_online_joining_formalities
+    </select> 
+    
+    <select id="getLastId"  resultClass="java.lang.Integer">
+        SELECT MAX(id) from employees
+    </select> 
+    
+    <select id = "getPassportId" parameterClass = "java.lang.String" resultClass = "java.lang.Integer">
+        select id from dtl_ojf_passport where id = #passportId#
+    </select>
+    
+<!--    <insert id="addOrUpdatePassportNumber" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        INSERT INTO dtl_ojf_passport (id,ojf_id,passport_number)
+        Values(#passportId#,#jfId#,#passportNumber#) 
+        ON DUPLICATE KEY UPDATE id=#passportId#,ojf_id=#jfId#,passport_number=#passportNumber#
+    </insert> -->
+    
+    <insert id = "addPassportNumber" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        INSERT INTO dtl_ojf_passport (ojf_id,passport_number)
+        Values(#jfId#,#passport_number#)
+    </insert>
+    
+    <update id = "UpdatePassportNumber" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        update dtl_ojf_passport set ojf_id=#jfId#, passport_number=#passportNumber# where id = #passportId#
+    </update>
+    
+    <insert id="addOrUpdateEmployeeStepOne" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        INSERT INTO dtl_ojf_employees (ojf_id,gender,father_name,marital_status,
+    date_married,spouse_name,place_of_birth,religion,mother_tongue,nationality,present_address,phone_present_address,
+    permanent_address,phone_permanent_address,previous_pf_number,bank_acc_type,name_in_bank_records,bank_name,bank_branch,bank_city,bank_account_number,bloodgroup) 
+     Values(#jfId#,#gender#,#fatherName#,#maritalStatus#,#dateOfMarriage#,
+    #spouseName#,#placeOfBirth#,#religion#,#motherTongue#,#nationality#,
+    #presentAddress#,#phoneNumberPresent#,#permanentAddress#,#phoneNumberPermanent#,
+    #previousPfNumber#,#bankAccType#,#nameInBankRecords#,#bankName#,#branch#,#bankCity#,#accountNumber#,#bloodGroup#) ON DUPLICATE 
+     KEY UPDATE ojf_id=#jfId#,gender=#gender#,father_name=#fatherName#,marital_status=#maritalStatus#,
+    date_married=#dateOfMarriage#,spouse_name=#spouseName#,place_of_birth=#placeOfBirth#,religion=#religion#,
+    mother_tongue=#motherTongue#,nationality=#nationality#,present_address=#presentAddress#,
+    phone_present_address=#phoneNumberPresent#,permanent_address=#permanentAddress#,
+    phone_permanent_address=#phoneNumberPermanent#,previous_pf_number=#previousPfNumber#,bank_acc_type=#bankAccType#,
+    name_in_bank_records=#nameInBankRecords#,bank_name=#bankName#,bank_branch=#branch#,bank_city=#bankCity#,
+    bank_account_number=#accountNumber#,bloodgroup=#bloodGroup#
+    </insert>
+    <select id = "getBankProofFileId" parameterClass = "Map" resultClass = "java.lang.Integer">
+        select id from file_uploads where ref_id = #jfId# and reference_name = #referenceName#
+    </select>
+    <insert id = "addFileDb" parameterClass = "Map">
+        INSERT into file_uploads(file_name,file_type,reference_name,ref_id,module_name)
+    values (#fileName#,#contentType#,#referenceName#,#jfId#,#moduleName#)
+    ON DUPLICATE KEY UPDATE id=#id#,file_name=#fileName#,file_type=#contentType#,reference_name=#referenceName#,
+    ref_id=#jfId#,module_name=#moduleName#;
+    </insert>
+    <update id = "updateFileDb" parameterClass = "Map">
+        update file_uploads set file_name = #fileName#,file_type = #contentType# where id = #id#;
+    </update>
+    <delete id="bankproof" parameterClass="Map">
+        DELETE FROM file_uploads WHERE ref_id=#jfId# AND reference_name=#fileProofType# AND module_name=#moduleName#;
+    </delete>
+    
+    <select id="getSkillDetails" parameterClass="Integer" resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO" >
+    select skill_id  as skillId,skill_name as skillName from dtl_skills WHERE stream_id = #id#;    
+        
+    </select>
+    
+   <select id="getEmployeeNamebyhr" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+    SELECT id as empId,employee_number As employeeNumber,CONCAT(first_name,' ',last_name) as employeeName 
+    FROM employees WHERE (first_name LIKE '%$searchString$%' OR last_name LIKE '%$searchString$%' OR employee_number 
+    LIKE '%$searchString$%') AND employment_status NOT IN('r','b','t') and structure_name=13 ORDER BY first_name,last_name,employee_number
+    </select>  
+    <select id="getJfFamilyMemberData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   SELECT id AS jfFamIdDb,person_name as nameOfRelationDb,relationship as relationShipDb,date_format(date_of_birth,'%d-%m-%Y') as dobRelationDb,
+   occupation as occupationOfRelDb,medical_insurance as medicalInsuranceDb 
+     FROM dtl_ojf_family_details WHERE ojf_id =#id# and deleted=0
+    </select>  
+    
+    <select id="getJfVisaData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT id AS jfVisaIdDb,visa_country as visaCountryDb,visa_type as visaTypeDb,date_format(date_of_issue,'%d-%m-%Y') as visaDateOfIssueDb,
+    date_format(date_of_expiry,'%d-%m-%Y') as visaDateOfExpiryDb,reference_number as referenceNumberDb,place_of_issue as placeOfIssueDb,no_of_entries as entriesDb
+    FROM dtl_ojf_visa_details WHERE ojf_id =#id# and deleted=0
+    </select> 
+     <select id="getPassportData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT id AS passportIdX,passport_number AS passportNumberX,date_format(passport_date_issue,'%d-%m-%Y') AS passDateOfIssueX,date_format(passport_date_expire,'%d-%m-%Y') as passDateOfExpiryX,
+     passport_place_issue AS passPlaceOfIssueX,attachment_path AS passAttachmentX
+     FROM dtl_ojf_passport
+     WHERE ojf_id =#id# AND deleted= 0 
+    </select> 
+    
+    <select id="getEmergencyContacts" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT id AS emergencyIdX,name AS nameX,relationship AS relationshipX,mobile_number as mobile_numberX,
+     home_phone_number AS home_phone_numberX,work_phone_number AS work_phone_numberX
+     FROM dtl_ojf_emergency_contacts
+     WHERE ojf_id =#id# AND deleted= 0
+    </select> 
+    
+     <select id="getVisaList"  resultClass="com.defiance.ideal.ojf.joiningForm.dto.NationalityDTO">
+    select child.configuration_key as visaId,child.configuration_value as visaName from configuration_values AS pt
+     LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id) 
+     WHERE pt.configuration_key = 'visa_type'
+    </select> 
+     <insert id="addOrUpdateEducation" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_education (ojf_id,degree,qualification,year_of_passing,institution,university,percentage,remarks,attachment_path,deleted) 
+     Values(#jfId#,#degreeX#,#qualificationX#,#year_of_passingX#,#institutionX#,#universityX#,#percentageX#,#remarksX#,#fileName#,#EDU_TR_deletedX#) 
+<!--     ON DUPLICATE KEY UPDATE id=#educationIdX#,ojf_id=#jfId#,degree=#degreeX#,qualification=#qualificationX#,year_of_passing=#year_of_passingX#,institution=#institutionX#,university=#universityX#,percentage=#percentageX#,remarks=#remarksX#,attachment_path=#fileName#,deleted=#EDU_TR_deletedX#-->
+      </insert>
+      
+      <update id = "updateEducation" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+          update dtl_ojf_education set ojf_id = #jfId#, degree=#degreeX#,qualification=#qualificationX#,year_of_passing=#year_of_passingX#,institution=#institutionX#,
+          university=#universityX#,percentage=#percentageX#,remarks=#remarksX#,attachment_path=#fileName#,deleted=#EDU_TR_deletedX# where id = #educationIdX#
+      </update>
+      
+      <insert id="addOrUpdateEducationWithouFileName" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_education (id,ojf_id,degree,qualification,year_of_passing,institution,university,percentage,remarks,deleted) 
+     Values(#educationIdX#,#jfId#,#degreeX#,#qualificationX#,#year_of_passingX#,#institutionX#,#universityX#,#percentageX#,#remarksX#,0) 
+     ON DUPLICATE KEY UPDATE id=#educationIdX#,ojf_id=#jfId#,degree=#degreeX#,qualification=#qualificationX#,year_of_passing=#year_of_passingX#,institution=#institutionX#,university=#universityX#,percentage=#percentageX#,remarks=#remarksX#,deleted=0
+      </insert>
+       
+       <insert id="addOrUpdateEducation1" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_education (ojf_id,degree,qualification,year_of_passing,institution,university,percentage,remarks,attachment_path,deleted) 
+     Values(#jfId#,#degreeX#,#qualificationX#,#year_of_passingX#,#institutionX#,#universityX#,#percentageX#,#remarksX#,#fileName#,#CER_TR_deletedX#) 
+<!--     ON DUPLICATE KEY UPDATE id=#certificationIdX#,ojf_id=#jfId#,degree=#degreeX#,qualification=#qualificationX#,year_of_passing=#year_of_passingX#,institution=#institutionX#,university=#universityX#,percentage=#percentageX#,remarks=#remarksX#,attachment_path=#fileName#,deleted=#CER_TR_deletedX#-->
+      </insert>
+      
+      <update id = "updateEducation1" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+          update dtl_ojf_education set ojf_id=#jfId#,degree=#degreeX#,qualification=#qualificationX#,
+          year_of_passing=#year_of_passingX#,institution=#institutionX#,university=#universityX#,
+          percentage=#percentageX#,remarks=#remarksX#,attachment_path=#fileName#,deleted=#CER_TR_deletedX#
+          where id = #certificationIdX#
+      </update>
+      
+      
+      
+      <insert id="addOrUpdateEducation123" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_education (id,ojf_id,degree,qualification,year_of_passing,institution,university,percentage,remarks,deleted) 
+     Values(#certificationIdX#,#jfId#,#degreeX#,#qualificationX#,#year_of_passingX#,#institutionX#,#universityX#,#percentageX#,#remarksX#,0) 
+     ON DUPLICATE KEY UPDATE id=#certificationIdX#,ojf_id=#jfId#,degree=#degreeX#,qualification=#qualificationX#,year_of_passing=#year_of_passingX#,institution=#institutionX#,university=#universityX#,percentage=#percentageX#,remarks=#remarksX#,deleted=0
+      </insert>
+      
+       <insert id="addOrUpdateSkill" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_skills (id,ojf_id,skill_category,stream_id,skill_id,skill_type,exp_years,exp_months,deleted) 
+     Values(#skillIdX#,#jfId#,#skill_categoryX#,#streamX#,#skillX#,#skill_typeX#,#skill_yearX#,#skill_monthX#,0) 
+    ON DUPLICATE KEY UPDATE id=#skillIdX#,ojf_id=#jfId#,skill_category=#skill_categoryX#,stream_id=#streamX#,skill_id=#skillX#,skill_type=#skill_typeX#,exp_years=#skill_yearX#,exp_months=#skill_monthX#,deleted=0
+      </insert> 
+    
+<!--     <insert id="addOrUpdatePreviousEmployer" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_pre_employer (id,ojf_id,name,address,date_joining,designation_joining,salary_joining,
+     date_relieving,designation_relieving,salary_relieving,deleted) values(#jfPreEmpId#,#jfId#,
+     #namePrevEmpDb#,#nameAddPrevEmpX#,#dateOfJoinX#,#desigOnJoinX#,#salaryOnJoinX#,#dateOfRelX#,#desigOnRelX#,#salOnRelX#,#EMP_TR_deletedX#) 
+     ON DUPLICATE KEY UPDATE ojf_id=#jfId#,name=#namePrevEmpDb#,address=#nameAddPrevEmpX#,date_joining=#dateOfJoinX#
+     ,designation_joining=#desigOnJoinX#,salary_joining=#salaryOnJoinX#,date_relieving=#dateOfRelX#,
+     designation_relieving=#desigOnRelX#,salary_relieving=#salOnRelX#,deleted=#EMP_TR_deletedX#,id=#jfPreEmpId#
+    
+     </insert> -->
+     
+      <insert id="addOrUpdatePreviousEmployer" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_pre_employer (id,ojf_id,name,address,date_joining,designation_joining,salary_joining,
+     date_relieving,designation_relieving,salary_relieving,deleted,experience) values(#jfPreEmpIdX#,#jfId#,
+     #namePrevEmpDb#,#nameAddPrevEmpX#,#dateOfJoinX#,#desigOnJoinX#,#salaryOnJoinX#,#dateOfRelX#,#desigOnRelX#,#salOnRelX#,#EMP_TR_deletedX#,#experience#) 
+     
+    
+     </insert> 
+     
+     <select id="getPreviousEmployerId" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="java.lang.String">
+     SELECT id from dtl_ojf_pre_employer where ojf_id=#jfId# AND name=#namePrevEmpDb# AND address=#nameAddPrevEmpX# AND date_joining=#dateOfJoinX# AND
+     designation_joining=#desigOnJoinX# AND salary_joining=#salaryOnJoinX# AND date_relieving=#dateOfRelX# AND designation_relieving=#desigOnRelX#
+     AND salary_relieving=#salOnRelX#
+    </select> 
+     
+ <update id="UpdatePreviousEmployer" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     
+    UPDATE dtl_ojf_pre_employer set ojf_id=#jfId#, name=#namePrevEmpDb#,date_joining=#dateOfJoinX#,salary_joining=#salaryOnJoinX#,address=#nameAddPrevEmpX#,designation_joining=#desigOnJoinX#,
+     date_relieving=#dateOfRelX#,designation_relieving=#desigOnRelX#,salary_relieving=#salOnRelX#,deleted=0, experience = #experience# where id=#jfPreEmpIdX# 
+ </update> 
+     
+     
+     
+     <select id="getJoinerMasterData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT emp.employee_number AS emloyeeNumber,emp.blood_group AS bloodGroup,empTypeCfg.configuration_value AS employeementType,empBillCfg.configuration_value AS empBillable,
+    cmpLoc.address_line1 AS joiningLocation,empCurrLoc.address_line1 AS currentLocation,emp.joined_date as joinerDoj 
+    FROM employees AS emp
+    LEFT JOIN configuration_values AS empTypeCfg ON (empTypeCfg.configuration_key=emp.employee_type AND empTypeCfg.parent_id=140)
+    LEFT JOIN configuration_values AS empBillCfg ON (empBillCfg.configuration_key=emp.billable AND empBillCfg.parent_id=52)
+    LEFT JOIN company_locations AS cmpLoc ON (cmpLoc.id=emp.company_location_id) 
+    LEFT JOIN company_locations AS empCurrLoc ON (empCurrLoc.id=emp.current_location_id)
+    WHERE emp.id=#empId#
+    </select> 
+    
+    <select id="getRRFRes" parameterClass="java.lang.String" resultClass="java.lang.String">
+     SELECT CONCAT('RRF/',cs.name,'/',rrf.request_id,'-',rrf.child_request_id) AS rrfRes
+     FROM dtl_rrf_split_request_master as rrf
+     LEFT JOIN dtl_rrf_master as master ON(master.id=rrf.request_id)
+     LEFT JOIN company_structures as cs ON(cs.id=master.practice_group) 
+     WHERE rrf.id = #id#
+    </select>
+    
+    <select id="getEmployeeType" parameterClass="java.lang.String" resultClass="java.lang.String">
+     SELECT employee_type from dtl_online_joining_formalities where id=#id#
+    </select>
+    <select id="getJfReferrerDTData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    SELECT id AS jfPerCompIdDb,name as nameOfPersonAtComDb,company as companyAndDepDb,relationship as pacRelationDb 
+    FROM dtl_ojf_persons_defiance  WHERE ojf_id =#id# and deleted=0
+    </select> 
+    
+    <select id="getJfReferrerPrevCompData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     SELECT id as jfRefEarCompIdDb,referred_by as refFrmEarNameDb,company_name as refFrmEarCmpNameDb,address_telenumber as refFrmEarAddressAndTelDb,designation as refFrmEarDesignationDb,no_of_years_known as refFrmEarNoOfYearsKnownDb
+     FROM dtl_ojf_refer_earlier_company WHERE ojf_id=#id# and deleted=0
+    </select>
+    
+    <select id="getMasterDataList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+     SELECT id AS configUniqueId,configuration_key AS configKey,configuration_value AS configValue FROM configuration_values WHERE parent_id=#configId#
+    </select>
+    <select id="getCmpLocationList" resultClass="com.defiance.ideal.ojf.joiningForm.dto.MasterDataDTO">
+     SELECT id AS cmpLocationId,address_line1 AS cmpLocationName FROM company_locations
+    </select>
+    
+    <insert id="addOrUpdateEmployeeLicence" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_employees (ojf_id,license_number,license_date_issue,license_place_issue,license_date_expire) 
+     Values(#jfId#,#dlNumber#,#dlDateOfIssue#,#dlPlaceOfIssue#,#dlDateOfExpiry#) 
+     ON DUPLICATE KEY UPDATE ojf_id=#jfId#,license_number=#dlNumber#,
+     license_date_issue=#dlDateOfIssue#,license_place_issue=#dlPlaceOfIssue#,license_date_expire=#dlDateOfExpiry#
+     </insert>
+	<insert id="addOrUpdateFamilyDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_family_details(id,ojf_id,person_name,relationship,date_of_birth,occupation,medical_insurance,deleted) VALUES (#jfFamIdDb#,#jfId#,#nameOfRelationDb#
+    ,#relationShipDb#,#dobRelationDb#,#occupationOfRelDb#,#medicalInsuranceDb#,#EDU_TR_deletedX#) ON DUPLICATE KEY UPDATE ojf_id=#jfId#,person_name=#nameOfRelationDb#,relationship=#relationShipDb#,
+    date_of_birth=#dobRelationDb#,occupation=#occupationOfRelDb#,medical_insurance=#medicalInsuranceDb#,deleted=#EDU_TR_deletedX#,id=#jfFamIdDb#
+     </insert> 
+	 
+	  <insert id="addOrUpdatePassport" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_passport (ojf_id,passport_number,passport_date_issue,passport_date_expire,passport_place_issue,attachment_path,deleted) 
+     Values(#jfId#,#passportNumberX#,#passDateOfIssueX#,#passDateOfExpiryX#,#passPlaceOfIssueX#,#fileName#,#EDU_TR_deletedX#) 
+<!--     ON DUPLICATE KEY UPDATE id=#passportId#,ojf_id=#jfId#,passport_number=#passportNumberX#,passport_date_issue=#passDateOfIssueX#,
+     passport_date_expire=#passDateOfExpiryX#,passport_place_issue=#passPlaceOfIssueX#,
+     attachment_path=#fileName#,deleted=#EDU_TR_deletedX#-->
+     </insert> 
+     
+     <update id="UpdatePassport" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     update dtl_ojf_passport set ojf_id=#jfId#,passport_number=#passportNumberX#,passport_date_issue=#passDateOfIssueX#,
+     passport_date_expire=#passDateOfExpiryX#,passport_place_issue=#passPlaceOfIssueX#,attachment_path=#fileName#,deleted=#EDU_TR_deletedX#
+    where id=#passportIdX#
+    </update> 
+     
+     
+     <select id="getPassportIds" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+     select id from dtl_ojf_passport where ojf_id=#jfId#
+    </select>
+     
+     
+     <insert id="addOrUpdateVisaDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_visa_details(id,ojf_id,visa_country,visa_type,date_of_issue,date_of_expiry,reference_number,place_of_issue,no_of_entries,deleted)
+     VALUES (#jfVisaIdDb#,#jfId#,#visaCountryDb#,#visaTypeDb#,#visaDateOfIssueDb#,#visaDateOfExpiryDb#,#referenceNumberDb#,#placeOfIssueDb#,#entriesDb#,#VISA_TR_deletedX#) 
+     ON DUPLICATE KEY UPDATE ojf_id=#jfId#,visa_country=#visaCountryDb#,visa_type=#visaTypeDb#,date_of_issue=#visaDateOfIssueDb#,date_of_expiry=#visaDateOfExpiryDb#,
+     reference_number=#referenceNumberDb#,place_of_issue=#placeOfIssueDb#,no_of_entries=#entriesDb#,deleted=#VISA_TR_deletedX#,id=#jfVisaIdDb#
+     </insert> 
+      
+     <insert id="addOrUpdateEmergencyContacts" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO dtl_ojf_emergency_contacts (id,ojf_id,name,relationship,mobile_number,home_phone_number,work_phone_number,deleted) 
+     Values(#emergencyIdX#,#jfId#,#nameX#,#relationShipDb#,#mobile_numberX#,#home_phone_numberX#,#work_phone_numberX#,#EMERGENCY_TR_deletedX#)
+     ON DUPLICATE KEY UPDATE ojf_id=#jfId#,id=#emergencyIdX#,name=#nameX#,relationship=#relationShipDb#,mobile_number=#mobile_numberX#,
+     home_phone_number=#home_phone_numberX#,work_phone_number=#work_phone_numberX#,deleted=#EMERGENCY_TR_deletedX#
+     </insert> 
+     
+     <select id="getNewEmployeeNumber" parameterClass="java.lang.Integer" resultClass="java.lang.String">
+      SELECT employee_number FROM employees WHERE id=#empId# AND employment_status NOT IN('r','b','t')
+     </select>
+     
+      <select id="getJoinerUserId" parameterClass="java.lang.String" resultClass="java.lang.Integer">
+      SELECT id FROM users WHERE employee_id=#jfId# AND group_id=18
+      </select>  
+      
+       <select id="getjoinerDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+      SELECT jfEmp.id as jfEmpId,gender,father_name as fatherName,marital_status as maritalStatus,
+    date_format(date_married,'%d-%m-%Y') as dateOfMarriage,spouse_name as spouseName,place_of_birth as placeOfBirth,religion,
+    mother_tongue as motherTongue,nationality,present_address as presentAddress,
+    phone_present_address as phoneNumberPresent,permanent_address as permanentAddress,
+    phone_permanent_address as phoneNumberPermanent,previous_pf_number as previousPfNumber,
+    name_in_bank_records as nameInBankRecords,bank_acc_type AS bankAccType,bank_name as bankName,bank_branch as branch,bank_city AS bankCity,
+    bank_account_number as accountNumber,rrf_id as rrfRes,
+    license_number AS dlNumber,date_format(license_date_issue ,'%d-%m-%Y') AS dlDateOfIssue,license_place_issue AS dlPlaceOfIssue,
+    date_format(license_date_expire ,'%d-%m-%Y') AS dlDateOfExpiry,bpfu.file_name AS bankFileName,bpfu.file_type AS bankFileType,
+    bpfu.id AS bankFileId,dlfu.file_name AS dlFileName,dlfu.file_type AS dlFileType,dlfu.id AS dlFileId,empfu.file_name AS empFileName,
+    empfu.file_type AS empFileType,empfu.id AS empFileId,empAddfu.file_name AS empAddPfFileName,empAddfu.file_type AS empAddPfFileType,empAddfu.id AS empAddPfFileId,jf.current_status AS status,
+    jf.personal_email_id AS personalEmailId1,jf.first_name AS firstName,jf.last_name AS lastName,jf.middle_name AS middleName,jf.data_verified_mail_cc AS dataVerifiedMailCc,jf.send_back_reason as sendBackReason,
+    reporting_manager as reportingManager,practice_group as practiceGroup,sub_practice_group AS subPracticeGroup,band_id AS band,designation_id AS designation,pan_no as panNo,
+    date_format(jf.expected_date_of_joining,'%d-%m-%Y') AS doj,jfEmp.bloodgroup as bloodGroup,jf.employee_type as employeeType,jf.data_approved_by as dataApprovedBy,jf.employee_id as joinerEmpId,jf.date_of_birth AS dateOfBirth,jf.employee_category AS empCategory FROM dtl_online_joining_formalities as jf 
+    LEFT JOIN dtl_ojf_employees AS jfEmp ON (jf.id=jfEmp.ojf_id) 
+    LEFT JOIN file_uploads AS bpfu ON (bpfu.ref_id=jfEmp.ojf_id AND bpfu.reference_name=#JF_BANK_PROOFNAME# AND bpfu.module_name=#JF_MODULE_CODE#) 
+    LEFT JOIN file_uploads AS dlfu ON (dlfu.ref_id=jfEmp.ojf_id AND dlfu.reference_name=#JF_DL_PROOFNAME# AND dlfu.module_name=#JF_MODULE_CODE#) 
+    LEFT JOIN file_uploads AS empfu ON (empfu.ref_id=jfEmp.ojf_id AND empfu.reference_name=#JF_JOINERPHOTO_PROOFNAME# AND empfu.module_name=#JF_MODULE_CODE#) 
+    LEFT JOIN file_uploads AS empAddfu ON (empAddfu.ref_id=jfEmp.ojf_id AND empAddfu.reference_name=#JF_JOINERADDRESS_PROOFNAME# AND empAddfu.module_name=#JF_MODULE_CODE#) 
+    WHERE jf.id=#jfId# group by jfEmp.id
+      </select> 
+      
+    <insert id="addOrUpdatePersonsknownCompany" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        INSERT INTO dtl_ojf_persons_defiance(id,ojf_id,name,company,relationship,deleted) values(#jfPerCompIdDb#,#jfId#,#nameOfPersonAtComDb#,#companyAndDepDb#,#pacRelationDb#,#REL_TR_deletedX#) ON DUPLICATE KEY UPDATE ojf_id=#jfId#,name=#nameOfPersonAtComDb#,company=#companyAndDepDb#,relationship=#pacRelationDb#,deleted=#REL_TR_deletedX#,id=#jfPerCompIdDb#
+    </insert> 
+    <insert id="addOrUpdatePersonsknownEarlierCompany" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        INSERT INTO dtl_ojf_refer_earlier_company(id,ojf_id,referred_by,company_name,address_telenumber,designation,no_of_years_known,deleted) values(#jfRefEarCompIdDb#,#jfId#,#refFrmEarNameDb#,#refFrmEarCmpNameDb#,#refFrmEarAddressAndTelDb#,#refFrmEarDesignationDb#,#refFrmEarNoOfYearsKnownDb#,#PRF_TR_deletedX#) 
+        ON DUPLICATE KEY UPDATE ojf_id=#jfId#,referred_by=#refFrmEarNameDb#,company_name=#refFrmEarCmpNameDb#,address_telenumber=#refFrmEarAddressAndTelDb#,designation=#refFrmEarDesignationDb#,no_of_years_known=#refFrmEarNoOfYearsKnownDb#,deleted=#PRF_TR_deletedX#,id=#jfRefEarCompIdDb#
+    </insert>
+    
+    <select id="getEmployeeNumber" parameterClass="java.lang.String" resultClass="java.lang.String">
+      SELECT employee_number  FROM employees WHERE employment_status = #employeeType# ORDER BY `employee_number` DESC LIMIT 0, 1
+     </select> 
+     
+     <update id="updateDetailsToIdealEmployees" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        UPDATE employees set employee_number=#empNumber#,first_name=#firstName#,middle_name=#middleName#,
+    last_name=#lastName#,structure_name=#practiceGroup#,structure_name_subgroup=#subPracticeGroup#,
+    band_id=#band#,designation_id=#designation#,personal_email_address=#personalEmailId1#,
+    birth_date=#dateOfBirth#,pan_number=#panNo#,gender=#gender#,marital_status=#maritalStatus#,
+    joined_date=#joinedDate#,employment_status=#employeeType#,work_email_address=#workMailid#,
+    mobile_number=#phoneNumberPresent#,employee_photo=#empFileName#,employee_type=#employeementType#,
+    company_location_id=#joiningLocation#,current_location_id=#currentLocation#,billable=#empBillable#,blood_group=#bloodGroup#,country_id=#nationality# WHERE id=#joinerEmpId#
+    </update> 
+    
+    <insert id="addDetailsToIdealEmployees" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" >
+      INSERT INTO employees (employee_number,first_name, middle_name,last_name, structure_name,structure_name_subgroup,band_id,designation_id,
+    personal_email_address,manager,birth_date, pan_number,gender, marital_status,joined_date,employment_status,sync_status,work_email_address,mobile_number,
+    employee_photo,employee_type,company_location_id,current_location_id,billable,blood_group,country_id,nonappraiseestatus) VALUES (#empNumber#,#firstName#,#middleName#,
+    #lastName#,#practiceGroup#,#subPracticeGroup#,#band#,#designation#,
+    #personalEmailId1#,#reportingManager#,#dateOfBirth#,#panNo#,#gender#,#maritalStatus#,#joinedDate#,
+    #employeeType#,'',#workMailid#,#phoneNumberPresent#,#empFileName#,#employeementType#,
+    #joiningLocation#,#currentLocation#,#empBillable#,#bloodGroup#,#nationality#,#nonappraiseestatus#)
+     ON DUPLICATE KEY UPDATE employee_number=#empNumber#,first_name=#firstName#,middle_name=#middleName#,
+    last_name=#lastName#,structure_name=#practiceGroup#,structure_name_subgroup=#subPracticeGroup#,
+    band_id=#band#,designation_id=#designation#,personal_email_address=#personalEmailId1#,
+    birth_date=#dateOfBirth#,pan_number=#panNo#,gender=#gender#,marital_status=#maritalStatus#,
+    joined_date=#joinedDate#,employment_status=#employeeType#,work_email_address=#workMailid#,
+    mobile_number=#phoneNumberPresent#,employee_photo=#empFileName#,employee_type=#employeementType#,
+    company_location_id=#joiningLocation#,current_location_id=#currentLocation#,billable=#empBillable#,blood_group=#bloodGroup#,country_id=#nationality#
+    </insert>  
+     
+      <update id="updateJoinerDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+       UPDATE dtl_online_joining_formalities SET data_approved_by=#dataApprovedBy#,employee_id=#empId# WHERE id=#jfId#
+    </update> 
+     
+     <update id="setEmployeeStatus" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+       UPDATE dtl_online_joining_formalities set current_status = #employeeStatusX# WHERE id=#jfId#
+    </update> 
+    
+     <select id="fetchRRF" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="java.lang.String">
+      SELECT rrf_id as rrfRes FROM dtl_online_joining_formalities WHERE id=#jfId#
+     </select>  
+     <update id="updateRRF" parameterClass="Map">
+       UPDATE dtl_rrf_split_request_master set status = 13, employeeId = #empId# WHERE id=#rrf_id#
+    </update>  
+    
+    <delete id="deleteEmployeeBankDetails" parameterClass="java.lang.Integer">
+       DELETE FROM employee_bank_details WHERE employee_id = #empId#
+    </delete>  
+    
+    <delete id="deleteEmployeeAddress" parameterClass="java.lang.Integer">
+       DELETE FROM employee_addresses WHERE employee_id = #empId#
+    </delete> 
+    
+     <delete id="deleteEmployeeVisa" parameterClass="java.lang.Integer">
+       DELETE FROM dtl_employee_visa WHERE employee_id = #empId#
+    </delete> 
+    
+     <delete id="deleteEmployeePassport" parameterClass="java.lang.Integer">
+       DELETE FROM dtl_employee_passport WHERE employee_id = #empId#
+    </delete> 
+    
+    <delete id="deleteEmployeeSkills" parameterClass="java.lang.Integer">
+       DELETE FROM dtl_employee_skills WHERE employee_id = #empId#
+    </delete> 
+    
+    <delete id="deleteEmployeeWorkExperience" parameterClass="java.lang.Integer">
+       DELETE FROM dtl_employee_workexperience WHERE employee_id = #empId#
+    </delete> 
+     
+     <delete id="deleteEmployeeEducation" parameterClass="java.lang.Integer">
+       DELETE FROM dtl_employee_education WHERE employee_id = #empId#
+    </delete> 
+    
+     <delete id="deleteEmployeeLeaveDetails" parameterClass="java.lang.Integer">
+       DELETE FROM employee_leave_details WHERE employee_id = #empId#
+    </delete> 
+    
+     <delete id="deleteEmployeeLeaveRequests" parameterClass="java.lang.Integer">
+       DELETE FROM employee_leave_requests WHERE employee_id = #empId#
+    </delete> 
+    
+     <delete id="deleteEmployeeEmergencyContacts" parameterClass="java.lang.Integer">
+       DELETE FROM employee_emergency_contacts WHERE employee_id = #empId#
+    </delete> 
+    
+     <insert id="addDetailsToIdealBank" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     INSERT INTO employee_bank_details (employee_id ,account_number,bank_name,branch_name,account_name,city_id)
+     VALUES(#empId#,#accountNumber#,#bankName#,#branch#,#nameInBankRecords#,#bankCity#) 
+     ON DUPLICATE KEY UPDATE employee_id=#empId#,account_number=#accountNumber#,bank_name=#bankName#,branch_name=#branch#,account_name=#nameInBankRecords#,city_id=#bankCity#
+    </insert> 
+    
+    <insert id="addDetaislToIdealFamily" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    INSERT INTO employee_dependents (employee_id ,name,relationship,birth_date,age)
+    VALUES(#empId#,#nameOfRelationDb#,#relationShipDb#,#dobRelationDb#,#age#) 
+    ON DUPLICATE KEY UPDATE employee_id=#empId#,name=#nameOfRelationDb#,relationship=#relationShipDb#,birth_date=#dobRelationDb#,age=#age#
+    </insert> 
+    
+     <insert id="addDetailsToIdealAddress" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    INSERT INTO employee_addresses (employee_id ,address_line1,home_phone_number,address_type)
+    VALUES(#empId#,#address#,#phone#,#type#)
+    </insert> 
+    
+     <insert id="addDetaislToIdealVisa" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO dtl_employee_visa (employee_id,country_id,visa_type,date_of_issue,date_of_expiry,reference_number,place_of_issue,visa_visit)
+   Values(#empId#,#visaCountryDb#,#visaTypeDb#,#date_of_issue#,#date_of_expiry#,#referenceNumberDb#,#placeOfIssueDb#,#entriesDb#)
+    </insert> 
+    
+     <insert id="addDetaislToIdealPassport" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO dtl_employee_passport (employee_id,passport_number,passport_date_issue,passport_date_expire,passport_place_issue,passport_status)
+   Values(#empId#,#passportNumberX#,#date_of_issue#,#date_of_expiry#,#passPlaceOfIssueX#,'a')
+    </insert> 
+<!--    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    
+  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@-->
+<!--     <insert id="addDetaislToIdealEducation" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO dtl_employee_education (employee_id,degree,course,institute,university,percentage,year_of_passing,remarks)
+   Values(#empId#,#degreeX,#qualificationX#,#institutionX#,#universityX#,#percentageX#,#year_of_passingX#,#remarksX#)
+    </insert>  -->
+    
+    <insert id="addDetaislToIdealSkill" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO dtl_employee_skills (employee_id,skill_category,skill_id,years_worked,months_worked,skill_type)
+   Values(#empId#,#skill_categoryX#,#skillX#,#skill_yearX#,#skill_monthX#,#skill_typeX#)
+    </insert>  
+    
+    <insert id="addDetaislToIdealExperience" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO dtl_employee_workexperience (employee_id,company_name,company_address,job_title,start_date,end_date)
+    Values(#empId#,#namePrevEmpDb#,#nameAddPrevEmpDb#,#desigOnRelDb#,#dateOfJoinDb#,#dateOfRelDb#)
+    </insert> 
+    
+     <insert id="addDetaislToIdealEmergency" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+   INSERT INTO employee_emergency_contacts (employee_id ,name,relationship,mobile_number,home_phone_number,work_phone_number)
+   VALUES(#empId#,#nameX#,#relationshipX#,#mobile_numberX#,#home_phone_numberX#,#work_phone_numberX#)
+    </insert> 
+    
+    <update id="updateDataVerifiedDetails" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+       UPDATE dtl_online_joining_formalities set data_verified_mail_cc = #dataVerifiedMailCc#,expected_date_of_joining=#doj#,data_verified_by=#dataVerifiedBy# WHERE id=#jfId#
+    </update>  
+    
+     <update id="updateSendBackReason" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+       UPDATE dtl_online_joining_formalities set send_back_reason = #sendBackReason# WHERE id=#jfId#
+    </update> 
+    
+    <select id="getGroupId" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="java.lang.String">
+      SELECT group_id as groupId from users WHERE employee_id=#jfId#
+     </select>   
+     
+      <select id="checkWorkEmailContract" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="java.lang.String">
+      SELECT COUNT( * ) FROM employees WHERE `work_email_address` LIKE #workEmailId# AND employment_status NOT IN('r','b','t') AND id != #contractemployeeId#     
+      </select>   
+    
+       <select id="checkWorkEmail" parameterClass="java.lang.String" resultClass="java.lang.String">
+     SELECT COUNT( * ) FROM employees WHERE `work_email_address` LIKE #workEmailId# AND employment_status NOT IN('r','b','t')
+      </select> 
+      
+        <insert id="insertEmployee" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        insert into users(username,password,employee_id,group_id)values(#personalEmailId1#,MD5(#password#),#jfId#,#JOINING_FORMALITY_NEWCANDIDATE_GROUPID#)
+           </insert> 
+           
+       <update id="updateNewEmployeeMailDetail1"  parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    update dtl_online_joining_formalities SET first_name=#firstName#,alternate_email_id=#personalEmailId2#,
+    middle_name=#middleName#,last_name=#lastName#, practice_group= #practiceGroup#, 
+    personal_email_id=#personalEmailId1#, reporting_manager=#reportingManager#, 
+    date_of_birth=#dateOfBirth#, pan_no=#panNo#,track_number=#password#, 
+    company_structure=#structureName#,employee_type=#employeeType#,mail_cc=#mailCc#,
+    mail_triggered_by=#userEmpId#,current_status=#status#,source_of_hire=#sourceofhire#,source_reference=#empref#,employee_category=#contract_type#,employee_id=#empContract#,rrf_id=#rrf_id# Where id = #jfId#
+    
+    </update> 
+     <update id="updateNewEmployeeDetail1"  parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+    UPDATE dtl_online_joining_formalities SET first_name=#firstName#,alternate_email_id=#personalEmailId2#,
+    middle_name=#middleName#,last_name=#lastName#, practice_group= #practiceGroup#,
+    sub_practice_group=#subPracticeGroup#,band_id=#subBand#,designation_id=#designation#, 
+    personal_email_id=#personalEmailId1#, reporting_manager=#reportingManager#, 
+    date_of_birth=#dateOfBirth#, pan_no=#panNo#, 
+    company_structure=#structureName#,employee_type=#employeeType#,
+    source_of_hire=#sourceofhire#,source_reference=#empref#,employee_category=#contract_type#,employee_id=#empContract#,rrf_id=#rrf_id# 
+    Where id = #jfId# 
+    </update>  
+     <select id="getMailCcfromOJF" parameterClass="java.lang.String" resultClass="java.lang.String">
+      select mail_cc from dtl_online_joining_formalities where id=#jfid#
+      </select>  
+      
+      <select id="getDateOfJoining" parameterClass="java.lang.String" resultClass="java.lang.String">
+      select date_joining from dtl_ojf_pre_employer where ojf_id=#jfid# 
+      </select>
+      
+      <select id="getCompanyNames" parameterClass="java.lang.String" resultClass="java.lang.String">
+      select name from dtl_ojf_pre_employer where ojf_id=#jfid#
+      </select> 
+      
+      <select id="getsalarysOnJoining" parameterClass="java.lang.String" resultClass="java.lang.String">
+      select salary_joining from dtl_ojf_pre_employer where ojf_id=#jfid#
+      </select> 
+      
+      
+      
+      
+      
+       <select id="getJoinerReportData" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     SELECT jf.first_name as firstName,jf.middle_name as middleName,jf.last_name as lastName,jf.personal_email_id as personalEmailId1,
+     jf.alternate_email_id  as personalEmailId2,date_format(jf.date_of_birth,'%d-%b-%Y') as dateOfBirth,jfe.father_name as fatherName,
+     jfe.present_address as presentAddress,jfe.spouse_name as spouseName,jfe.bloodgroup AS bloodGroup,
+     cs.name as structureName,pg.name AS practiceGroup,subpg.name AS subPracticeGroup,jf.pan_no as panNo,
+     CONCAT('DTL','/',jf.candidate_reference_number,'/',cs.name,'-',pg.name,'/',jf.id) AS refnumber,
+     CONCAT(rm.first_name,' ',rm.last_name) as reportingManager,emp.employee_number AS joinerEmpId,DATE_FORMAT(emp.joined_date,'%d-%b-%Y') as joinedDate,
+     band.name as bandName,subband.name as subBandName,desig.designation AS desigName,jf.current_status AS jfStatus,city.city AS employeeLocation,
+     jf.data_approved_by AS dataApprovedById,jf.data_verified_by AS dataVerifiedById,jf.employee_category AS employeeCategory 
+     FROM dtl_online_joining_formalities as jf 
+     LEFT JOIN employees as rm on(rm.id=jf.reporting_manager)
+     LEFT JOIN employees as emp ON(emp.id=jf.employee_id)
+     LEFT JOIN dtl_ojf_employees jfe ON (jfe.ojf_id=jf.id) 
+     LEFT JOIN company_structures as cs ON(cs.id=jf.company_structure)
+     LEFT JOIN company_structures as pg ON(pg.id=jf.practice_group) 
+     LEFT JOIN company_structures as subpg ON(subpg.id=jf.sub_practice_group) 
+     LEFT JOIN designations as desig ON(desig.id=jf.designation_id)
+     LEFT JOIN bands as subband ON(subband.id=jf.band_id) 
+     LEFT JOIN bands as band ON(band.id=subband.parent_id) 
+     LEFT JOIN company_locations AS loc ON (loc.id = emp.company_location_id)
+     LEFT JOIN cities  AS city ON (city.id = loc.city_id)
+     WHERE jf.id=#empId1#
+    </select>  
+    
+    <select id="getAuthorizerDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" >
+      SELECT CONCAT(emp.first_name,' ',emp.last_name) as hrName,city.city AS cityName FROM employees emp
+   LEFT JOIN company_locations AS loc ON (loc.id = emp.company_location_id)
+   LEFT JOIN cities  AS city ON (city.id = loc.city_id)
+   WHERE emp.id = #val#
+    </select>
+    <select id="getJfEmpData1" parameterClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+     SELECT jfEmp.id as jfEmpId,gender,father_name as fatherName,marital_status as maritalStatus,
+    date_format(date_married,'%d-%m-%Y') as dateOfMarriage,spouse_name as spouseName,place_of_birth as placeOfBirth,religion,
+    mother_tongue as motherTongue,nationality,present_address as presentAddress,
+    phone_present_address as phoneNumberPresent,permanent_address as permanentAddress,
+    phone_permanent_address as phoneNumberPermanent,previous_pf_number as previousPfNumber,
+    name_in_bank_records as nameInBankRecords,bank_acc_type AS bankAccType,bank_name as bankName,bank_branch as branch,bank_city AS bankCity,
+    bank_account_number as accountNumber,rrf_id as rrfRes,
+    license_number AS dlNumber,date_format(license_date_issue ,'%d-%m-%Y') AS dlDateOfIssue,license_place_issue AS dlPlaceOfIssue,
+    date_format(license_date_expire ,'%d-%m-%Y') AS dlDateOfExpiry,bpfu.file_name AS bankFileName,bpfu.file_type AS bankFileType,
+    bpfu.id AS bankFileId,dlfu.file_name AS dlFileName,dlfu.file_type AS dlFileType,dlfu.id AS dlFileId,empfu.file_name AS empFileName,
+    empfu.file_type AS empFileType,empfu.id AS empFileId,empAddfu.file_name AS empAddPfFileName,empAddfu.file_type AS empAddPfFileType,empAddfu.id AS empAddPfFileId,jf.current_status AS status,
+    jf.personal_email_id AS personalEmailId1,jf.first_name AS firstName,jf.last_name AS lastName,jf.last_name AS middleName,jf.data_verified_mail_cc AS dataVerifiedMailCc,jf.send_back_reason as sendBackReason,
+    reporting_manager as reportingManager,practice_group as practiceGroup,sub_practice_group AS subPracticeGroup,band_id AS band,designation_id AS designation,pan_no as panNo,
+    date_format(jf.expected_date_of_joining,'%d-%m-%Y') AS doj,jfEmp.bloodgroup as bloodGroup,jf.employee_type as employeeType,jf.data_approved_by as dataApprovedBy,jf.employee_id as joinerEmpId,jf.date_of_birth AS dateOfBirth,jf.employee_category AS empCategory FROM dtl_online_joining_formalities as jf 
+    LEFT JOIN dtl_ojf_employees AS jfEmp ON (jf.id=jfEmp.ojf_id) 
+    LEFT JOIN file_uploads AS bpfu ON (bpfu.ref_id=jfEmp.ojf_id AND bpfu.reference_name=#JF_BANK_PROOFNAME# AND bpfu.module_name=#JF_MODULE_CODE#)
+    LEFT JOIN file_uploads AS dlfu ON (dlfu.ref_id=jfEmp.ojf_id AND dlfu.reference_name=#JF_DL_PROOFNAME# AND dlfu.module_name=#JF_MODULE_CODE#) 
+    LEFT JOIN file_uploads AS empfu ON (empfu.ref_id=jfEmp.ojf_id AND empfu.reference_name=#JF_JOINERPHOTO_PROOFNAME# AND empfu.module_name=#JF_MODULE_CODE#) 
+    LEFT JOIN file_uploads AS empAddfu ON (empAddfu.ref_id=jfEmp.ojf_id AND empAddfu.reference_name=#JF_JOINERADDRESS_PROOFNAME# AND empAddfu.module_name=#JF_MODULE_CODE#) 
+    WHERE jf.id=#empId1#
+    </select>  
+    
+     <select id="getMediInsuranceData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" >
+      SELECT id AS jfFamIdDb,person_name as nameOfRelationDb,relationship as relationShipDb,date_format(date_of_birth,'%d-%b-%Y') as dobRelationDb,
+    occupation as occupationOfRelDb,medical_insurance as medicalInsuranceDb FROM dtl_ojf_family_details WHERE ojf_id =#empId# and deleted=0 and medical_insurance=1
+    </select>
+<!--    <select id="getJfReferrerDTData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" >
+      SELECT id AS jfPerCompIdDb,name as nameOfPersonAtComDb,company as companyAndDepDb,relationship as pacRelationDb 
+      FROM dtl_ojf_persons_defiance WHERE ojf_id =#id# and deleted=0 
+    </select>
+    
+    <select id="getJfReferrerPrevCompData" parameterClass="java.lang.String" resultClass="com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" >
+      SELECT id as jfRefEarCompIdDb,referred_by as refFrmEarNameDb,company_name as refFrmEarCmpNameDb,address_telenumber as refFrmEarAddressAndTelDb,designation as refFrmEarDesignationDb,no_of_years_known as refFrmEarNoOfYearsKnownDb 
+      FROM dtl_ojf_refer_earlier_company WHERE ojf_id=#id# and deleted=0
+    </select>-->
+    
+     <update id="revertRRF"  parameterClass="java.lang.String">
+     UPDATE dtl_online_joining_formalities SET rrf_id = 0 WHERE id = #jf_id#
+    </update>  
+    
+   <select id="getNewEmployeeNumber1" parameterClass="java.lang.Integer" resultClass="java.lang.String" >
+      SELECT employee_number FROM employees WHERE id=#empId# AND employment_status NOT IN('r','b','t')
+    </select>
+    
+    <select id = "getJfStatus" parameterClass = "java.lang.Integer" resultClass="java.lang.Integer">
+        select current_status from dtl_online_joining_formalities where id = #id#;
+    </select>
+    
+    <select id = "getAddressId" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO" resultClass = "java.lang.Integer">
+        select id from employee_addresses where employee_id = #emp_id#
+    </select>
+    
+    <insert id = "addEmployeeAddressDetails" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        insert into employee_addresses (employee_id,address_type,address_line1,country_id,region_id,city_id,zip_code,home_phone_number)
+        values(#emp_id#,#address_type#,#permanentAddress#,#country#,#region#,#city#,#zip_code#,#phoneNumberPermanent#)
+    </insert>
+    
+    <update id = "updateEmployeeAddressDetails" parameterClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        update employee_addresses set employee_id = #emp_id#,address_line1 = #permanentAddress#,country_id = #country#,
+        region_id = #region#,city_id = #city#,zip_code = #zip_code#,home_phone_number = #phoneNumberPermanent# where employee_id = #emp_id#
+    </update>
+    
+    <select id = "getEmployeeAddressData" parameterClass = "java.lang.Integer" resultClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        select address_line1 as permanentAddress,country_id as country,region_id as region,city_id as city,
+        zip_code from employee_addresses where employee_id = #empId#
+    </select>
+    
+    <select id = "getEmpId" parameterClass = "java.lang.String" resultClass = "java.lang.Integer">
+        select id from employees where employee_number = #employeeNumber#
+    </select>
+    
+    <update id = "updateEmpAddressData" parameterClass = "Map">
+        update employee_addresses set employee_id = #id# where employee_id = #jfId#
+    </update>
+    
+    <select id = "getJfEmpId" parameterClass = "java.lang.Integer" resultClass = "java.lang.Integer">
+        select employee_id from dtl_online_joining_formalities where id = #jfId#
+    </select>
+    
+    <select id = "getSyncEmpDetails" parameterClass = "java.lang.String" resultClass = "com.defiance.ideal.ojf.joiningForm.dto.JoinerFormDTO">
+        select concat(first_name,' ',last_name) as employeeName,employee_number as employeeNumber, id as employeeId from employees where sync_status = #n# OR sync_status = 'R'
+    </select>
+      
+</sqlMap>
+

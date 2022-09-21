@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="EarnedLeaveMap">
+
+    <select id="getSearchList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.EarnedLeaveFilterDTO">
+        SELECT 
+            Employee.id AS empId,
+            CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+    
+   <select id="getLeaveRecords" parameterClass="com.defiance.ideal.reports.dto.EarnedLeaveFilterDTO" resultClass="com.defiance.ideal.reports.dto.EarnedLeaveDataDTO">
+        SELECT
+	   Employee.employee_number AS empNumber,
+	   CONCAT_WS(' ', Employee.first_name, Employee.last_name) AS empName,
+	   CONCAT(RM.employee_number,' - ', RM.first_name,' ',RM.last_name) AS rmName,
+	   CS.name AS unit,
+	   CSsubgroup.name AS cmpStructSubGroup,
+	   CV.configuration_value AS Employee_Status,
+	   ( ( EmployeeLeaveDetail.no_of_days_allotted + EmployeeLeaveDetail.leave_brought_forward + EmployeeLeaveDetail.leave_cancelled ) - (EmployeeLeaveDetail.leave_taken + EmployeeLeaveDetail.leave_encashed )) AS earnedLeave
+        FROM employee_leave_details AS EmployeeLeaveDetail
+        JOIN employees AS Employee ON (EmployeeLeaveDetail.employee_id = Employee.id)
+        JOIN company_structures AS CS ON (CS.id = Employee.structure_name)
+        JOIN company_structures AS CSsubgroup ON (CSsubgroup.id = Employee.structure_name_subgroup)
+        JOIN employees AS RM ON (Employee.manager = RM.id)
+        LEFT JOIN configuration_values CV ON (CV.configuration_key = Employee.employment_status AND CV.parent_id = '286')
+        WHERE
+           EmployeeLeaveDetail.year = #financialYear#
+           AND EmployeeLeaveDetail.leave_category_id = '4'
+           AND Employee.employment_status IN ('e','p','t','r','b','q','o')
+            <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   Employee.id = #employee_id#
+                </isNotEmpty>
+            </dynamic>
+        ORDER BY Employee.employee_number ASC
+    </select>
+
+    <select id="getEncashRecords" parameterClass="com.defiance.ideal.reports.dto.EarnedLeaveFilterDTO" resultClass="com.defiance.ideal.reports.dto.EarnedLeaveDataDTO">
+        SELECT
+            Employee.employee_number AS empNumber,
+            CONCAT_WS(' ', Employee.first_name, Employee.last_name) AS empName,
+            CS.name AS unit,
+             CSsubgroup.name AS cmpStructSubGroup,
+            DATE_FORMAT(Encashment.date_applied,'%d-%m-%Y') AS appliedDate,
+<!--            ( ( EmployeeLeaveDetail.no_of_days_allotted + EmployeeLeaveDetail.leave_brought_forward ) - EmployeeLeaveDetail.leave_taken ) AS earnedLeave,-->
+            Encashment.number_of_days AS daysCount,
+            Encashment.year AS financialYear
+        FROM employee_leave_encashments AS Encashment
+        JOIN employees AS Employee ON (Encashment.employee_id = Employee.id)
+        JOIN company_structures AS CS ON (CS.id = Employee.structure_name)
+          JOIN company_structures AS CSsubgroup ON (CSsubgroup.id = Employee.structure_name_subgroup)
+<!--        JOIN employee_leave_details AS EmployeeLeaveDetail ON (EmployeeLeaveDetail.employee_id = Employee.id AND EmployeeLeaveDetail.year = Encashment.year AND EmployeeLeaveDetail.leave_category_id = 4)-->
+        WHERE
+            Encashment.id NOT IN ('NULL') 
+            AND 
+        (DATE_FORMAT(Encashment.date_applied,'%Y-%m-%d') BETWEEN 
+        #filter_date_applied_pre# AND #filter_date_applied#)
+            <dynamic prepend="AND">
+                <isNotEmpty property="employee_id">
+                   Employee.id = #employee_id#
+                </isNotEmpty>
+            </dynamic>
+        ORDER BY Employee.employee_number ASC
+    </select>
+
+    <select id="getLopRecords" parameterClass="com.defiance.ideal.reports.dto.EarnedLeaveFilterDTO" resultClass="com.defiance.ideal.reports.dto.EarnedLeaveDataDTO">
+        SELECT
+            Employee.employee_number AS empNumber,
+            CONCAT_WS(' ', Employee.first_name, Employee.last_name) AS empName,
+            CS.name AS unit,
+            CSsubgroup.name AS cmpStructSubGroup,
+			DATE_FORMAT(Lreq.date_applied,'%d-%m-%Y') AS appliedDate,
+			DATE_FORMAT(Lreq.from_date,'%d-%m-%Y') AS fromDate,
+			DATE_FORMAT(Lreq.to_date,'%d-%m-%Y') AS toDate,
+			Lop.year AS lopYear,
+			Lop.month AS lopMonth,
+			Lop.lop_days AS daysCount
+        FROM employee_lop_details AS Lop
+        JOIN employees AS Employee ON (Lop.employee_id = Employee.id)
+        JOIN company_structures AS CS ON (CS.id = Employee.structure_name)
+        JOIN company_structures AS CSsubgroup ON (CSsubgroup.id = Employee.structure_name_subgroup)
+     JOIN employee_leave_requests AS Lreq ON (Lreq.id = Lop.employee_leave_request_id )
+        WHERE
+            Lop.id NOT IN ('NULL') 
+       <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   Employee.id = #employee_id#
+                </isNotEmpty>
+                
+               <isNotEqual prepend="AND" property="filter_month" compareValue="All">
+                    Lop.month = #filter_month#
+                </isNotEqual>
+                 <isNotEqual prepend="AND" property="filter_year" compareValue="All">
+                    Lop.year = #filter_year#
+                </isNotEqual>
+                
+            </dynamic>
+<!--        AND Lop.status = 'Opened' -->
+          
+            ORDER BY Lreq.date_applied DESC
+    </select>
+
+</sqlMap>

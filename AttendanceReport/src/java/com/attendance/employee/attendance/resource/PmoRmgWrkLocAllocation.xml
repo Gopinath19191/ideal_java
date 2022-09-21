@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+
+
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="PmoRmgWrkLocAllocation">
+    
+    <select id="getEmployeeList" parameterClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT emp.id AS employeeId, CONCAT(emp.employee_number, ' - ', emp.first_name,' ',emp.last_name) AS empName,         
+        CONCAT(cv.configuration_key,' - ',co.country, '- ',ct.city) AS baseLocation,cl.id AS baseLocationId,
+        empWrk.work_location_id AS workLocationId,
+            CASE
+        WHEN empWrk.location_table = 'customer_work_locations'
+        THEN 
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cus.customer_name,' - ',cco.country, ' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cus.customer_name,' - ',cco.country, ' - ',cct.city, ' - ' ,cusWrk.address_line)
+        END
+        WHEN empWrk.location_table = 'company_locations'
+        THEN 
+        CASE 
+        WHEN empWrk.work_location_id = 0
+        THEN 'ALL'
+        ELSE
+        CONCAT(cv.configuration_key,' - ',hco.country, '- ',hct.city)
+        END
+        END AS workLocation,
+        CONCAT(rm.employee_number,' - ',rm.first_name,' ',rm.last_name) AS reportingManager,
+        DATE_FORMAT(empWrk.effective_from,'%d-%m-%Y') AS effectiveFrom,
+        cal.customer_calendar_name AS calendarName,
+        cal.available_hours AS available_hours,
+        F_IsEmpAllocated(emp.id) AS isAllocated
+        from employees emp
+        LEFT JOIN employee_work_location empWrk ON(empWrk.employee_id = emp.id)
+        LEFT JOIN company_locations cl ON(emp.current_location_id = cl.id)
+        LEFT JOIN employees AS rm ON(emp.manager=rm.id)
+        LEFT JOIN cities ct ON (ct.id = cl.city_id)
+        LEFT JOIN countries co ON (co.id = cl.country_id)
+        LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = empWrk.work_location_id)
+        LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = empWrk.work_location_id)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        LEFT JOIN customer_calendars cal ON (cal.calendar_id = empWrk.calendar_id)
+        WHERE emp.employment_status NOT IN('t','q','b','o','r','y') 
+        
+        <dynamic>
+            <isNotEmpty property="employeeId" prepend="AND">
+                emp.id IN($employeeId$)
+            </isNotEmpty>
+            <isNotEmpty property="managerId" prepend="AND">
+                emp.manager = #managerId#
+            </isNotEmpty>
+            <isNotEmpty property="baseLocationId" prepend="AND">
+                emp.current_location_id = #baseLocationId#
+            </isNotEmpty>
+            <isNotEmpty property="workLocationId" prepend="AND">
+                empWrk.work_location_id	 = #workLocationId#
+            </isNotEmpty>
+        </dynamic>
+        order by  emp.employee_number
+    </select>
+    
+    <select id="baseLocationList" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT DISTINCT CONCAT(cv.configuration_key,' - ',co.country, '- ',ct.city) AS baseLocationName,empWrk.work_location_id AS baseLocationId
+        FROM
+        employee_work_location empWrk 
+        LEFT JOIN company_locations cl ON(empWrk.work_location_id = cl.id AND empWrk.location_table = 'company_locations')
+        LEFT JOIN cities ct ON (ct.id = cl.city_id)
+        LEFT JOIN countries co ON (co.id = cl.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        WHERE empWrk.location_table='company_locations' AND cl.deleted = 0
+        ORDER BY co.country,ct.city
+        
+    </select>
+    
+    <select id="workLocationList" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT  
+        DISTINCT
+        CASE
+        WHEN empWrk.location_table = 'customer_work_locations'
+        THEN 
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cus.customer_name,' - ',cco.country,' - ',cusWrk.address_line) 
+        ELSE
+        CONCAT(cus.customer_name,' - ',cco.country, ' - ',cct.city,' - ',cusWrk.address_line)
+        END
+        WHEN empWrk.location_table = 'company_locations'
+        THEN 
+        CASE 
+        WHEN empWrk.work_location_id = 0
+        THEN 'ALL'
+        ELSE
+        CONCAT(cv.configuration_key,' - ',hco.country, '- ',hct.city)
+        END
+        END AS workLocationName,
+        empWrk.work_location_id AS workLocationId
+        FROM
+        employee_work_location empWrk 
+        LEFT JOIN customer_work_locations cusWrk ON (cusWrk.id = empWrk.work_location_id)
+        LEFT JOIN customers cus ON(cus.id = cusWrk.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cusWrk.city_id)
+        LEFT JOIN countries cco ON (cco.id = cusWrk.country_id)
+        LEFT JOIN company_locations cll ON(cll.id = empWrk.work_location_id AND cll.deleted = 0)
+        LEFT JOIN cities hct ON (hct.id = cll.city_id)
+        LEFT JOIN countries hco ON (hco.id = cll.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        LEFT JOIN employees e ON (empWrk.employee_id = e.id)
+        WHERE e.employment_status IN ('p','d','v','e','g')
+        ORDER BY workLocationName
+    </select>
+    
+    <select id="HtlbaseLocationList" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT DISTINCT CONCAT(cv.configuration_key,' - ',co.country, '- ',ct.city) AS htlBaseLocationName,cl.id AS htlBaseLocationId
+        FROM
+        company_locations cl 
+        LEFT JOIN cities ct ON (ct.id = cl.city_id)
+        LEFT JOIN countries co ON (co.id = cl.country_id)
+        LEFT JOIN configuration_values cv ON (cv.parent_id = '639')
+        WHERE cl.deleted = 0
+        ORDER BY co.country,ct.city
+    </select>
+    
+    <select id="searchEmployeeList" parameterClass="com.attendance.employee.attendance.dto.SearchDTO" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT 
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE (Employee.employee_number like #employeeSearch# OR Employee.first_name like #employeeSearch# OR Employee.last_name like #employeeSearch#)
+        AND Employee.employment_status NOT IN('t','q','b','o','r','y')
+        <dynamic>
+            <isNotNull property="managerId" prepend="AND">
+                Employee.manager IN ($managerId$)
+            </isNotNull>
+        </dynamic>
+    </select>
+    
+    <select id="customerAddressList" parameterClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto"> 
+        SELECT  
+        case when cct.city IS NULL
+        THEN
+        CONCAT(cus.address_shortcode,'  -  ',cs.customer_name,' - ',cco.country, ' - ', cus.address_line) 
+        ELSE
+        CONCAT(cus.address_shortcode,'  -  ',cs.customer_name,' - ',cco.country, ' - ',cct.city, ' - ' ,cus.address_line)
+        END AS cusWrkLocAddress, 
+		cus.id AS cusWrkLocId 
+        FROM customer_work_locations AS cus
+        LEFT JOIN customers cs ON (cs.id = cus.customer_id)
+        LEFT JOIN cities cct ON (cct.id = cs.city_id)
+        LEFT JOIN countries cco ON (cco.id = cus.country_id)
+        WHERE 1=1
+        <dynamic>
+            <isNotNull property="cusId" prepend="AND">
+                cus.customer_id = #cusId#
+            </isNotNull>
+        </dynamic>
+        ORDER BY cus.address_line
+    </select>
+    
+    <select id="customerList" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        SELECT cus.id AS cusId, 
+        CONCAT(cus.customer_name , ' -', COALESCE(cus.division,''),'- ', cus.customer_code) AS cusName
+        FROM customers cus
+        WHERE cus.status ='a' AND cus.deleted = 0
+        ORDER BY cus.customer_name
+    </select>
+    
+    <insert id="insertLocation" parameterClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        INSERT INTO employee_work_location (employee_id, work_location_id, location_table, effective_from, calendar_id, created_by, created_date)
+        VALUES (#employeeId#,#employeeWrkLocId#,#locationTable#,#effectiveFrom#,#calendar_id#, #created_by#, CURDATE())
+        ON DUPLICATE KEY UPDATE work_location_id = #employeeWrkLocId#,location_table = #locationTable#,effective_from = #effectiveFrom#, calendar_id = #calendar_id#, created_by = #created_by#, created_date = CURDATE()
+    </insert>
+    
+    <insert id="insertLocationHistory" parameterClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto">
+        INSERT INTO employee_work_location_histories (employee_id, changed_by, changed_from, changed_to, field_changed, created_time, from_date, to_date, status, calendar_id)
+        VALUES (#employeeId#, #created_by#, #employeeOldWrkLocId#, #employeeWrkLocId#, #locationTable#, CURDATE(), #fromDate#, #toDate#, '0', #calendar_id#)
+    </insert>
+    
+    <select id="getSingleEmployeeDetail" parameterClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto" resultClass="com.attendance.employee.attendance.dto.PmoRmgWrkLocAllocationDto" >
+        SELECT work_location_id AS employeeOldWrkLocId,location_table AS locationTable,effective_from AS oldEffectiveFrom,calendar_id AS oldCalendar_id  FROM employee_work_location WHERE employee_id=#employeeId#
+    </select>
+    
+    <parameterMap id="getCalendarNameList" class="com.attendance.employee.attendance.dto.CalendarDTO">
+        <parameter property="customer_id" jdbcType="Integer" mode="IN" />
+        <parameter property="location_id" jdbcType="Integer" mode="IN" />        
+        <parameter property="is_customer" jdbcType="Integer" mode="IN" />     
+    </parameterMap>
+
+    <procedure id="getCalendarNameList" parameterMap="getCalendarNameList" resultClass="com.attendance.employee.attendance.dto.CalendarDTO">
+        {call P_GetCalendarNameList (?,?,?)}
+    </procedure> 
+    
+    <parameterMap id="getAvailableHours" class="com.attendance.employee.attendance.dto.CalendarDTO">
+        <parameter property="customer_id" jdbcType="Integer" mode="IN" />           
+    </parameterMap>
+
+    <procedure id="getAvailableHours" parameterMap="getAvailableHours" resultClass="String">
+        {call p_GetAvailableHrs (?)}
+    </procedure> 
+    
+    <parameterMap id="getReportingList" class="com.attendance.employee.attendance.dto.SearchDTO">
+        <parameter property="loginEmpId" jdbcType="Integer" mode="IN" />           
+    </parameterMap>
+
+    <procedure id="getReportingList" parameterMap="getReportingList" resultClass="com.attendance.employee.attendance.dto.ReportingListDTO">
+        {call sp_getReportingList (?)}
+    </procedure>
+    
+</sqlMap>

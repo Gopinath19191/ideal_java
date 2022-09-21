@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="filter">
+ 
+ <select id="getList" resultClass="com.defiance.ideal.fullreport.dto.FilterDTO">
+       SELECT prj.project_code as code, prj.project_name as name, date_format(prj.planned_start_date,"%d-%m-%Y") As start_date , date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, SUM(po.planned_efforts) As estimated_hours, cust.customer_name As customer_name, emp.employee_number As pm_number, emp.first_name As manager, emp.work_email_address As manager_email, cstruct.name As sbu, comprbu.name As rbu, CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable" WHEN "e" THEN "External Billable" WHEN "x" THEN "External NonBillable" END AS billable, CASE prj.project_type WHEN "d" THEN "Development" WHEN "m" THEN "Maintenance" WHEN "p" THEN "Production Support" WHEN "s" THEN "Maintenance &amp; Support" WHEN "i" THEN "Implementation" WHEN "e" THEN "Engineering" WHEN "u" THEN "Migration &amp; Upgrade" WHEN "g" THEN "Migration" WHEN "r" THEN "Upgrade" WHEN "t" THEN "Training" WHEN "c" THEN "Consulting" WHEN "n" THEN "Testing" ELSE "Type Not specified" END AS "Project Type", CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership, CASE prj.execution_model WHEN "off" THEN "OffShore" WHEN "on" THEN "Onsite" WHEN "any" THEN "Offshore/Onsite" ELSE "Model Not Specified" END AS model, CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Model Not Specified" END AS pricing , CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" ELSE "Status Not Present" END AS status,(select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase, (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks FROM projects AS prj LEFT JOIN employees As emp ON (emp.id = prj.project_manager) LEFT JOIN customers As cust ON (cust.id = prj.customer_id) LEFT JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu) LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu) JOIN project_purchase_orders As po ON (po.project_id = prj.id)
+       WHERE prj.deleted=0 GROUP BY prj.id
+ </select>
+<select id="finalList" parameterClass="com.defiance.ideal.fullreport.dto.FullReportDTO" resultClass="com.defiance.ideal.fullreport.dto.FilterDTO">
+SELECT prj.project_code as code, prj.project_name as name, date_format(prj.planned_start_date,"%d-%m-%Y") As start_date , date_format(prj.planned_end_date,"%d-%m-%Y") As end_date, SUM(po.planned_efforts) As estimated_hours, cust.customer_name As customer_name, emp.employee_number As pm_number, emp.first_name As manager, emp.work_email_address As manager_email, cstruct.name As sbu, comprbu.name As rbu, CASE prj.billable WHEN "i" THEN "Internal Billable" WHEN "n" THEN "Internal NonBillable" WHEN "e" THEN "External Billable" WHEN "x" THEN "External NonBillable" END AS billable, CASE prj.project_type WHEN "d" THEN "Development" WHEN "m" THEN "Maintenance" WHEN "p" THEN "Production Support" WHEN "s" THEN "Maintenance &amp; Support" WHEN "i" THEN "Implementation" WHEN "e" THEN "Engineering" WHEN "u" THEN "Migration &amp; Upgrade" WHEN "g" THEN "Migration" WHEN "r" THEN "Upgrade" WHEN "t" THEN "Training" WHEN "c" THEN "Consulting" WHEN "n" THEN "Testing" ELSE "Type Not specified" END AS "Project Type", CASE prj.ownership WHEN "df" THEN "Defiance Managed" WHEN "cr" THEN "Customer Managed" ELSE "Ownership Not Specified" END As ownership, CASE prj.execution_model WHEN "off" THEN "OffShore" WHEN "on" THEN "Onsite" WHEN "any" THEN "Offshore/Onsite" ELSE "Model Not Specified" END AS model, CASE prj.pricing WHEN "tm" THEN "Time &amp; Material" WHEN "fb" THEN "Fixed Bid" ELSE "Model Not Specified" END AS pricing , CASE prj.project_status WHEN "e" THEN "Active" WHEN "y" THEN "Yet to Start" WHEN "h" THEN "On Hold" WHEN "c" THEN "Closed" ELSE "Status Not Present" END AS status,(select COUNT(aspp.id) As "No Of Phases" from project_phases AS aspp where aspp.project_id = prj.id) As phase, (select COUNT(astt.id) As "No Of Phases" from project_phase_tasks AS astt where astt.project_id = prj.id) As tasks FROM projects AS prj LEFT JOIN employees As emp ON (emp.id = prj.project_manager) LEFT JOIN customers As cust ON (cust.id = prj.customer_id) LEFT JOIN company_structures As cstruct ON (cstruct.id = prj.project_sbu) LEFT JOIN company_structures As comprbu ON (comprbu.id = prj.project_rbu) JOIN project_purchase_orders As po ON (po.project_id = prj.id)
+WHERE prj.deleted=0
+<dynamic prepend="AND">
+        <isNotEmpty property="projectcode">
+           prj.project_code = #projectcode#
+      </isNotEmpty>
+      </dynamic>
+      <dynamic prepend="AND  prj.project_status IN">
+      <isNotNull property="status">
+         <iterate property="status" open="(" close=")" conjunction="," >
+           #status[]#
+          </iterate>
+      </isNotNull>
+   </dynamic>
+    <dynamic prepend="AND  prj.ownership IN">
+      <isNotNull property="ownership">
+         <iterate property="ownership" open="(" close=")" conjunction="," >
+           #ownership[]#
+          </iterate>
+      </isNotNull>
+   </dynamic>
+   <dynamic prepend="AND">        
+      <isNotEqual property="sbu" compareValue="All">
+           cstruct.name = #sbu#
+      </isNotEqual>
+   </dynamic>
+GROUP BY prj.id
+</select>
+</sqlMap>

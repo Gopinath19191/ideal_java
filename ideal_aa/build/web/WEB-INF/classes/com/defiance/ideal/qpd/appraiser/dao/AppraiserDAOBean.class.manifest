@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+
+Name: com/defiance/ideal/qpd/appraiser/dao/AppraiserDAOBean.class
+Java-Bean: true
+Beehive-Control: true

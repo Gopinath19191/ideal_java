@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BenchDaysMap">
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.BenchReportFilterDTO">
+        SELECT id as sbuId, name as sbuName
+        FROM company_structures
+        WHERE parent_id = #employeeId#
+    </select>
+    <select id="getBandList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.BenchReportFilterDTO">
+        select id as bandId,name as bandName
+        from bands
+    </select>
+    <select id="getBenchDaysList" parameterClass="com.defiance.ideal.reports.dto.BenchReportFilterDTO" resultClass="com.defiance.ideal.reports.dto.BenchReportDataDTO">
+        SELECT distinct e.employee_number As EmpNumber,CONCAT( e.first_name, ' ', e.last_name ) AS empName,
+        case when e.employment_status = 'e' then "Transferred To Onsite" when e.employment_status = 'a' then "AL Employees" when e.employment_status = 'c' then "Contract GMBH" when e.employment_status = 'g' then "Permanent GMBH" when e.employment_status = 'p' then "Permanent" when e.employment_status = 'd' then "Direct Contract" when e.employment_status = 'v' then "Vendor Contract" else "" end As EmpStatus,
+        CONCAT( rm.first_name, ' ', rm.last_name ) AS rmName,
+        DATE_FORMAT(e.joined_date,'%d-%m-%Y') AS JoiningDate,
+        c.name as SBU,cs.name as subSbu,subBand.name AS Band,
+        CONCAT(FLOOR((DATEDIFF(NOW(),e.joined_date)/(30*12))),'.',FLOOR((DATEDIFF(NOW(),e.joined_date)/(30))%12)) as dtExp,
+        DATE_FORMAT(max(te.timesheet_date),'%d-%m-%Y') as lastbilledDate,
+        case when tep.approved_hours = null then tep.worked_hours else tep.worked_hours end as lastbilledHrs,
+        case when (select distinct(project_id) from timesheet_entry_projects where timesheet_entry_id=max(te.id) having max(id)) = 'Non_Project_Activity'
+        then 'Non Project Activity' else (select concat(project_code,'-',project_name)
+        from projects where id =
+        (select distinct(project_id) from timesheet_entry_projects where timesheet_entry_id=max(te.id) having max(id))) end  as lastProjectId,
+
+        CASE WHEN (max(p.end_date) = "" || max(p.end_date) IS NULL) THEN DATEDIFF(CURDATE(),e.joined_date) 
+        ELSE DATEDIFF(CURDATE(),max(p.end_date)) END as benchDays,
+        DATE_FORMAT(max(p.end_date),'%d-%m-%Y') as lastAllocatedDate
+        FROM employees e
+        inner JOIN employees AS rm ON ( rm.id = e.manager  )
+        inner JOIN bands AS subBand ON ( subBand.id = e.band_id )
+        inner JOIN company_structures AS c ON ( c.id = e.structure_name )
+        inner JOIN company_structures AS cs ON ( cs.id = e.structure_name_subgroup )
+        LEFT JOIN project_team_allocations p on(p.employee_id=e.id and p.deleted = 0)
+        LEFT JOIN timesheet_entries te on (te.employee_id=e.id)
+        LEFT JOIN timesheet_entry_projects tep on(tep.timesheet_entry_id=te.id)
+        left join projects pj on (pj.id=p.project_id)
+        where e.employment_status NOT IN ('r','b','t','q','o','y')
+        and e.billable='b'
+        and e.id not in (select employee_id
+        from project_team_allocations p
+        where CURDATE() between p.start_date and p.end_date
+        and p.deleted=0
+        group by p.employee_id
+        having max(p.end_date))
+        <dynamic prepend="AND">
+             <isNotEqual property="sbuFilter" compareValue="All">
+                <isNotEmpty prepend="AND" property="sbuFilter">
+                           c.id=#sbuFilter#
+            </isNotEmpty>
+            </isNotEqual>
+        </dynamic>
+        <dynamic>
+            <isNotEqual property="subSbu" compareValue="All">
+                <isNotEmpty prepend="AND" property="subSbu">
+                    cs.id=#subSbu#
+                </isNotEmpty>
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEmpty property="bandFilter">
+                subBand.id=#bandFilter#
+            </isNotEmpty>
+        </dynamic>
+
+        group by e.id
+    </select>
+</sqlMap>

@@ -1,0 +1,190 @@
+body
+{ 
+    font-family: Arial;
+    font-size: 12px;
+    line-height: 15px;
+    background: #EEF2F8;
+    color: #666;
+    margin: 0px;
+    padding: 0px;
+}
+#pm_att_report
+{
+    width: 980px;
+    display: table;
+    margin: auto;
+    background-color: #FFF;
+}
+.main h2
+{
+    font-weight: bold;
+    color: #666666;
+    font-size: 16px;
+    width: 98%;
+    padding: 0.5% 1%;
+}
+#pm_att_report .row
+{
+    width: 100%;
+    padding: 5px 0px 5px 0px;
+    display: table;
+}
+#pm_att_report .main
+{
+    width: 980px;
+    min-height: 180px;
+    display: table;
+}
+#pm_att_report .filter_container
+{
+    width: 96%;
+    padding: 1%;
+    margin: auto;
+    display: table;
+    background: url(../images/box-strip.jpg) repeat-x scroll top center #E2E8EC;
+}
+#pm_att_report .filter_container label
+{
+    width: 100px;
+    display: inline-block;
+    font-weight: bold;
+    padding-top: 5px;
+}
+#pm_att_report .filter_container .section_two label
+{
+    padding-top: 8px;
+}
+#pm_att_report .filter_container label+span
+{
+    margin-right: 5px;
+}
+#pm_att_report .section_one 
+{
+    width: 45%;
+    float: left;
+    display: inline-table;
+}
+#pm_att_report .section_two 
+{
+    width: 30%;
+    float: left;
+    display: inline-table;
+}
+#pm_att_report .section_three
+{
+    width: 80%;
+    float: left;
+    display: inline-table;
+}
+#pm_att_report .section_four
+{
+    width: 20%;
+    float: left;
+    display: inline-table;
+}
+#pm_att_report .textbox
+{
+    width: 150px;
+    height: 25px;
+    padding-left: 5px;
+    border: 1px solid #a3bae9;
+    box-shadow: 0 0 5px #DDD inset;
+    background-image: none;
+}
+#pm_att_report .dropdown
+{
+    width: 162px;
+    height: 25px;
+    border: 1px solid #a3bae9;
+    box-shadow: 0 0 5px #DDD inset;    
+    background-image: none;
+}
+#pm_att_report .datepicker
+{
+    width: 100px;
+    height: 25px;
+    padding-left: 5px;
+    border: 1px solid #a3bae9;
+    box-shadow: 0 0 5px #DDD inset;
+    background-image: none;
+}
+#pm_att_report .project_name
+{
+    width: 300px;
+}
+.goBtn
+{
+    background: none repeat scroll 0 0 #316ca8;
+    border: 1px solid #BCCFEA;
+    color: #FFF;
+    width: 45px;
+    font-weight: bold;
+    height: 30px;
+    padding-top: 2px;
+    margin: 0px 0px 0px 5px;
+    cursor: pointer;   
+}
+.resetBtn
+{
+    background: none repeat scroll 0 0 #316ca8;
+    border: 1px solid #BCCFEA;
+    color: #FFF;
+    width: 60px;
+    font-weight: bold;
+    height: 30px;
+    padding-top: 2px;
+    margin: 0px 0px 0px 5px;
+    cursor: pointer;   
+}
+.exportBtn
+{
+    background: none repeat scroll 0 0 #316ca8;
+    border: 1px solid #BCCFEA;
+    color: #FFF;
+    width: 60px;
+    font-weight: bold;
+    height: 30px;
+    padding-top: 2px;
+    margin: 0px 0px 0px 5px;
+    cursor: pointer;   
+}
+.btnContainer
+{
+    text-align: right;
+}
+#pm_att_report_table_container
+{
+    width: 100%;
+    display: table;
+    padding: 4px;
+}
+#pm_att_report_table
+{
+    width: 98%;
+    border-collapse: collapse;
+    padding: 1%;
+    margin: 10px auto;
+    border: 1px solid #CADFF2;
+}
+#pm_att_report_table th, #pm_att_report_table td
+{
+    border: 1px solid #CADFF2;
+    padding: 4px 4px;
+}
+#pm_att_report_table th
+{
+    background: url(images/table-header-strip.jpg) repeat-x scroll top center #EFF4FB;
+}
+table#pm_att_report_table tr:nth-child(even)
+{
+    background-color: #eef2f8;
+}
+table#pm_att_report_table tr:nth-child(odd)
+{
+    background-color: #FFF;
+}
+.datepicker
+{
+    position: relative;
+    z-index: 9999;
+}

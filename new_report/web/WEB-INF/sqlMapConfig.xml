@@ -1,0 +1,48 @@
+<!DOCTYPE sqlMapConfig
+  PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+  "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+
+<settings useStatementNamespaces="true" />
+    <!-- Identify all SQL Map XML files to be loaded by this SQL map.
+         Notice the paths are relative to the classpath. For now, we only have one  -->
+    <sqlMap resource="com/defiance/ideal/reports/resource/Address.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Reports.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Accrual.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Associate.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Authenticator.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/BillableStatus.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/BillableHours.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/ProjectCompletion.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/MonthlyLeave.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/EarnedLeave.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Variance.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/BenchReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/CustagingReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/CollectionReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/ProjectReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/AssociateTimesheet.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/TravelReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/ProjectFinanceReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/RollOutReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/ExitReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Birthday_Anniversary.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/AnnualAppraisalReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/SubordinateLeave.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/BillingInvoiceReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/TeamAllocationReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/Approval.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/timesheetReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/EmployeeBasicReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/EffortsLeakageReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/vendorContractTimesheetExport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/UnBillabelHours.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/LeaveReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/HrPersonal.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/SkillsDomains.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/FranceLeaveReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/TimesheetAttendanceReport.xml" />
+    <sqlMap resource="com/defiance/ideal/reports/resource/PrTimesheetLekageReport.xml" />
+</sqlMapConfig>
+

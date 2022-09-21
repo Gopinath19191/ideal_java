@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations" >
+            <list>
+                <value>/WEB-INF/jdbc.properties</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="multipartResolver"
+        class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    </bean>
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+          p:driverClassName="${Driver}"
+          p:url="${Url}"
+          p:username="${Username}"
+          p:password="${Password}" />
+
+    <bean id="sqlMap" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="configLocation"><value>/WEB-INF/sqlMapConfig.xml</value></property>
+        <property name="dataSource" ref="dataSource" />
+        <property name="useTransactionAwareDataSource" value="true"/>
+    </bean>
+
+   
+    <bean name="AuthenticateDao" class="com.defiance.ideal.travelplan.dao.AuthenticateDaoImpl">
+        <property name="sqlMapClient" ref="sqlMap"/>
+    </bean>
+    
+    <bean name="CommonDao" class="com.defiance.ideal.travelplan.dao.CommonDaoImpl">
+        <property name="sqlMapClient" ref="sqlMap"/>
+    </bean>
+
+    <bean name="LocalConveyanceDao" class="com.defiance.ideal.travelplan.dao.LocalConveyanceDaoImpl">
+        <property name="sqlMapClient" ref="sqlMap"/>
+    </bean>
+    <bean name="DomesticTravelDao" class="com.defiance.ideal.travelplan.dao.DomesticTravelDaoImpl">
+        <property name="sqlMapClient" ref="sqlMap"/>
+    </bean>
+    <bean name="TravelSettlementDao" class="com.defiance.ideal.travelplan.dao.TravelSettlementDaoImpl">
+        <property name="sqlMapClient" ref="sqlMap"/>
+    </bean>
+    
+       
+</beans>

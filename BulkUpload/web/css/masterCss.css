@@ -1,0 +1,466 @@
+/* SVN FILE: $Id$ */
+/**
+ *
+ * PHP versions 4 and 5
+ *
+ * CakePHP(tm) :  Rapid Development Framework (http://www.cakephp.org)
+ * Copyright 2005-2010, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
+ *
+ * Licensed under The MIT License
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @filesource
+ * @copyright     Copyright 2005-2010, Cake Software Foundation, Inc. (http://www.cakefoundation.org)
+ * @link          http://www.cakefoundation.org/projects/info/cakephp CakePHP(tm) Project
+ * @package       cake
+ * @subpackage    cake.app.webroot.css
+ * @since         CakePHP(tm)
+ * @version       $Revision$
+ * @modifiedby    $LastChangedBy$
+ * @lastmodified  $Date$
+ * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
+*/
+/* General Style Info */
+html{
+    /*overflow: scroll;*/
+}
+body {
+    background: url("../images/bg_page.png") repeat-x scroll center top #EEF2F8;
+   
+    clear: both;
+    color: #666666;
+    margin: 0 auto;
+    width: 937px;
+    font-family: Arial;
+    font-size: 12px;
+}
+
+/* Layout */
+#container {
+    text-align: left;
+    width:95%;
+    padding: 0px 20px 0px 20px;
+    margin: auto;
+}
+.add {
+   background: url("../images/add.png") no-repeat scroll left center transparent;
+    color: #4D85B8;
+    float: right;
+    height: 20px;
+    padding: 2px 0 0 21px;
+    text-decoration: none;
+}
+#datadisplay table {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-color: -moz-use-text-color #99BBE8 #99BBE8;
+    border-right: 1px solid #99BBE8;
+    border-style: none solid solid;
+    border-width: 0 1px 1px;
+    clear: both;
+    color: #000000;
+    padding: 0;
+    width: 98.2%;
+    margin: 0px 10px 0px 15px;
+}
+#datadisplay th{
+    background: url("../images/grid3-hrow.gif") repeat-x scroll center bottom #F2F2F2;
+    border-color: #FFFFFF #BBBBBB -moz-use-text-color #FFFFFF;
+    border-right: 1px solid #BBBBBB;
+    border-style: solid solid none;
+    border-width: 1px 1px 0;
+    font-weight: bolder;
+    height: 22px;
+    padding-left: 2px;
+}
+#datadisplay th:hover {
+    background: url("../images/grid3-hrow-over.gif") repeat-x scroll center bottom transparent;
+}
+#datadisplay th.sort_selected {
+    background: url("../images/grid3-hrow-over.gif") repeat-x scroll center bottom transparent;
+}
+#datadisplay th a {
+    color: #000000;
+    display: block;
+    text-decoration: none;
+    text-align: left;
+    width: auto;
+}
+#datadisplay table tr td {
+    background: none repeat scroll 0 0 #FFFFFF;
+    padding: 1px 3px;
+    vertical-align: top;
+}
+#datadisplay table tr.mouseover {
+    background: url("../js/extjs/resources/images/default/grid/row-over.gif") repeat-x scroll 0 0 transparent;
+}
+#datadisplay table tr.selected {
+    background: none repeat scroll 0 0 #DFE8F6;
+}
+#datadisplay table tr.altrow td {
+    background: none repeat scroll 0 0 #FAFAFA;
+    border-bottom: 1px solid #EDEDED;
+    border-top: 1px solid #EDEDED;
+}
+#datadisplay td.actions {
+    text-align: center;
+    white-space: nowrap;
+}
+#datadisplay td.actions a {
+    margin: 0px 6px;
+}
+#datadisplay dl {   
+    width: 60%;
+    margin:10px 0 0 10px;
+}
+#datadisplay dl .altrow {
+    background: #f4f4f4;
+}
+#datadisplay dt {
+    font-weight: bold;
+    vertical-align: top;
+}
+#datadisplay dd {
+    margin:0;
+    vertical-align: top;
+}
+.delete {
+    background: url("../images/delete.gif") no-repeat scroll left center transparent;
+    padding: 0 0 0 20px;
+}
+.deleterecord {
+    cursor: pointer;
+}
+div.actions {
+    padding: 0 0 10px;
+}
+#content {
+    background: none repeat scroll 0 0 #C3D5ED;
+    clear: both;
+    color: #000000;
+    /*min-height: 375px;*/
+    /*padding: 20px;*/
+}
+/*.listinggrid {
+    background: url("../images/grid.png") no-repeat scroll 0 0 transparent;
+    color: #15428B;
+    padding: 1px 0 1px 18px;
+    text-decoration: none;
+    margin: 10px 0px 0px 15px;
+}*/
+#commonforms {
+    width: 100%;
+}
+#commonformbg {
+    background: none repeat scroll 0 0 #DFE8F6;
+    border-color: -moz-use-text-color #99BBE8 #99BBE8;
+    border-right: 1px solid #99BBE8;
+    border-style: none solid solid;
+    border-width: medium 1px 1px;
+    padding: 20px 0 40px;
+    width: 98.1%;
+    margin: 0px 10px 0px 15px;
+}
+form{
+    margin: 0;
+    padding: 0;
+}
+form div {
+    clear: both;
+    padding: 5px;
+    vertical-align: text-top;
+}
+form div.input {
+    color: #444444;
+}
+form div.required {
+    color: #333333;
+    font-weight: bold;
+}
+form label {
+/*    display: block;
+    float: left;
+    padding-right: 7px;
+    text-align: left;
+    width: 120px;
+*/
+float: left;
+padding-right: 20px;
+text-align: right;
+width: 352px;
+}
+
+input.textbox {
+    background: url("../images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #B5B8C8;
+    float: left;
+    height: 20px;
+    width: 380px;
+}
+form div.submit {
+    border: 0 none;
+    clear: both;
+    margin-left: 373px;
+    width: 500px;
+}
+/*input.submitbutton {
+    background: url("../images/application_go.png") no-repeat scroll 2px 2px transparent;
+    border-color: #FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 5px 0 0;
+    padding: 2px 2px 2px 18px;
+}*/
+input.buttons {
+    display: inline;
+    /*padding: 2px 5px;*/
+    vertical-align: bottom;
+    width: auto;
+}
+input.resetbutton {
+    background: url("../images/arrow_refresh.png") no-repeat scroll 2px 2px transparent;
+    border-color: #FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 5px 0 0;
+    padding: 2px 2px 2px 18px;
+}
+div.error-message {
+    clear: both;
+    color: #CC3300;
+    font-weight: bold;
+    margin-left: 195px;
+    padding-bottom: 0;
+    width: 382px;
+}
+div.successMsg {
+    clear: both;
+    color: green;
+    font-weight: bold;
+    /*margin-left: 195px;*/
+    padding-bottom: 0;
+    width: 926px;
+    text-align: center;
+}
+element.style {
+    display: block;
+    left: 550px;
+    position: absolute;
+    top: 202px;
+    visibility: visible;
+    width: 266px;
+    z-index: 9003;
+}
+/*div.paging {
+    background: url("../images/bg.gif") repeat-x scroll 0 0 #D0DEF0;
+    border-color: -moz-use-text-color #99BBE8 #99BBE8;
+    border-right: 1px solid #99BBE8;
+    border-style: none solid solid;
+    border-width: medium 1px 1px;
+    color: #000000;
+    font-size: 11px;
+    height: 23px;
+    padding: 3px 5px 0;
+    margin: 0px 10px 0px 15px;
+}*/
+/*.pagingdetails {
+    color: #000000;
+    float: right;
+    font-size: 11px;
+}*/
+.pagingdetails {
+    color: #666666;
+    float: right;
+    font-size: 12px;
+    padding: 20px;
+    margin-top: 10px;
+}
+.regioncountry {
+    float: left;
+    margin: 3px 0 0;
+}
+/*select.selectbox {
+    background: url("../images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #B5B8C8;
+    float: left;
+    overflow: visible;
+    width: 380px;
+}*/
+.x-window {
+}
+.page_heading {
+    color: #666666;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 30px 30px 30px 0px;
+}
+div.generalFormContent {
+    background-color: #FFFFFF;
+    border: 1px solid #CFDFF1;
+    float: left;
+    padding: 10px;
+    width: 940px;
+}
+div.style_tab {
+    border-bottom: 1px solid #BCCFEA;
+    float: left;
+    width: 922px;
+}
+.goToList {
+    color: #4C83B3;
+    float: right;
+    font-size: 12px;
+    font-weight: bold;
+    /*margin: 0 45px 0 0;*/
+}
+.formarea {
+    background-position: center center;
+    color: #333333;
+    float: left;
+    font-family: Arial;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 24px;
+    margin-bottom: 30px;
+    margin-right: 20px;
+    margin-top: 20px;
+    width: 98%;
+    z-index: 1;
+}
+.formarea_header {
+    background: url("../images/table-header-strip.jpg") repeat-x scroll center top #EFF4FB;
+    border-color: #D1E0F1 #D1E0F1 -moz-use-text-color #EFF4FB;
+    border-style: solid solid none;
+    border-width: 1px 1px 0;
+    font-weight: bolder;
+    padding: 5px 10px;
+}
+.formarea_row1 {
+    background-color: #FFFFFF;
+    border: 1px solid #D1DFF0;
+    height: 30px;
+}
+.formarea_row2 {
+    background: none repeat scroll 0 0 #EFF4FA;
+    border-bottom: 1px solid #EDEDED;
+    border-top: 1px solid #EDEDED;
+    height: 30px;
+}
+span.ticket_tab a {
+    border: 1px solid #BCCFEA;
+    color: #4786C2;
+    cursor: pointer;
+    float: left;
+    font-family: arial;
+    font-size: 12px;
+    font-weight: bold;
+    height: 20px;
+    margin: 0 2px -1px 0;
+    padding: 5px 7px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    width: 100px;
+}
+span.pagingTab a {
+    border: 1px solid #BCCFEA;
+    color: #4786C2;
+    cursor: pointer;
+    float: right;
+    font-family: arial;
+    font-size: 12px;
+    font-weight: bold;
+    height: 17px;
+    margin-left: 5px;
+    /*margin: 0 2px -1px 0;*/
+    padding-top: 2px;
+    position: relative;
+    text-align: center;
+    text-decoration: none;
+    width: 41px;
+}
+span.active_tab a {
+    background: url("../images/bg_tab.jpg") repeat-x scroll center top transparent;
+    border-bottom-color: #FFFFFF;
+    color: #666666;
+}
+a.tableHeading{
+    text-decoration:none;
+    color: #333333;
+    float: left;
+    padding-left: 10px;
+}
+div.paging {
+    -moz-border-bottom-colors: none;
+    -moz-border-image: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-color: -moz-use-text-color #CADFF2 #CADFF2;
+    border-right: 1px solid #CADFF2;
+    /*border-style: none solid solid;*/
+    border-width: medium 1px 1px;
+    color: #666666;
+    /*padding: 20px;*/
+}
+select.selectbox {
+    background: url("../images/text-bg.gif") repeat-x scroll center top #FFFFFF;
+    border: 1px solid #C4D1E0;
+    /*float: right;*/
+    font-family: arial;
+    font-size: 12px;
+    height: 20px;
+}
+div.qpdSearch {
+    background-color: #F2F5F8;
+    color: #555555;
+    float: left;
+    font-family: Arial;
+    font-size: 12px;
+    font-weight: bold;
+    height: 39px;
+    margin-top: 11px;
+    padding-left: 10px;
+    padding-top: 8px;
+    width: 922px;
+}
+.instructions {
+    background: url("../images/bg_alertBox.png") repeat-x scroll center top #ECE6D2;
+    border: 1px solid #DDD6B7;
+    float: left;
+    margin-top: 15px;
+    padding: 10px 20px;
+    width: 885px;
+    height: 23px;
+}
+.instructions_lines {
+    float: left;
+    padding-left: 20px;
+    width: 830px;
+}
+.instructions_lines span {
+    background: url("../images/tick.png") no-repeat scroll 0 3px transparent;
+    float: left;
+   margin-left: 19px;
+    margin-top: -29px;
+    padding-left: 20px;
+    width: 812px;
+}
+input.submitbutton {
+    background: url("../images/icon_btn_submit.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}
+input.cancelbutton {
+    background: url("../images/icon_btn_cancel.png") no-repeat scroll 8px 8px #316CA8;
+    border: 1px solid #4492BF;
+    color: #FFFFFF;
+    font-weight: bold;
+    height: 30px;
+    margin: 0 5px 0 0;
+    padding: 0 10px 0 30px;
+}

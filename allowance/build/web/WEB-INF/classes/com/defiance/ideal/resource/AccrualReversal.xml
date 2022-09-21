@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="accrualReversalMap">
+    
+    <select id="getCustomerList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT cus.id AS cus_id,
+        CONCAT(cus.customer_code,' - ',cus.customer_name,' ',IFNULL(cus.division,' ')) AS customer_name 
+        FROM projects AS prj
+        LEFT JOIN customers AS cus ON prj.customer_id = cus.id
+        WHERE prj.project_status = 'e' AND prj.customer_id IS NOT NULL AND prj.project_manager = #created_by#
+        GROUP BY cus.id
+        UNION ALL
+        SELECT cus.id AS cus_id,
+        CONCAT(cus.customer_code,' - ',cus.customer_name,' ',IFNULL(cus.division,' ')) AS customer_name 
+        FROM projects AS prj
+        LEFT JOIN customers AS cus ON prj.customer_id = cus.id
+        LEFT JOIN assign_proxy_pms AS app ON prj.id = app.project_id
+        LEFT JOIN proxy_pms AS pp ON app.proxy_pm_id = pp.id
+        WHERE prj.project_status = 'e' AND prj.customer_id IS NOT NULL AND pp.proxy_pm_id = #created_by#
+        GROUP BY cus.id
+    </select>
+    
+    <select id="getProjectList" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT prj.id AS prjt_id,
+        CONCAT(prj.project_code,'-',prj.project_name) AS project_name
+        FROM projects AS prj
+        WHERE prj.project_status = 'e' AND prj.customer_id = #cus_id# AND prj.project_manager = #created_by#
+        UNION ALL
+        SELECT prj.id AS prjt_id,
+        CONCAT(prj.project_code,'-',prj.project_name) AS project_name
+        FROM projects AS prj
+        LEFT JOIN assign_proxy_pms AS app ON prj.id = app.project_id
+        LEFT JOIN proxy_pms AS pp ON app.proxy_pm_id = pp.id
+        WHERE prj.project_status = 'e' AND prj.customer_id = #cus_id# AND pp.proxy_pm_id = #created_by#;
+    </select>
+    
+    <select id="getAccrualNo" parameterClass="java.lang.String" resultClass="java.lang.String" >
+        SELECT DISTINCT(accrual_no) FROM accrual_tms WHERE is_invoiced = 'n' AND project_id = #project_id# AND status = 'm' ORDER BY accrual_no;
+    </select>
+    
+    <select id="getEmployeeAccrualDetails" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.AccrualDto" >
+        <!--SELECT acc.id AS accrual_id,
+        acc.emp_id AS employee_id,
+        CASE WHEN acc.is_outsource = 0 THEN
+        CONCAT(emp.employee_number, '-', emp.first_name,' ',emp.last_name) 
+        ELSE
+        CONCAT(ven.code, '-', ven.name) END AS employee_name,
+        acc.role_id AS role_id,
+        rol.role_description AS role_name,
+        acc.billing_month AS billing_month,
+        acc.billing_year AS billing_year,
+        acc.ts_approved_hours AS timesheet_hours,
+        acc.billable_hours AS billable_hours,
+        acc.billable_uom AS uom_id,
+        uom.configuration_value AS uom_name,
+        acc.billable_effort AS billable_efforts,
+        acc.billing_rate AS billing_rate,
+        acc.billable_amount AS billable_amount,
+        acc.project_id AS project_id,
+        acc.sbu AS sbu,
+        acc.sub_sbu AS sub_sbu,
+        acc.working_location AS work_location_id,
+        acc.location_table AS location_table,
+        acc.is_outsource AS is_outsource
+        FROM accrual_consolidations AS acc
+        LEFT JOIN employees AS emp ON (acc.emp_id = emp.id)
+        LEFT JOIN project_vendor_allocations AS pva ON(acc.emp_id = pva.id)
+        LEFT JOIN vendors as ven ON (pva.vendor_id = ven.id)
+        LEFT JOIN roles AS rol ON acc.role_id = rol.id
+        LEFT JOIN configuration_values AS uom ON(uom.configuration_key = acc.billable_uom AND uom.parent_id = 135)
+        WHERE acc.accrual_no = #accrual_no# AND acc.status = 'm';-->
+        SELECT acc.id AS accrual_id,
+        acc.emp_id AS employee_id,
+        CASE WHEN acc.is_outsource = 0 THEN
+        CONCAT(emp.employee_number, '-', emp.first_name,' ',emp.last_name) 
+        ELSE
+        CONCAT(ven.code, '-', ven.name) END AS employee_name,
+        acc.role_id AS role_id,
+        rol.role_description AS role_name,
+        acc.billing_month AS billing_month,
+        acc.billing_year AS billing_year,
+        acc.ts_approved_hours AS timesheet_hours,
+        acc.billable_hours AS billable_hours,
+        acc.billable_uom AS uom_id,
+        uom.configuration_value AS uom_name,
+        acc.billable_effort AS billable_efforts,
+        acc.billing_rate AS billing_rate,
+        acc.billable_amount AS billable_amount,
+        acc.project_id AS project_id,
+        acc.sbu AS sbu,
+        acc.sub_sbu AS sub_sbu,
+        acc.working_location AS work_location_id,
+        acc.location_table AS location_table,
+        acc.is_outsource AS is_outsource,
+        CASE WHEN acc.billable_hours = TIME_FORMAT(SEC_TO_TIME( SUM( TIME_TO_SEC(atms.accrued_hours))),"%H:%i") THEN "1" ELSE "0 " END AS eligible
+        FROM accrual_consolidations AS acc
+        LEFT JOIN employees AS emp ON (acc.emp_id = emp.id)
+        LEFT JOIN project_vendor_allocations AS pva ON(acc.emp_id = pva.id)
+        LEFT JOIN vendors AS ven ON (pva.vendor_id = ven.id)
+        LEFT JOIN roles AS rol ON acc.role_id = rol.id
+        LEFT JOIN accrual_tms AS atms ON acc.emp_id = atms.emp_id AND atms.is_invoiced='n' AND acc.accrual_no = atms.accrual_no AND acc.role_id = atms.role_id
+        LEFT JOIN configuration_values AS uom ON(uom.configuration_key = acc.billable_uom AND uom.parent_id = 135)
+        WHERE acc.accrual_no = #accrual_no# AND acc.status = 'm' and acc.project_id = #project_id#
+        AND MONTH(ts_entry_date) = acc.billing_month
+        GROUP BY atms.emp_id,acc.role_id,acc.billing_month
+    </select>
+    
+    <select id="getMaxAccrualNo" resultClass="java.lang.String" >
+        SELECT MAX(accrual_no) as max_accrual_no FROM accrual_consolidations;
+    </select>
+    
+    <insert id="submitAccrualReversal" parameterClass="com.defiance.ideal.dto.AccrualDto">
+        INSERT INTO accrual_consolidations (project_id, emp_id, sbu, sub_sbu, role_id, working_location, location_table,
+                billing_month, billing_year, ts_approved_hours, billable_hours, billable_uom, billable_effort, 
+                billing_rate, billable_amount, accrual_no, status, submitted_on, updated_on, submitted_by, updated_by, is_outsource)
+        VALUES(#project_id#, #employee_id#, #sbu#, #sub_sbu#, #role_id#, #work_location_id#, #location_table#,
+                #billing_month#, #billing_year#, #timesheet_hours#, #billable_hours#, #uom_id#, #billable_efforts#,
+                #billing_rate#, #billable_amount#, #new_accrual_no#, 'r', now(), now(), #created_by#, #created_by#, #is_outsource#);
+        <selectKey resultClass="String" keyProperty="last_id">
+            select last_insert_id() as last_id;
+        </selectKey>
+    </insert>
+    
+    <insert id="insertReversalRemarks" parameterClass="com.defiance.ideal.dto.AccrualDto">
+        INSERT INTO accrual_reversal_details (old_accrual_id, new_accrual_id, remarks, created_on)
+            VALUES(#accrual_id#, #last_id#, #remarks#, now());
+    </insert>
+    
+    <update id="updateAccrualConsolidationStatus" parameterClass="java.lang.String">
+        UPDATE accrual_consolidations SET status = 'r' WHERE id = #accrual_id#;
+    </update>
+    
+    <select id="getTimesheetDate" parameterClass="com.defiance.ideal.dto.AccrualDto" resultClass="java.lang.String" >
+        SELECT GROUP_CONCAT("'",ts_entry_date,"'") FROM accrual_tms WHERE accrual_no = #accrual_no# AND status = 'm' AND emp_id = #employee_id#
+        AND project_id = #project_id# AND role_id = #role_id# AND is_invoiced = 'n';
+    </select>
+    
+    <update id="updateAccrualTms" parameterClass="com.defiance.ideal.dto.AccrualDto">
+        UPDATE accrual_tms SET status = 'r' WHERE accrual_no = #accrual_no# AND status = 'm' AND emp_id = #employee_id#
+        AND project_id = #project_id# AND role_id = #role_id# AND is_invoiced = 'n' AND ts_entry_date IN($submitted_date$);
+    </update>
+    
+    <update id="reverseTimesheetAccrual" parameterClass="com.defiance.ideal.dto.AccrualDto">
+        UPDATE timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id
+        SET tep.is_accrued = 'n'
+        WHERE te.employee_id = #employee_id# AND te.role_id = #role_id# AND tep.project_id = #project_id# AND te.timesheet_date IN($submitted_date$);
+    </update>
+    
+    <select id="getEmployeeTimesheetDetails" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.AccrualDto" >
+        SELECT emp.id AS employee_id,
+        CONCAT(emp.employee_number,' - ', emp.first_name,' ',emp.last_name) AS employee_name,
+        prjt.id AS project_id,
+        CONCAT(prjt.project_code,' - ',prjt.project_name) AS project_name,
+        te.role_id AS role_id, 
+        rol.role_description AS role_name,
+        <!--prjrol.billing_rate AS billing_rate,-->
+        CONCAT(cur.currency_code, ' ', prjrol.billing_rate,' /',uom.configuration_value) AS billing_rate,
+        TIME_FORMAT(SEC_TO_TIME( SUM( TIME_TO_SEC(tep.worked_hours))),"%H:%i") AS timesheet_hours
+        FROM timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id AND tep.deleted = 0
+        LEFT JOIN employees AS emp ON te.employee_id = emp.id
+        LEFT JOIN roles AS rol ON te.role_id = rol.id
+        LEFT JOIN projects AS prjt ON tep.project_id = prjt.id
+        LEFT JOIN project_roles AS prjrol ON prjt.id = prjrol.project_id AND prjrol.role_id = rol.id
+        LEFT JOIN project_so_masters AS pso ON prjt.id = pso.project_id
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id
+        LEFT JOIN currencies AS cur ON so.currency_id = cur.id
+        LEFT JOIN configuration_values AS uom ON(uom.configuration_key = so.uom_id AND uom.parent_id = 135)
+        WHERE tep.project_id = #project_id# AND te.timesheet_date BETWEEN #startDate# AND #endDate# AND tep.is_accrued = 'n'
+        GROUP BY  emp.id, rol.id
+        <!--LIMIT 10;-->
+    </select>
+    
+    <select id="getEmployeeProjects" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT pta.project_id AS project_id,
+        CONCAT(prjt.project_code ,' - ', prjt.project_name) AS project_name
+        FROM project_team_allocations AS pta
+        LEFT JOIN projects AS prjt ON pta.project_id = prjt.id
+        WHERE pta.employee_id = #employee_id# AND (pta.start_date <![CDATA[ >= ]]> #startDate# 
+        OR pta.end_date<![CDATA[ >= ]]> #endDate#) AND prjt.project_status IN('e') 
+        AND pta.status = 'a' AND prjt.project_manager = #created_by#;
+    </select>
+    
+    <select id="getEmployeeRoles" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT pta.role_id AS role_id,
+        rol.role_description AS role_name,
+        <!--prjrol.billing_rate AS billing_rate-->
+        CONCAT(cur.currency_code, ' ', prjrol.billing_rate,' /',uom.configuration_value) AS billing_rate
+        FROM project_team_allocations AS pta
+        LEFT JOIN roles AS rol ON pta.role_id = rol.id
+        LEFT JOIN projects AS prjt ON pta.project_id = prjt.id
+        LEFT JOIN project_roles AS prjrol ON prjt.id = prjrol.project_id AND prjrol.role_id = rol.id
+        LEFT JOIN project_so_masters AS pso ON prjt.id = pso.project_id
+        LEFT JOIN sales_orders AS so ON pso.sales_order_id = so.id
+        LEFT JOIN currencies AS cur ON so.currency_id = cur.id
+        LEFT JOIN configuration_values AS uom ON(uom.configuration_key = so.uom_id AND uom.parent_id = 135)
+        WHERE pta.employee_id = #employee_id# AND pta.project_id = #project_id#
+        AND pta.end_date <![CDATA[ >= ]]> #startDate#  AND pta.status = 'a' AND pta.deleted = 0;
+    </select> 
+    
+    <update id="updateTimesheet" parameterClass="com.defiance.ideal.dto.SearchDto">
+        UPDATE timesheet_entries AS te 
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id 
+        SET te.role_id = #new_role_id#, tep.project_id = #new_project_id# 
+        WHERE te.employee_id = #employee_id# AND tep.project_id = #project_id# AND te.role_id = #role_id#
+        AND te.timesheet_date BETWEEN #startDate# AND #endDate# 
+        AND tep.is_accrued = 'n';
+    </update>   
+    <insert id="insertTimesheetUpdate" parameterClass="com.defiance.ideal.dto.SearchDto">
+        INSERT INTO timesheet_reversal_details (employee_id, old_project_id, old_role_id, new_project_id, 
+                            new_role_id, updated_by, created_on)
+        VALUES (#employee_id#, #project_id#, #role_id#, #new_project_id#, #new_role_id#, #created_by#, now());
+    </insert>
+    <select id="getProjectByManager" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT prj.id AS project_id,
+        CONCAT(prj.project_code,'-',prj.project_name) AS project_name
+        FROM projects AS prj
+        WHERE prj.project_status = 'e' AND prj.project_manager = #manager_id#;
+    </select>
+    <select id="getReporteesList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT emp.id AS employee_id,
+        CONCAT(emp.first_name,' ',emp.last_name, ' - ',emp.employee_number) AS employee_name
+        FROM employees AS emp
+        WHERE emp.manager = #manager_id# AND emp.employment_status NOT IN('r','t','b','q','o','y')
+        ORDER BY emp.first_name;
+    </select>
+    <select id="getEmployeeList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT DISTINCT(emp.id) AS employee_id,
+        CONCAT(emp.first_name,' ',emp.last_name, ' - ',emp.employee_number) AS employee_name
+        FROM project_team_allocations AS pta
+        LEFT JOIN employees AS emp ON pta.employee_id = emp.id
+        WHERE pta.project_id = #project_id# AND emp.employment_status NOT IN('r','t','b','q','o','y')
+        ORDER BY emp.first_name;
+    </select>
+    <select id="getNonProjectTimesheet" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.AccrualDto" >
+        SELECT te.id AS timesheet_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        te.timesheet_date AS timesheet_date,
+        "Role" AS role_name,
+        "Non Project Activity" AS project_name,
+        tep.worked_hours AS timesheet_hours,
+        CASE WHEN tep.approved_hours IS NULL THEN "--" ELSE tep.approved_hours END AS billable_hours,
+        st.configuration_value AS remarks
+        FROM timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id
+        LEFT JOIN employees AS emp ON (te.employee_id = emp.id AND emp.manager = #created_by#)
+        LEFT JOIN configuration_values AS st ON (tep.status = st.configuration_key AND st.parent_id = 262)
+        WHERE te.timesheet_date BETWEEN #startDate# AND #endDate#
+        AND tep.project_id = 'Non_Project_Activity' AND tep.status IN('m','a')
+        AND emp.employment_status NOT IN('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull prepend="AND" property="employee_id">
+                <isNotEqual property="employee_id" compareValue="" >
+                    te.employee_id = #employee_id#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+    </select>
+    <select id="getProjectTimesheet" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.AccrualDto" >
+        SELECT te.id AS timesheet_id,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        te.timesheet_date AS timesheet_date,
+        rol.role_description AS role_name,
+        CONCAT(prj.project_code, ' - ',prj.project_name) AS project_name,
+        tep.worked_hours AS timesheet_hours,
+        CASE WHEN tep.approved_hours IS NULL THEN "--" ELSE tep.approved_hours END AS billable_hours,
+        st.configuration_value AS remarks
+        FROM timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id
+        LEFT JOIN employees AS emp ON (te.employee_id = emp.id)
+        LEFT JOIN projects AS prj ON(tep.project_id = prj.id)
+        LEFT JOIN roles AS rol ON(te.role_id = rol.id)
+        LEFT JOIN configuration_values AS st ON (tep.status = st.configuration_key AND st.parent_id = 262)
+        WHERE te.timesheet_date BETWEEN #startDate# AND #endDate# AND tep.is_accrued = 'n' 
+        AND tep.project_id = #project_id# AND tep.status IN('m','a') 
+        AND emp.employment_status NOT IN('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull prepend="AND" property="employee_id">
+                <isNotEqual property="employee_id" compareValue="" >
+                    te.employee_id = #employee_id#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+    </select>
+    <update id="rejectTimesheet" parameterClass="java.lang.String">
+        UPDATE timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON te.id = tep.timesheet_entry_id
+        SET te.status = 'r', tep.status = 'r', tep.approved_date = NOW()
+        WHERE te.id = #timesheet_id# 
+        AND tep.is_accrued = 'n';
+    </update>
+    <select id="getOfficeTimingList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT configuration_key AS role_id, configuration_value AS role_name FROM configuration_values WHERE parent_id = 1056;
+    </select>
+    <insert id="updateOfficeTiming" parameterClass="com.defiance.ideal.dto.SearchDto">
+        INSERT INTO employee_office_start_time(employee_id, start_time, created_on, status) VALUES
+            (#created_by#, #role_id#, now(), #status#);
+    </insert>
+    <select id="getEmployessList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT eot.id AS timesheet_id,
+        emp.employee_number AS employee_id,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        ot.configuration_value AS role_name,
+        st.configuration_value AS status,
+        DATE_FORMAT(eot.created_on, "%d-%m-%Y %H:%i") AS cut_off_date
+        FROM employee_office_start_time AS eot
+        LEFT JOIN employees AS emp ON eot.employee_id = emp.id
+        LEFT JOIN configuration_values AS ot ON (eot.start_time = ot.configuration_key AND ot.parent_id = 1056)
+        LEFT JOIN configuration_values AS st ON (eot.status = st.configuration_key AND st.parent_id = 262)
+        WHERE emp.manager = #created_by# AND eot.status = 'm'
+    </select>
+    <update id="approveOfficeTiming" parameterClass="com.defiance.ideal.dto.SearchDto">
+        UPDATE employee_office_start_time SET status = #status#, approved_by = #created_by#, approved_on = now() WHERE id = #timesheet_id#;
+    </update>
+    <select id="getSelectedList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT ot.configuration_value AS role_name,
+        DATE_FORMAT(eot.created_on, "%d-%m-%Y %H:%i") AS cut_off_date,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(eot.approved_on, "%d-%m-%Y %H:%i") AS startDate,
+        CASE WHEN eot.status = 'a' AND eot.approved_by IS NULL 
+        THEN "Auto Approved"
+        ELSE st.configuration_value END AS status
+        FROM employee_office_start_time AS eot
+        LEFT JOIN employees AS emp ON eot.approved_by = emp.id
+        LEFT JOIN configuration_values AS ot ON (eot.start_time = ot.configuration_key AND ot.parent_id = 1056)
+        LEFT JOIN configuration_values AS st ON (eot.status = st.configuration_key AND st.parent_id = 262)
+        WHERE eot.employee_id = #created_by#
+        ORDER BY eot.created_on DESC;
+    </select>
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        emp.work_email_address AS employee_mail_id,
+        CONCAT(rm.first_name,' ',rm.last_name) AS manager_name,
+        rm.work_email_address AS manager_mail_id,
+        unit.name AS role_name,
+        ot.configuration_value AS startDate
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON emp.manager = rm.id
+        LEFT JOIN company_structures AS unit ON emp.structure_name_subgroup = unit.id
+        LEFT JOIN configuration_values AS ot ON (ot.configuration_key = #role_id# AND ot.parent_id = 1056)
+        WHERE emp.id = #created_by#
+    </select>
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    <select id="getoffTimingDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT  employee_id AS employee_id, start_time as role_id FROM employee_office_start_time  WHERE id =#parentId#;
+    </select>
+    <select id="getAccrualDetails" parameterClass="String" resultClass="com.defiance.ideal.dto.SearchDto" >
+        SELECT accounting_month AS startMonth,
+        start_accrual_no AS startDate,
+        end_accrual_no AS endDate,
+        DATE_FORMAT(CONCAT(accounting_year,'-',accounting_month,'-01'),"%b") AS month,
+        DATE_FORMAT(closed_on, "%d-%m-%Y %H:%i") AS cut_off_date
+        FROM `accrual_accounting_month`
+        WHERE accounting_year = #year#
+        ORDER BY accounting_month;
+    </select>
+    <select id="checkAccrualNumber" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="String" >
+        SELECT accrual_no FROM accrual_consolidations WHERE accrual_no = #endDate#;
+    </select>
+    <update id="updateAaccrualClose" parameterClass="com.defiance.ideal.dto.SearchDto">
+        UPDATE `accrual_accounting_month` SET end_accrual_no = #endDate#, closed_on = NOW(), closed_by = #created_by#
+        WHERE accounting_month = #startMonth# AND accounting_year = #startYear#;
+    </update>
+    <insert id="insertNextAccountingMonth" parameterClass="com.defiance.ideal.dto.SearchDto">
+        INSERT INTO `accrual_accounting_month` (accounting_year, accounting_month, start_accrual_no, created_by) VALUES
+            (#year#, #month#, #accrual_no#, #created_by#);
+    </insert>
+    
+</sqlMap>

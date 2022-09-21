@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BulkUploadingMap">
+    <select id="getBands"  resultClass="java.lang.String">
+        SELECT name FROM bands WHERE parent_id!=0
+    </select>
+    <select id="getDesignations"  resultClass="java.lang.String">
+        SELECT designation FROM designations
+    </select>
+    <select id="getEmployeNumber" resultClass="java.lang.String">
+        SELECT employee_number FROM employees where employment_status NOT IN('r','q','o','t','b')
+    </select>
+<!--    <select id="getDesignationid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from designations where designation=#designation#
+    </select>   -->
+    <select id="getDesignationid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select configuration_key from configuration_values where configuration_value=#departmentName# and parent_id=583
+    </select>   
+    <select id="getBandid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from bands where name=#band#
+    </select>  
+    <select id="getEmpid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from employees where employee_number=#empNumber#
+    </select>  
+    <insert id="updateEmploye" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        INSERT INTO employee_attendance (emp_id,site_code,type,attendance_date,first_in,last_out,carry_fwd_in,carry_fwd_out,location,source) values
+        (#employee_number#,#site_code#,#type#,#date#,concat(#date#,' ',#first_in#),concat(#date#,' ',#last_out#),concat(#next_date#,' ',#carry_fwd_in#),concat(#next_date#,' ',#carry_fwd_out#),#loc_id#,#source#)    
+    </insert>
+    <update id="updateEmployeExcel" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        UPDATE employee_attendance
+        SET emp_id = #employee_number#,site_code=#site_code#,type=#type#,
+        attendance_date=#date:date#,
+        first_in=concat(#date#,' ',#first_in#),
+        last_out=concat(#date#,' ',#last_out#),
+        carry_fwd_in=concat(#next_date#,' ',#carry_fwd_in#),
+        carry_fwd_out=concat(#next_date#,' ',#carry_fwd_out#),
+        location=#loc_id#,source=#source#
+        WHERE emp_id = #employee_number#
+        AND attendance_date=#date# 
+    </update>
+    <select id="getEmpData" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto" resultClass = "com.ideal.hrMaster.dto.EmployeHistoryDto">
+        SELECT emp_id,first_in,last_out,source,attendance_date
+        FROM employee_attendance WHERE emp_id=#employee_number# AND attendance_date=#date# 
+    </select>
+    <select id="getSourceData" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto" resultClass = "com.ideal.hrMaster.dto.EmployeHistoryDto">
+        SELECT E.employee_number as empNumber,emp_id,attendance_date,first_in,last_out,source
+        FROM employee_attendance
+        LEFT JOIN EMPLOYEES E ON(E.id=employee_attendance.emp_id)
+        WHERE emp_id=#employee_number# AND attendance_date=#date:date# 
+    </select>
+    <insert id="insertHistory" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        insert into employee_info_histories (employee_id,changed_by,reason,changed_to,changed_from,field_changed,modified_time,created_time) values
+        (#employee_number#,#authEmpId#,#reason#,#changed_to#,#changed_from#,#field_changed#,#modified_time#,#modified_time#)
+    </insert>
+    <select id="getEmployeId"  parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        SELECT id FROM employees where employee_number=#authEmpid#
+    </select>
+    <select id="getSingleEmploye" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto">            
+        select employee_number,band_id,designation_id,manager AS manager_id from employees where employee_number=#employee_number#            
+    </select>
+     <select id="getSingleLocation" parameterClass="java.lang.String" resultClass="java.lang.String">            
+        select configuration_key AS loc_id from configuration_values where configuration_value=#location#   AND parent_id=627         
+    </select>
+<!--    <insert id="insertAudithistory" parameterClass="com.ideal.hrMaster.dto.AuditListDto">
+        insert into audit_list (employee_number,modified_date,module_name,file_name) values(#employee_number#,#modified_date#,#module_name#,#file_name#)     
+    </insert>-->
+    <select id="getAuditList" parameterClass="com.ideal.hrMaster.dto.AuditListDto" resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        select e.employee_number,e.first_name,e.last_name,al.modified_date,al.module_name,al.file_name from audit_list AS al
+        LEFT JOIN employees e ON(al.employee_number = e.id)
+        WHERE 1=1
+        <dynamic>
+            <isNotNull prepend="AND" property="filterName">
+                <isNotEmpty property="filterName">
+                    e.employee_number=#filterName#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property="filterModule">
+                <isNotEmpty property="filterModule">
+                    al.module_name = #filterModule#
+                </isNotEmpty>
+            </isNotNull>
+            order by al.modified_date desc
+        </dynamic>
+    </select>
+    <select id="getDistinctEmp" resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        select distinct(e.employee_number) from audit_list as al
+        LEFT JOIN employees e ON(al.employee_number = e.id)
+    </select>
+    <select id="getSerlize" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto" >
+        SELECT * FROM employees emp 
+        LEFT JOIN designations des ON(emp.designation_id =des.id)
+        LEFT JOIN countries cont ON(emp.country_id = cont.id)
+        LEFT JOIN company_structures cs1 ON(emp.structure_name = cs1.id)
+        LEFT JOIN company_structures cs ON(emp.structure_name_subgroup = cs.id)
+        LEFT JOIN bands band ON (emp.band_id = band.id)
+        LEFT JOIN company_locations cl ON(emp.company_location_id = cl.id)
+        LEFT JOIN users user ON(emp.id=user.employee_id)
+        where emp.id=#employee_number#
+    </select>
+    <update id="updateEmployeeManager" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        update employees set manager=#manager_id#
+        where id=#employee_number#            
+    </update>
+    <select id="getManagerid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select manager from employees where employee_number=#empNumber#
+    </select>
+    
+</sqlMap>

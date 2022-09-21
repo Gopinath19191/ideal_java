@@ -1,0 +1,1146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "file:///D:/sql-map-config-2.dtd">
+
+<!--
+    Document   : Approval.xml
+    Created on : December 29, 2011, 12:00 PM
+    Author     : 14578
+    Description:
+    Purpose of the document follows.
+-->
+
+<sqlMap namespace="queryMap">
+
+   <select id="getUserDetails" parameterClass="String" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+            SELECT id as userAccountId,username,password,group_id as groupId,employee_id as empId from users where username=#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+   <select id="getProjectList"  parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT `Project`.`id` As projectId, `Project`.`project_name` As projectName, `Project`.`project_code` As projectCode FROM `timesheet_entry_projects` AS `TimesheetEntryProject`
+        INNER JOIN projects AS `Project` ON (`Project`.`id` = `TimesheetEntryProject`.`project_id`)
+        INNER JOIN timesheet_entries AS `TimesheetEntry` ON (`TimesheetEntry`.`id` = `TimesheetEntryProject`.`timesheet_entry_id`)
+        INNER JOIN project_team_allocations AS PTA ON(PTA.project_id=`Project`.`id` AND PTA.employee_id= TimesheetEntry.employee_id AND PTA.deleted = 0)
+        LEFT JOIN assign_proxy_pms AS app ON(project.id = app.project_id)
+        LEFT JOIN proxy_pms AS pp ON(app.proxy_pm_id = pp.id)
+        WHERE (`Project`.`project_manager` = #employeeId# OR PTA.timesheet_approver_id = #employeeId# OR pp.proxy_pm_id = #employeeId#)       
+        <dynamic>
+            <isEqual property="approveType" compareValue="pending" >
+                AND `TimesheetEntryProject`.`status` IN ("m") AND `Project`.`project_status` IN ("e") 
+            </isEqual>
+            <isEqual property="approveType" compareValue="processed" >
+                AND `TimesheetEntryProject`.`status` IN ("a") AND `Project`.`project_status` IN ("e", "d") 
+            </isEqual>
+        </dynamic>
+        AND Project.status IN ("a")
+        GROUP BY `Project`.`project_code`
+        ORDER BY `Project`.`project_code` ASC ;
+        
+<!--        SELECT `Project`.`id` AS projectId, `Project`.`project_name` AS projectName, `Project`.`project_code` AS projectCode 
+        FROM projects AS `Project`
+        INNER JOIN project_team_allocations AS PTA ON(PTA.project_id=`Project`.`id` AND PTA.deleted = 0)
+        LEFT JOIN assign_proxy_pms AS app ON(project.id = app.project_id)
+        LEFT JOIN proxy_pms AS pp ON(app.proxy_pm_id = pp.id)
+        WHERE (`Project`.`project_manager` = #employeeId# OR PTA.timesheet_approver_id = #employeeId# OR pp.proxy_pm_id = #employeeId#)       
+        <dynamic>
+            <isEqual property="approveType" compareValue="pending" >
+                AND `Project`.`project_status` IN ("e") 
+            </isEqual>
+            <isEqual property="approveType" compareValue="processed" >
+                AND `Project`.`project_status` IN ("e", "d")
+            </isEqual>
+        </dynamic>
+        AND Project.status IN ("a")
+        GROUP BY `Project`.`project_code`
+        ORDER BY `Project`.`project_status` desc , `Project`.`project_code` ASC ;-->
+         
+    </select>
+    <select id="getWorkTypeList"  parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT child.configuration_key AS workTypeKey ,child.configuration_value AS workTypeValue
+	FROM configuration_values AS pt
+	LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id)
+	WHERE pt.configuration_key = 'Regularisation'
+	ORDER BY child.configuration_value ASC;
+    </select>
+    
+    <select id="authenticateGroup" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="loginCheck" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT username AS idealUserName,login_time as idealLoginTime from request_management_sessions WHERE token_id=#userName#;
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        SELECT DISTINCT(emp.id) As empId,tep.status,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name , '  ' , emp.last_name) As empName
+        FROM employees AS emp
+        INNER JOIN timesheet_entries AS te ON(te.employee_id=emp.id)
+        INNER JOIN timesheet_entry_projects AS tep on(tep.timesheet_entry_id=te.id)
+        LEFT JOIN project_team_allocations as pta on (pta.project_id = tep.project_id )
+        LEFT JOIN projects AS project ON(pta.project_id = project.id)
+        LEFT JOIN assign_proxy_pms AS app ON(project.id = app.project_id)
+        LEFT JOIN proxy_pms AS pp ON(app.proxy_pm_id = pp.id)
+        WHERE 1=1  AND (emp.employment_status NOT IN ('t', 'r', 'b', 'q', 'o', 'y' ) 
+        or emp.released_date >= date_format(now()-interval 1 month,'%Y-%m-01'))
+        <dynamic>
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND emp.manager=#employeeId#
+            </isEqual>
+            <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+                <isEqual property="managerId" compareValue="YES">
+                    AND tep.project_id=#projectId# 
+                </isEqual>
+                <isEqual property="managerId" compareValue="NO">
+                    AND tep.project_id=#projectId# and (pta.timesheet_approver_id = #employeeId# OR pp.proxy_pm_id = #employeeId#)and pta.employee_id=te.employee_id
+                </isEqual>
+            </isNotEqual>
+             <isEqual prepend="AND" property="approveType" compareValue="pending">
+                tep.status IN('m') 
+            </isEqual>
+            <isEqual prepend="AND" property="approveType" compareValue="processed">
+                tep.status IN('a') 
+            </isEqual>
+        </dynamic>
+        order by emp.first_name 
+    </select>
+    
+    <select id="getprojectManager" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="java.lang.String">
+         select distinct  project_manager as prjId from projects 
+        where project_manager=#employeeId# AND deleted =0;
+    </select>
+   
+    <select id="getPrjDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+<!--        SELECT DISTINCT(prjt.project_code) AS projectCode,
+        currency.currency_code AS projectCurrency,
+        cust.customer_name AS projectCustomerName,
+        ppo.po_value AS projectPoValue
+        FROM employees AS emp
+        INNER JOIN timesheet_entries AS te ON(te.employee_id=emp.id)
+        INNER JOIN timesheet_entry_projects AS tep ON(tep.timesheet_entry_id=te.id)
+        LEFT JOIN projects AS prjt ON (tep.project_id=prjt.id)
+        LEFT JOIN currencies AS currency ON(prjt.currency_id=currency.id)
+        LEFT JOIN customers AS cust ON(prjt.customer_id=cust.id)
+        LEFT JOIN project_purchase_orders AS ppo ON(prjt.id=ppo.project_id)
+        WHERE  emp.employment_status NOT IN('t','q','b','o','r','y')
+        <dynamic>
+            <isEqual property="approveType" compareValue="pending" >
+                AND   tep.status='m' 
+            </isEqual>
+            <isEqual property="approveType" compareValue="processed" >
+                AND   tep.status='a'   
+            </isEqual>
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND emp.manager=#employeeId# AND tep.project_id=#projectId#
+            </isEqual>
+            <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND tep.project_id=#projectId# 
+            </isNotEqual>
+            
+        </dynamic>-->
+        
+<!--        SELECT DISTINCT(prjt.project_code) AS projectCode,
+        currency.currency_code AS projectCurrency,
+        cust.customer_name AS projectCustomerName,
+        sum(ppo.po_value) AS projectPoValue
+        FROM projects AS prjt
+        LEFT JOIN currencies AS currency ON(prjt.currency_id=currency.id)
+        LEFT JOIN customers AS cust ON(prjt.customer_id=cust.id)
+        LEFT JOIN project_purchase_orders AS ppo ON(prjt.id=ppo.project_id)
+        WHERE prjt.id=#projectId# and ppo.status = 'a' group by ppo.project_id-->
+        
+        SELECT DISTINCT(prjt.project_code) AS projectCode,         
+        currency.currency_code AS projectCurrency,         
+        cust.customer_name AS projectCustomerName,         
+
+        prjt.project_value AS projectPoValue
+        FROM projects AS prjt  
+        LEFT JOIN project_so_masters psm ON (psm.project_id=prjt.id)
+        LEFT JOIN sales_orders so ON (so.id=psm.sales_order_id)      
+        LEFT JOIN currencies AS currency ON(so.currency_id=currency.id)      
+        LEFT JOIN customers AS cust ON(prjt.customer_id=cust.id) 
+        LEFT JOIN project_so_masters prjSO ON (prjSO.project_id = prjt.id)  
+        LEFT JOIN po_so_masters poso ON (poso.sales_order_id = prjSO.sales_order_id)
+        LEFT JOIN project_purchase_orders po ON (po.id = poso.po_id)
+        WHERE prjt.id=#projectId# and po.status = 'a' 
+        group by prjSO.project_id  
+        
+    </select>
+
+    <select id="getJoinedYear" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetEntryDTO"  resultClass="String">
+        SELECT DATE_FORMAT(joined_date,'%Y')
+        FROM employees AS Employee
+        WHERE
+            Employee.id = #employeeId#
+    </select>
+
+        <select id="getJoinedDate" parameterClass="String"  resultClass="String">
+        SELECT joined_date
+        FROM employees AS Employee
+        WHERE
+            Employee.id = #key#
+    </select>
+
+    <select id="getProjects" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT PTA.project_id,CONCAT(Project.project_code,'-',Project.project_name) AS project_name
+        FROM project_team_allocations AS PTA
+        INNER JOIN projects AS Project ON (Project.id = PTA.project_id)
+        WHERE 
+            PTA.employee_id = #employeeId# 
+            AND #entry_date# between PTA.start_date AND PTA.end_date
+            AND PTA.deleted = 0 AND Project.status IN ('a') AND Project.project_status IN('e')
+    </select>
+
+    <select id="getProjectsGlobal" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT PTA.project_id,CONCAT(Project.project_code,'-',Project.project_name) AS project_name
+        FROM project_team_allocations AS PTA
+        INNER JOIN projects AS Project ON (Project.id = PTA.project_id)
+        WHERE
+            PTA.employee_id = #employeeId#
+            AND ( #start_date# between PTA.start_date AND PTA.end_date AND #end_date# between PTA.start_date AND PTA.end_date )
+            AND PTA.deleted = 0 AND Project.status IN ('a')
+    </select>
+
+    <select id="getProjectsGlobalNew" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT PTA.project_id,CONCAT(Project.project_code,'-',Project.project_name) AS project_name
+        FROM project_team_allocations AS PTA
+        INNER JOIN projects AS Project ON (Project.id = PTA.project_id)
+        WHERE
+            PTA.employee_id = #employeeId#
+            AND ( PTA.start_date between #start_date# AND #end_date# OR PTA.end_date between #start_date# AND #end_date# )
+            AND PTA.deleted = 0 AND Project.status IN ('a')
+    </select>
+
+    <select id="getConfigurationList" parameterClass="String"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT child.configuration_key ,child.configuration_value from configuration_values AS pt
+        LEFT JOIN configuration_values AS child ON (pt.id = child.parent_id)
+        WHERE pt.configuration_key = #key# ORDER BY child.configuration_value ASC;
+    </select>
+
+    <select id="getPhaseList" parameterClass="String"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT phase_id,phase_name 
+        FROM project_phases
+        WHERE project_id = #key#
+    </select>
+
+    <select id="getTaskList" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT id AS task_id,task_name
+        FROM project_phase_tasks
+        WHERE project_id = #project_id# AND phase_id = #phase_id#
+    </select>
+
+    <select id="getProjectDetail" parameterClass="String"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT planned_start_date as start_date,planned_end_date as end_date
+        FROM projects
+        WHERE id = #key#
+    </select>
+
+    <select id="getProjectDetailGlobal" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT * 
+        FROM projects
+        WHERE id = #project# AND ( (#start_date# BETWEEN planned_start_date AND planned_end_date) AND (#end_date# BETWEEN planned_start_date AND planned_end_date))
+    </select>
+    
+     <select id="getTimesheetEntries" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT 
+	DISTINCT TIMEDIFF(empattd.last_out, empattd.first_in) AS out_attendance_hours, 
+	TimeEntry.id AS out_timesheet_id,
+	TimeProject.project_id AS out_project,
+	TimeEntry.shift AS out_shift,
+	TimeEntry.timesheet_date AS out_timesheet_date,
+	TimeEntry.location AS out_location,
+	TimeEntry.role_id AS out_role,
+	TimeProject.task_id AS out_task_id,
+	TimeProject.phase_id AS out_phase_id,
+	TimeProject.task_remarks AS out_remarks,
+	TimeProject.remarks AS out_rejected_remarks,
+	F_EmployeeHour_Details(TimeEntry.employee_id,TimeEntry.timesheet_date) AS out_available_hours,  
+	TimeProject.status AS out_status,
+	TimeProject.worked_hours AS out_worked_time 
+	FROM timesheet_entries AS TimeEntry
+	LEFT JOIN timesheet_entry_projects AS TimeProject ON (TimeEntry.id = TimeProject.timesheet_entry_id)
+	LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=TimeEntry.employee_id AND empattd.attendance_date=TimeEntry.timesheet_date)
+        WHERE
+            TimeEntry.timesheet_date between #start_date# AND #end_date# 
+            AND TimeEntry.employee_id = #employeeId#
+            AND TimeEntry.deleted = 0
+            AND TimeProject.deleted = 0
+<!--            AND TimeEntry.status NOT IN ('a','m')-->
+        ORDER BY TimeEntry.timesheet_date ASC
+    </select>
+    
+    <select id="getAttendanceHours" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+<!--        SELECT TIMEDIFF(last_out, first_in) AS attendance_hours, attendance_date as attendance_date FROM employee_attendance
+        WHERE emp_id = #employeeId# AND attendance_date BETWEEN #start_date# AND #end_date# order by attendance_date-->
+        SELECT DISTINCT TIMEDIFF(last_out, first_in) AS attendance_hours, attendance_date as attendance_date FROM employee_attendance
+        WHERE emp_id = #employeeId# AND attendance_date = #effective_date#
+        
+    </select>
+    
+<!--    <select id="getAttendanceHoursForApproval" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT TIMEDIFF(last_out, first_in) AS attendance_hours, attendance_date as attendance_date FROM employee_attendance
+        WHERE emp_id = #employeeId# AND attendance_date BETWEEN #start_date# AND #end_date# order by attendance_date
+        
+    </select>-->
+    
+    <select id="getPhases" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Phase.phase_name,Phase.id as phase_id
+        FROM project_phases AS Phase
+        INNER JOIN projects AS Project ON (Project.id = Phase.project_id)
+        WHERE
+            Phase.project_id = #project#
+            AND ( #entry_date# between Phase.planned_start_date AND Phase.planned_end_date )
+    </select>
+
+    <select id="getNonPhases" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Phase.phase_name,Phase.id as phase_id
+        FROM non_project_phases AS Phase
+    </select>
+
+    <select id="getPhaseId" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="String">
+        SELECT phase_id
+        FROM project_phases
+        WHERE
+            project_id = #project#
+            AND id = #phase#
+    </select>
+
+    <select id="getTasks" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Task.task_name,Task.id AS task_id
+        FROM project_phase_tasks AS Task
+        WHERE
+            Task.project_id = #project#
+            AND Task.phase_id = #phase#
+    </select>
+
+    <select id="getNonTasks" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Task.task_name,Task.id as task_id 
+        FROM non_project_phase_tasks AS Task
+        WHERE Task.phase_id = #phase#
+    </select>
+
+    <select id="getRoles" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Role.role_description AS role_name,
+        Role.id AS role_id,
+        CASE WHEN pta.location_table = 'company_locations'
+        THEN 's' ELSE 'o' END AS location
+        FROM project_team_allocations AS PTA
+        INNER JOIN roles AS Role ON ( Role.id = PTA.role_id )
+        WHERE PTA.project_id =#project# AND PTA.employee_id =#employeeId#
+        AND deleted =0 AND #entry_date# BETWEEN PTA.start_date AND PTA.end_date 
+        UNION ALL
+        SELECT Role.role_description AS role_name,
+        Role.id AS role_id,
+        's' AS location
+        FROM `practice_bench_project_mappings` AS PTA
+        INNER JOIN roles AS Role ON ( Role.id = PTA.role_id )
+        WHERE PTA.project_id = #project#;
+    </select>
+    
+    <select id="getTimesheetEntryProjects" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+
+<!--        SELECT
+        DISTINCT (CASE WHEN F_IsAttendance_Available(te.employee_id,te.timesheet_date) = 1 THEN
+	TIME_FORMAT(TIMEDIFF(IFNULL(empattd.carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+        ELSE F_GetAvailableHrs(te.employee_id,te.timesheet_date) END)
+        AS attendance_hours, 
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+        tep.worked_hours AS workedHours,
+        CASE WHEN tep.approved_hours IS NULL
+        THEN tep.worked_hours 
+        ELSE tep.approved_hours
+        END AS approvedHrs,
+        tep.approved_minutes AS approvedMins,
+        SUBSTRING(tep.approved_hours,1,2) AS approvedHrsValue,
+        tep.task_remarks AS taskRemarks,
+        tep.status AS entryStatus,
+        tep.remarks AS timeSheetRemarks,
+        te.timesheet_date AS timesheetDate,
+        te.employee_id AS empId,
+        te.employeeNumber AS employeeNumber,
+        te.employeeName,
+        te.shift AS shiftKey,
+        shift_config.configuration_value AS shiftName,
+        CASE 
+        WHEN tep.phase_id = 'others' THEN 'Others'
+        WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+        ELSE (SELECT pp1.phase_name FROM project_phases AS pp1 WHERE tep.phase_id = pp1.id) 
+        END AS phaseName,
+        CASE 
+        WHEN tep.task_id = 'others' THEN 'Others'
+        WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+        ELSE (SELECT ppt.task_name  FROM project_phase_tasks AS ppt WHERE tep.task_id = ppt.id) 
+        END AS taskNamee,
+        te.location AS locationKey,
+        CASE WHEN location_config.configuration_value ='Offshore'
+        THEN CONCAT('HTL - ', city.city)
+        ELSE
+        CASE 
+        WHEN cusWrk.address_shortcode IS NULL OR cusWrk.address_shortcode = ''
+        THEN cus.customer_name	
+        ELSE cusWrk.address_shortcode
+        END	
+        END AS locationName,
+        te.role_id AS roleId,
+        Role.role_description AS roleName,
+        tep.projectName,
+        tep.projectCode,
+        so.pricing_model AS pricingKey,
+        pricing_config.configuration_value AS pricingType,
+        empattd.attendance_date AS attendance_date,
+        tep.regularization_reason AS regReason
+        FROM timesheet_entry_prj tep
+        LEFT JOIN view_timesheet_entries AS te ON te.id=tep.timesheet_entry_id
+        LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=tep.project_id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+        LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')
+        LEFT JOIN cities city ON(city.id = cl.city_id)
+        LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+        LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+        LEFT JOIN project_so_masters AS psm ON (psm.project_id=tep.project_id)
+        LEFT JOIN sales_orders AS so ON (so.id=psm.sales_order_id)
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+        LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+        LEFT JOIN configuration_values AS pricing_config ON pricing_config.configuration_key=tep.pricing AND pricing_config.parent_id='242'
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN configuration_values AS location_config ON(location_config.configuration_key=te.location AND location_config.parent_id='205')
+        LEFT JOIN assign_proxy_pms AS app ON(pta.project_id = app.project_id)
+        LEFT JOIN proxy_pms AS pp ON(app.proxy_pm_id = pp.id)
+        where `ProjectRole`.`status` = "a"  AND-->
+        SELECT tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+        tep.worked_hours AS workedHours,
+        CASE WHEN tep.approved_hours IS NULL
+        THEN tep.worked_hours 
+        ELSE tep.approved_hours
+        END AS approvedHrs,
+        tep.approved_minutes AS approvedMins,
+        SUBSTRING(tep.approved_hours,1,2) AS approvedHrsValue,
+        tep.task_remarks AS taskRemarks,
+        tep.status AS entryStatus,
+        tep.remarks AS timeSheetRemarks,
+        te.timesheet_date AS timesheetDate,
+        te.employee_id AS empId,
+        emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name)AS employeeName,
+        shift_config.configuration_value AS shiftName,
+        te.role_id AS roleId,
+        Role.role_description AS roleName,
+        tep.regularization_reason AS regReason
+        FROM timesheet_entry_projects AS tep
+        LEFT JOIN timesheet_entries AS te ON te.id=tep.timesheet_entry_id
+        LEFT JOIN employees AS emp ON te.employee_id = emp.id
+        LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=tep.project_id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+        LEFT JOIN project_roles AS ProjectRole ON te.`role_id`=`ProjectRole`.`role_id` AND `ProjectRole`.`deleted`=0 AND `ProjectRole`.`project_id`= tep.`project_id`
+        LEFT JOIN roles AS Role ON `Role`.`id`=`ProjectRole`.`role_id`
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN assign_proxy_pms AS app ON(pta.project_id = app.project_id)
+        LEFT JOIN proxy_pms AS pp ON(app.proxy_pm_id = pp.id)
+        WHERE `ProjectRole`.`status` = "a" AND
+        <dynamic>
+             <isEqual property="managerId" compareValue="YES">
+                    <isNotNull property="value">
+                    $value$ 
+                    </isNotNull>
+                    <isEqual prepend="AND" property="approveType" compareValue="pending">
+                       tep.status ='m'
+                    </isEqual>
+                   <isEqual prepend="AND" property="approveType" compareValue="processed">
+                          tep.status ='a'
+                    </isEqual>
+       
+                    <isEqual prepend="AND" property="regularName" compareValue="N">
+                        ( tep.regularization_reason IS NULL  OR  tep.regularization_reason=''  )
+                    </isEqual>
+                    <isEqual prepend="AND" property="regularName" compareValue="E">
+                         (tep.regularization_reason IS NOT NULL   AND  tep.regularization_reason!='')
+                    </isEqual>
+             </isEqual>
+             <isEqual property="managerId" compareValue="NO">
+                  <isNotNull property="value">
+                    $value$ 
+                    </isNotNull>
+                    <isEqual prepend="AND" property="approveType" compareValue="pending">
+                       tep.status ='m'
+                    </isEqual>
+                   <isEqual prepend="AND" property="approveType" compareValue="processed">
+                          tep.status ='a'
+                    </isEqual>
+       
+                    <isEqual prepend="AND" property="regularName" compareValue="N">
+                        ( tep.regularization_reason IS NULL  OR  tep.regularization_reason=''  )
+                    </isEqual>
+                    <isEqual prepend="AND" property="regularName" compareValue="E">
+                         (tep.regularization_reason IS NOT NULL   AND  tep.regularization_reason!='')
+                    </isEqual>
+                    AND  (PTA.timesheet_approver_id=#employeeId# OR pp.proxy_pm_id = #employeeId#)
+             </isEqual>
+        </dynamic>
+        group by te.id
+       ORDER BY te.timesheet_date ASC
+        <dynamic>
+            <isEqual property="approveType" compareValue="processed">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+            <isEqual property="approveType" compareValue="pending">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+        </dynamic>
+       
+    </select>
+    
+    <select id="getNonProjectTimesheetEntry" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+
+        SELECT DISTINCT
+        (case when F_IsAttendance_Available(te.employee_id,te.timesheet_date) =1 then
+        TIME_FORMAT(TIMEDIFF(IFNULL(carry_fwd_out, empattd.last_out), empattd.first_in), '%H:%i') 
+        else F_GetAvailableHrs(te.employee_id,te.timesheet_date) end)
+        AS attendance_hours, 
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        F_GetAvailableHrs(te.employee_id,te.timesheet_date) AS availableHours,
+        tep.id AS entryProjectId,
+        tep.project_id AS projectId,
+        te.timesheet_date AS timesheetDate,
+        tep.worked_hours AS workedHours,
+        CASE 
+        WHEN tep.approved_hours IS NULL
+        THEN tep.worked_hours 
+        ELSE tep.approved_hours
+        END AS approvedHrs,
+        tep.status AS entryStatus,
+        tep.remarks AS timeSheetRemarks,
+        tep.task_remarks AS taskRemarks,
+        te.employee_id AS empId,
+        emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ' , emp.last_name) As employeeName,
+        te.shift AS shiftKey,
+        shift_config.configuration_value AS shiftName,
+        CASE WHEN tep.phase_id = 'others' THEN 'Others'
+        WHEN tep.phase_id = 'Non billable activity' THEN 'Non billable activity'
+        Else npp.phase_name END AS phaseName,
+        CASE WHEN tep.task_id = 'others' THEN 'Others'
+        WHEN tep.task_id = 'Non billable activity' THEN 'Non billable activity'
+        Else nppt.task_name END AS taskNamee,
+        empattd.attendance_date AS attendance_date,
+        tep.regularization_reason AS regReason
+        FROM timesheet_entry_projects tep
+        LEFT JOIN timesheet_entries AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN employees AS emp ON(emp.id=te.employee_id)
+        LEFT JOIN non_project_phases AS npp ON ( npp.id = tep.phase_id )
+        LEFT JOIN non_project_phase_tasks AS nppt ON ( nppt.id = tep.task_id )
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id=#shiftKey#)
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        WHERE emp.manager=#employeeId# 
+        AND te.deleted = 0
+        AND tep.deleted = 0 AND
+         <dynamic>
+             <isNotNull property="value">
+               $value$
+             </isNotNull>
+             <isEqual prepend="AND" property="approveType" compareValue="pending">
+                 tep.status ='m'
+             </isEqual>
+             <isEqual prepend="AND" property="approveType" compareValue="processed">
+                 tep.status ='a'   
+             </isEqual>
+              <isEqual prepend="AND" property="regularName" compareValue="N">
+                ( tep.regularization_reason IS NULL  OR  tep.regularization_reason=''  )
+            </isEqual>
+            <isEqual prepend="AND" property="regularName" compareValue="E">
+                 (tep.regularization_reason IS NOT NULL   AND  tep.regularization_reason!='')
+            </isEqual>
+         </dynamic>
+         group by te.id
+         ORDER BY te.timesheet_date ASC  
+          <dynamic>
+            <isEqual property="approveType" compareValue="processed">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+            <isEqual property="approveType" compareValue="pending">
+                LIMIT #start_page#,#end_page#         
+            </isEqual>
+        </dynamic>
+    </select>
+    <update id="updateTimesheetEntryStatus" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" >
+        UPDATE timesheet_entry_projects AS tep 
+        LEFT JOIN timesheet_entries AS te ON tep.timesheet_entry_id = te.id
+        SET tep.approved_hours=#approvedHrs# , 
+            tep.approved_minutes=#approvedMins# , 
+            tep.remarks=#timeSheetRemarks# ,
+            tep.approved_date = now() ,
+            tep.status=#actionValue# ,
+            te.status=#actionValue# 
+        WHERE tep.id=#checkedId#
+    </update>
+
+    <insert id="insertTimesheetEntry" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        INSERT INTO timesheet_entries
+        (employee_id,timesheet_date,shift,location,role_id,status,deleted) 
+        values(#employeeId#,#db_timesheet_date#,#db_shift#,#db_location#,#db_role#,#status#,0)
+        <selectKey resultClass="String" keyProperty="last_id">
+          select last_insert_id() as last_id
+        </selectKey>
+    </insert>
+
+    <insert id="insertTimesheetEntryProject" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        INSERT INTO timesheet_entry_projects
+        (timesheet_entry_id,project_id,phase_id,task_id,worked_hours,task_remarks,status,deleted)
+        values(#db_timesheet_entry_id#,#db_project#,#db_phase#,#db_task#,#db_worked_hours#,#db_remarks#,#status#,0)
+    </insert>
+
+    <update id="updateTimesheetEntry" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        UPDATE timesheet_entries SET
+            shift=#db_shift#,
+            location=#db_location#,
+            role_id=#db_role#,
+            status='m'
+        WHERE id=#db_autoId#
+    </update>
+
+    <update id="updateTimesheetEntryProject" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        Update timesheet_entry_projects SET
+            project_id=#db_project#,
+            phase_id=#db_phase#,
+            task_id=#db_task#,
+            worked_hours=#db_worked_hours#,
+            task_remarks=#db_remarks#,
+            status='m'
+        WHERE id=#db_autoId#
+    </update>
+
+    <select id="getTimesheetEntryProjectId" parameterClass="String"  resultClass="String">
+        SELECT id
+        FROM timesheet_entry_projects
+        WHERE timesheet_entry_id = #key#
+    </select>
+
+    <select id="getEmployeeInfo" parameterClass="String"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Employee.joined_date,CompanyLocation.city_id
+        FROM employees AS Employee
+        INNER JOIN company_locations AS CompanyLocation
+            ON (CompanyLocation.id = Employee.company_location_id)
+        WHERE
+            Employee.id = #key#
+    </select>
+    <select id="getAvailableHours" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+<!--        SELECT ewk.effective_from AS effective_date,
+        CASE WHEN ewk.location_table='company_location' THEN '09:30' 
+        ELSE(SELECT cusloc.customer_working_hrs FROM customer_work_locations AS cusloc WHERE cusloc.id = ewk.work_location_id)
+        END AS available_hours
+        FROM employees AS Employee
+        LEFT JOIN employee_work_location AS ewk ON(ewk.employee_id = Employee.id)
+        WHERE Employee.id = #key# AND CURDATE() >= ewk.effective_from-->
+        SELECT case when F_EmployeeHour_Details(#employeeId#,#effective_date#) is null
+        then '-'
+        else F_EmployeeHour_Details(#employeeId#,#effective_date#)
+        end
+        AS available_hours
+        FROM employee_work_location WHERE employee_id=#employeeId#
+        
+    </select>
+
+    <select id="getHolidays" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT holiday_date,holiday_description
+        FROM holidays
+        WHERE
+            city_id = #city_id#
+            AND holiday_date BETWEEN #start_date# AND #end_date#
+    </select>
+
+    <select id="getLeaveDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT from_date,to_date,length_days,from_half_day,to_half_day,canceled_dates
+        FROM employee_leave_requests
+        WHERE
+            employee_id = #employeeId#
+            AND leave_status IN ('t','o','a')
+            AND (from_date BETWEEN #start_date# AND #end_date# OR to_date BETWEEN #start_date# AND #end_date#)
+    </select>
+       
+    <select id="getTimesheetEntryCount" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="String">
+       SELECT COUNT(*) AS recordCount 
+        FROM timesheet_entry_projects tep
+        <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+        LEFT JOIN timesheet_entries AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN projects AS prj ON(prj.id=tep.project_id)
+        LEFT JOIN project_team_allocations AS PTA ON(PTA.project_id=prj.id AND PTA.employee_id= te.employee_id AND PTA.deleted = 0)
+        LEFT JOIN company_locations cl ON(cl.id = PTA.work_location_id AND PTA.location_table = 'company_locations')
+	LEFT JOIN cities city ON(city.id = cl.city_id)
+	LEFT JOIN customer_work_locations cusWrk ON(cusWrk.id = PTA.work_location_id  AND PTA.location_table = 'customer_work_locations')
+	LEFT JOIN customers cus ON(cus.id=cusWrk.customer_id)
+        LEFT JOIN project_so_masters AS psm ON (psm.project_id=prj.id)
+        LEFT JOIN sales_orders AS so ON (so.id=psm.sales_order_id)
+        LEFT JOIN employees AS emp ON(emp.id=te.employee_id)
+        LEFT JOIN (project_roles AS ProjectRole, roles AS Role ) ON
+        (te.role_id=ProjectRole.role_id AND Role.id=ProjectRole.role_id AND ProjectRole.deleted=0 AND ProjectRole.project_id= tep.project_id)
+        LEFT JOIN configuration_values AS pricing_config ON(pricing_config.configuration_key=so.pricing_model AND pricing_config.parent_id='242')
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id='201')
+        LEFT JOIN configuration_values AS location_config ON(location_config.configuration_key=te.location AND location_config.parent_id='205')
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        WHERE `ProjectRole`.`status` ='a'
+        AND te.deleted = 0
+        AND tep.deleted = 0
+        </isNotEqual>
+        <isEqual property="projectId" compareValue="Non_Project_Activity" >
+         LEFT JOIN timesheet_entries AS te ON(te.id=tep.timesheet_entry_id)
+        LEFT JOIN employees AS emp ON(emp.id=te.employee_id)
+        LEFT JOIN non_project_phases AS npp ON ( npp.id = tep.phase_id )
+        LEFT JOIN non_project_phase_tasks AS nppt ON ( nppt.id = tep.task_id )
+        LEFT JOIN configuration_values AS shift_config ON(shift_config.configuration_key=te.shift AND shift_config.parent_id=#shiftKey#)
+        LEFT JOIN employee_attendance AS empattd ON (empattd.emp_id=te.employee_id AND empattd.attendance_date=te.timesheet_date)
+        WHERE 1=1
+        AND te.deleted = 0
+        AND tep.deleted = 0
+        </isEqual>
+        <dynamic>
+            <isEqual prepend="AND" property="approveType" compareValue="pending">
+                tep.status ='m'
+            </isEqual>
+            <isEqual prepend="AND" property="approveType" compareValue="processed">
+                tep.status ='a' 
+            </isEqual>
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND emp.manager=#employeeId#
+            </isEqual>
+            <isNotNull property="value">
+            AND  $value$
+            </isNotNull>
+             <isEqual prepend="AND" property="regularName" compareValue="N">
+                ( tep.regularization_reason IS NULL  OR  tep.regularization_reason=''  )
+            </isEqual>
+            <isEqual prepend="AND" property="regularName" compareValue="E">
+                 (tep.regularization_reason IS NOT NULL   AND  tep.regularization_reason!='')
+            </isEqual>
+        </dynamic>
+    </select>
+    
+    <select id="getProjectDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+<!--        SELECT prj.project_model AS projectModel,prj.billable AS prjBillable, prj.pricing AS prjPricing , prj.execution_model AS prjExecutionModel,prj.efforts_uom AS effortUOM FROM projects prj
+               WHERE prj.id=#projectName#;-->
+          SELECT prj.project_model AS projectModel,prj.billable AS prjBillable, so.pricing_model AS prjPricing ,
+ prj.execution_model AS prjExecutionModel,so.uom_id AS effortUOM 
+ FROM projects prj
+ LEFT JOIN project_so_masters psm ON (psm.project_id=prj.id)
+ LEFT JOIN sales_orders so ON (so.id=psm.sales_order_id)
+              WHERE prj.id=#projectName#;
+			   
+    </select>
+    
+    <select id="getTimeSheetDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+    SELECT te.timesheet_date as timesheetDate ,te.employee_id AS empId , 
+    te.location AS workLocation , te.role_id AS roleId , tep.project_id AS projectId
+            FROM timesheet_entries te
+            LEFT JOIN timesheet_entry_projects AS tep ON(tep.timesheet_entry_id=te.id)
+            LEFT JOIN projects AS prj ON(prj.id=tep.project_id)
+            WHERE tep.id=#checkedId#;
+    </select>
+    
+    <select id="getBillingDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+     SELECT pta.billable_effort AS billingHours , pr.billing_rate AS billRate , pta.role_id AS roleId 
+        FROM project_team_allocations pta
+        left JOIN project_roles pr ON (pta.project_id=pr.project_id)
+        WHERE pta.employee_id=#employeeId# AND pta.project_id=#projectName# 
+        AND 
+        CASE WHEN pta.location_table!=#workingPlace#
+        THEN pta.location_table='company_locations'
+        ELSE
+        pta.location_table=#workingPlace#
+        END
+        AND pr.role_id=#roleId# AND pta.deleted=0 
+        AND pta.start_date <![CDATA[ <= ]]> #timesheetDateBilling# 
+        AND pta.end_date <![CDATA[ >= ]]> #timesheetDateBilling#;
+    </select>
+
+    <select id="getBillingAdviceDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+    SELECT ba.billable_amount AS billableAmount,ba.billable_effort AS billableEffort FROM billing_advices ba
+             WHERE ba.project_id=#projectName# AND ba.employee_id=#employeeId# AND ba.working_place=#workingPlace# AND ba.role_id=#roleId# AND ba.status='s' AND ba.billing_month=#enteredMonth# AND ba.billing_year=#enteredYear#;
+    </select>
+    
+    <update id="updateBillingAdviceDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO" >
+    UPDATE billing_advices ba SET ba.billable_effort=#totApprovedHrs# , ba.billable_amount=#billableAmount#<![CDATA[ + ]]>#calculatedEffort#, deleted=0
+        WHERE ba.billing_month=#enteredMonth# AND ba.billing_year=#enteredYear# AND ba.employee_id=#employeeId# AND ba.project_id=#projectName#  AND ba.working_place=#workingPlace# AND ba.role_id=#roleId# AND ba.status='s';
+    </update>
+    
+    <insert id="insertBillingDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        INSERT INTO billing_advices (project_id,role_id,employee_id,working_place,billing_month,billing_year,billable_effort,billable_amount,deleted,status,sbu,subsbu)
+            VALUES(#projectName#,#roleId#,#employeeId#,#workingPlace#,#enteredMonth#,#enteredYear#,#totApprovedHrs#,#calculatedEffort#,0,'s',#sbu#,#subSbu#);
+    </insert>
+
+    <select id="getEmployeeJoinedDate" parameterClass="String" resultClass="String">
+        SELECT joined_date
+        FROM employees 
+        WHERE id=#key#
+    </select>
+
+    <select id="excelProjectList" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT DISTINCT(PTA.project_id),CONCAT(Project.project_code,'-',Project.project_name) AS project_name
+        FROM project_team_allocations AS PTA
+        INNER JOIN projects AS Project ON (Project.id = PTA.project_id) WHERE  PTA.employee_id = #employeeId#
+        AND #prj_entry_date# between PTA.start_date AND PTA.end_date
+        AND PTA.deleted = 0 AND Project.status IN ('a') ;
+    </select>
+    <select id="excelRoleList" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT
+            Role.role_description AS role_name,
+            Role.id AS role_id,
+<!--            PTA.working_place AS location-->
+CASE WHEN pta.location_table = 'company_locations'
+				 THEN 's'
+				 ELSE 'o'
+				 END AS location
+        FROM project_team_allocations AS PTA
+        INNER JOIN roles AS Role ON ( Role.id = PTA.role_id )
+        WHERE
+            PTA.project_id =#project_id#
+            AND #prj_entry_date# between PTA.start_date AND PTA.end_date
+            AND PTA.employee_id =#employeeId#
+            AND PTA.working_place=#empWork_location#
+            AND deleted =0
+            
+    </select>
+    <select id="excelPhaseList" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+        SELECT Phase.phase_name,Phase.id as phase_id
+        FROM project_phases AS Phase
+        INNER JOIN projects AS Project ON (Project.id = Phase.project_id)
+        WHERE
+            Phase.project_id = #project_id#
+              </select>
+     <select id="getEmployeeStructure" parameterClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO"  resultClass="com.defiance.ideal.timesheet.approve.dto.ApprovalDTO">
+        
+         select (SELECT parent_id from company_structures where id = subsbu) as sbu,
+                 subSbu
+                 from(select if(structure_name_subgroup = #subSbu#,(SELECT changed_from from employee_info_histories where employee_id = #employeeId# and status = 1),
+                      structure_name_subgroup) as subsbu from employees WHERE  id  = #employeeId#) 
+         as temp
+    </select>
+    
+     <select id="getStatusList" resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetDTO">
+         select configuration_key as status_key,configuration_value as status_value from configuration_values where parent_id IN (select id from configuration_values where configuration_key = 'timesheet_status')
+     </select>
+     
+    <parameterMap id="getTimesheetMap" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO">
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getTimesheetEntries_New" parameterMap="getTimesheetMap" resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetEntryDTO">
+        {call P_GetTimesheetEntries (?,?,?)}
+    </procedure> 
+    
+    <parameterMap id="getEmployeeMap" class="String">
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getEmployeeInfo_New" parameterMap="getEmployeeMap" resultClass="com.defiance.ideal.timesheet.approve.dto.EmployeeDTO">
+        {call P_GetEmployeeInfo (?)}
+    </procedure>     
+    
+    <parameterMap id="getCompanyHolidays" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getCompanyHolidays" parameterMap="getCompanyHolidays" resultClass="com.defiance.ideal.timesheet.approve.dto.CompanyHolidayDTO">
+        <!--{call P_GetCompanyHolidays (?,?,?)}-->
+        {call P_GetEmployeeHolidayCalendar (?,?,?)}
+    </procedure>     
+    
+    <parameterMap id="getCompanyExceptionalDays" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+    
+    <procedure id="getCompanyExceptionalWorkingDays" parameterMap = "getCompanyExceptionalDays" resultClass="com.defiance.ideal.timesheet.approve.dto.CompanyHolidayDTO">
+        {call P_GetCalendarExceptionalDays (?,?,?)}
+    </procedure>
+    
+    <parameterMap id="getEmployeeLeaveDetails" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getEmployeeLeaveDetails" parameterMap="getEmployeeLeaveDetails" resultClass="com.defiance.ideal.timesheet.approve.dto.EmployeeLeaveDTO">
+        {call P_GetEmployeeLeaveDetails (?,?,?)}
+    </procedure> 
+    
+    <parameterMap id="getAllocatedProjects" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getProjects_New" parameterMap="getAllocatedProjects" resultClass="com.defiance.ideal.timesheet.approve.dto.ProjectDTO">
+        {call P_GetProjectsForEmployee (?,?)}
+    </procedure> 
+    
+    <parameterMap id="getPhases" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getPhases_New" parameterMap="getPhases" resultClass="com.defiance.ideal.timesheet.approve.dto.PhaseDTO">
+        {call P_GetPhases (?,?)}
+    </procedure> 
+    
+    <parameterMap id="getTasks" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="phaseId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getTasks_New" parameterMap="getTasks" resultClass="com.defiance.ideal.timesheet.approve.dto.TaskDTO">
+        {call P_GetTasks (?,?)}
+    </procedure> 
+    
+     <parameterMap id="getRoles" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getRoles_New" parameterMap="getRoles" resultClass="com.defiance.ideal.timesheet.approve.dto.RoleDTO">
+        {call P_GetRoles (?,?,?)}
+    </procedure> 
+    
+    <parameterMap id="getProjects" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+        <parameter property="global_projects" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getProjects_New1" parameterMap="getProjects" resultClass="com.defiance.ideal.timesheet.approve.dto.ProjectDTO">
+        {call P_GetProjects (?,?,?,?,?)}
+    </procedure>
+    
+    <parameterMap id="getProjectDetail" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getProjectDetail_New" parameterMap="getProjectDetail" resultClass="com.defiance.ideal.timesheet.approve.dto.ProjectDTO">
+        {call P_GetProjectDetail (?,?,?)}
+    </procedure>
+    
+    
+    <parameterMap id="getPhaseDetail" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="projectPhase" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getPhaseDetail" parameterMap="getPhaseDetail" resultClass="com.defiance.ideal.timesheet.approve.dto.PhaseDTO">
+        {call P_GetPhaseDetail (?,?)}
+    </procedure>
+    
+    <parameterMap id="getTaskDetail" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="projectId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="taskId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getTaskDetail" parameterMap="getTaskDetail" resultClass="com.defiance.ideal.timesheet.approve.dto.TaskDTO">
+        {call P_GetTasksDetails (?,?)}
+    </procedure>
+    
+    <parameterMap id="getConfiguration" class="String" >
+        <parameter property="key" jdbcType="VARCHAR" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getConfiguration" parameterMap="getConfiguration" resultClass="com.defiance.ideal.timesheet.approve.dto.ConfigurationDTO">
+        {call P_GetConfiguration (?)}
+    </procedure>
+    
+    <parameterMap id="getAttendanceHours" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getAttendanceHours_New" parameterMap="getAttendanceHours" resultClass="String">
+        {call P_GetAttendanceHours (?,?)}
+    </procedure>  
+    
+    <parameterMap id="getAttendanceHoursInOut" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getAttendanceHoursInOut" parameterMap="getAttendanceHoursInOut" resultClass="String">
+        {call P_GetAttendanceHoursInOut (?,?)}
+    </procedure>  
+    
+    <parameterMap id="getAvailableHours" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+    
+    <select id="getAvailableHours_New" parameterMap="getAvailableHours" resultClass = "String">
+       SELECT F_GetAvailableHrs(?,?) as availHrs
+    </select>
+    
+    <select id="getAvailableOfficeHours_New" parameterMap="getAvailableHours" resultClass = "String">
+       SELECT F_GetAvailableHrsOffcHrs(?,?) as availHrs
+    </select>
+    
+    <parameterMap id="getOfficeHours" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+    
+    <select id="getOfficeHours_New" parameterMap="getOfficeHours" resultClass = "String">
+       SELECT F_GetOfficeHrs(?,?) as officeHrs
+    </select>
+    
+    <parameterMap id="saveTimesheetEntry" class="com.defiance.ideal.timesheet.approve.dto.TimesheetEntryDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+        <parameter property="shift" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="role_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="project_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="phase_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="task_id" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="worked_hours" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="remarks" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="regularization_reason" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="status" jdbcType="VARCHAR" mode="IN" />
+        <parameter property="deleted" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_id" jdbcType="VARCHAR" mode="IN" />
+    </parameterMap>
+    
+    <procedure id="saveTimesheetEntry" parameterMap="saveTimesheetEntry" resultClass = "String">
+       {call P_Ins_Upd_TimeSheet(?,?,?,?,?,?,?,?,?,?,?,?,?)}
+    </procedure>
+    
+    <parameterMap id="getRoleAndLocation" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO">
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getRoleAndLocation" parameterMap="getRoleAndLocation" resultClass="com.defiance.ideal.timesheet.approve.dto.RoleWorkLocationDTO">
+        {call P_GetRoleAndLocationForEmployee (?,?,?)}
+    </procedure> 
+
+    <select id="getWorkLocationOfEmployee" parameterClass="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO"  resultClass="String">
+        select  F_IsAttendance_Available(#employeeId#, #timesheet_date#) 
+    </select>    
+    
+    <parameterMap id="removedSavedEntry" class="string">
+        <parameter property="timeSheetId" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="removedSavedEntryProcedure" parameterMap="removedSavedEntry" resultClass = "String">
+        {call sp_deleteTs_Record (?)}
+    </procedure> 
+    
+    <parameterMap id="getWFHcount" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO">
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />
+        <parameter property="yearStart_date" jdbcType="DATE" mode="IN" />
+        <parameter property="yearEnd_date" jdbcType="DATE" mode="IN" />
+        <parameter property="employeeId" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+    
+    <procedure id="getWFHcount" parameterMap="getWFHcount" resultClass="com.defiance.ideal.timesheet.approve.dto.WFHpolicyIntegrationDTO">
+        {call P_WFH_Details (?,?,?,?,?)}
+    </procedure> 
+    
+    <procedure id="getPolicyValue" resultClass="com.defiance.ideal.timesheet.approve.dto.WFHpolicyIntegrationDTO">
+        {call p_WFH_PolicyValue()}
+    </procedure> 
+    
+    <procedure id="getExceptionList" resultClass="com.defiance.ideal.timesheet.approve.dto.WFHpolicyIntegrationDTO">
+        {call P_WFH_ExceptionList()}
+    </procedure>    
+         
+    <parameterMap id="getEmployee_WeekEnd" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO">
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="start_date" jdbcType="DATE" mode="IN" />
+        <parameter property="end_date" jdbcType="DATE" mode="IN" />        
+    </parameterMap>
+
+    <procedure id="getEmployee_WeekEnd" parameterMap="getEmployee_WeekEnd" resultClass="com.defiance.ideal.timesheet.approve.dto.WeekEndDetails">
+        {call p_GetEmployee_WeekEnd(?,?,?)}
+    </procedure>
+    
+    <parameterMap id="get_WFH_Eligible" class="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" >
+        <parameter property="employeeId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="timesheet_date" jdbcType="DATE" mode="IN" />
+    </parameterMap>
+    
+    <select id="get_WFH_Eligible" parameterMap="get_WFH_Eligible" resultClass = "String">
+       SELECT 
+       F_WFH_Eligible(?,?) as eligible
+    </select>
+    <select id="getTimesheetDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetExportDTO">
+        CALL PR_DELIQUENCY_REPORT_PROJECT_WISE(#start_date#,#end_date#,#employeeId#,NULL);
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.timesheet.approve.dto.SearchCriteriaDTO" resultClass="com.defiance.ideal.timesheet.approve.dto.TimesheetExportDTO">
+        SELECT emp.employee_number AS employee_number,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        CONCAT(rm.employee_number,' - ',rm.first_name,' ',rm.last_name) AS reporting_manager,
+        F_Current_EmpLocation(emp.id,#start_date#) AS location,
+        ven.name AS vendor_name,
+        ven.code AS vendor_code,
+        MONTHNAME(#start_date#) AS month,
+        YEAR(#start_date#) AS year,
+        CASE WHEN pta.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(compcal.location_id, #start_date#,#end_date#,0)
+        WHEN pta.location_table IS NULL AND ewl.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(ewl.work_location_id, #start_date#,#end_date#,0)
+        WHEN pta.location_table IS NULL AND ewl.location_table = 'customer_work_locations'
+        THEN F_Customer_Workingdays(ewl.work_location_id, #start_date#,#end_date#,1)
+        ELSE F_Customer_Workingdays(custcal.location_id, #start_date#,#end_date#,1)
+        END AS working_days,
+        (SELECT COUNT(DISTINCT(te.timesheet_date)) AS tedate FROM timesheet_entries AS te
+        LEFT JOIN timesheet_entry_projects AS tep ON (te.id = tep.timesheet_entry_id AND tep.deleted=0 AND tep.status IN('m','a'))
+        WHERE te.timesheet_date BETWEEN #start_date# AND #end_date# AND te.employee_id=#employeeId# AND te.status IN('m','a') AND te.deleted = 0) AS worked_days,
+        LeaveLengthData(#start_date#,#end_date#,#year#,#month#,emp.id) as leave_days
+        FROM employees AS emp
+        LEFT JOIN company_locations AS cmpl ON emp.current_location_id = cmpl.id
+        LEFT JOIN project_team_allocations AS pta ON(pta.employee_id = emp.id AND (pta.start_date <![CDATA[ <= ]]> #end_date#) and (pta.end_date <![CDATA[ >= ]]> #start_date#) and pta.deleted = 0)
+        LEFT JOIN projects AS prjt ON(prjt.id = pta.project_id)
+        LEFT JOIN customer_calendars AS custcal ON (custcal.location_id = pta.work_location_id AND custcal.is_customer=1)
+        LEFT JOIN customer_calendars AS compcal ON (compcal.location_id = pta.work_location_id AND compcal.is_customer=0)
+        LEFT JOIN employee_work_location AS ewl ON (ewl.employee_id = emp.id)
+        LEFT JOIN employees AS rm ON emp.manager = rm.id
+        LEFT JOIN employee_vendor_mappings AS evm ON evm.employee_id = emp.id
+        LEFT JOIN vendors AS ven ON evm.vendor_id = ven.id
+        WHERE emp.id = #employeeId#
+        GROUP BY emp.id;
+    </select>
+    
+    <select id="getTimesheetBlockDate" resultClass = "String">
+       SELECT configuration_value FROM configuration_values WHERE id=846;
+    </select>
+    
+    <select id="getOfficeStartTime" parameterClass="String" resultClass = "String">
+       SELECT CASE WHEN start_time IS NOT NULL THEN start_time ELSE 'e' END AS office_start_time FROM employee_office_start_time
+        WHERE employee_id = #employeeId# AND STATUS = 'a' AND 
+        created_on = (SELECT MAX(created_on) FROM employee_office_start_time WHERE employee_id = #employeeId# AND STATUS = 'a') LIMIT 1;
+    </select>
+    
+    <select id="getProjectRole" parameterClass="com.defiance.ideal.timesheet.approve.dto.TimesheetEntryDTO" resultClass = "String">
+        SELECT role_id FROM project_team_allocations WHERE employee_id = #employeeId# AND project_id = #project_id# AND #timesheet_date# BETWEEN start_date AND end_date and deleted = 0 and status = 'a' limit 1;
+    </select>
+    
+    <select id="getNonComplianceCount" parameterClass="String" resultClass = "String">
+<!--        SELECT COUNT(employee_id) FROM employee_deliquency WHERE timesheet_Date BETWEEN DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH,'%Y-%m-01') AND LAST_DAY(DATE_SUB(CURDATE(),INTERVAL 30 DAY))
+        AND employee_id = #employee_id# AND worked_hours = 'NC'-->
+        CALL PR_LAST_MONTH_PENDING_TIMESHEET(DATE_FORMAT(CURDATE() - INTERVAL 1 MONTH,'%Y-%m-01'), LAST_DAY(DATE_SUB(CURDATE(),INTERVAL 1 MONTH)), #employee_id#, NULL)
+    </select>
+    
+</sqlMap>

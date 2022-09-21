@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="allowanceMap">
+    <select id="getCutOffDate" parameterClass="java.lang.Integer" resultClass="java.lang.String">
+        SELECT configuration_value as cut_off_date FROM configuration_values WHERE id = #key#;
+    </select>
+    
+    <select id="getCustomerList" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.FullAllowanceDto" >
+        select cus.id AS customer_id,
+        CONCAT(cus.customer_code,' - ',cus.customer_name,' ',IFNULL(cus.division,' ')) AS customer_name 
+        FROM customers cus        
+        LEFT JOIN projects p ON (cus.id=p.customer_id)
+        LEFT JOIN Project_team_allocations as pta on(pta.project_id=p.id)
+        LEFT JOIN employees as emp on (emp.id=pta.employee_id)
+        where cus.status='a' and cus.customer_code!= 'NULL' AND p.status IN('a') AND p.project_model='wpo' AND p.project_status NOT IN('y') 
+        AND (p.planned_start_date<![CDATA[ <= ]]>#endDate# AND p.planned_end_date<![CDATA[ >= ]]>#startDate#)
+        AND (pta.start_date <![CDATA[ <= ]]> #endDate# and pta.end_date <![CDATA[ >= ]]> #startDate#)
+        AND emp.employment_status in ('p')
+        <dynamic>
+            <isNotEmpty property="created_by" prepend="AND">
+                p.project_manager=#created_by#
+            </isNotEmpty>
+        </dynamic>
+        group by cus.id order by customer_name 
+    </select>
+    
+    <select id="getProjectList" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT project.id AS project_id,
+        CONCAT(Project.project_code,'-' ,Project.project_name) AS project_name
+        FROM projects AS Project    
+        LEFT JOIN customers AS cus ON (Project.customer_id=cus.id)
+        LEFT JOIN Project_team_allocations as pta on(pta.project_id=Project.id)
+        LEFT JOIN employees as emp on (emp.id=pta.employee_id)
+        WHERE Project.status IN('a') AND Project.project_model='wpo' AND Project.project_status NOT IN('y')
+        AND (Project.planned_start_date<![CDATA[ <= ]]>#endDate# AND Project.planned_end_date<![CDATA[ >= ]]>#startDate#)
+        AND (pta.start_date <![CDATA[ <= ]]> #endDate# and pta.end_date <![CDATA[ >= ]]> #startDate#)
+        AND (emp.released_date <![CDATA[ >= ]]> #startDate# OR emp.released_date IS NULL)
+        <dynamic>
+            <isNotEmpty property="cus_id" prepend="AND">
+                Project.customer_id=#cus_id# 
+            </isNotEmpty>
+            <isNotEmpty property="created_by" prepend="AND">
+                Project.project_manager=#created_by#
+            </isNotEmpty>
+        </dynamic>
+        group by pta.project_id
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass="com.defiance.ideal.dto.SearchDto">
+        CALL PR_ELIGIBLE_ALLOWANCE_DAYS_COUNT(9999,#prjt_id#,#startDate#,#endDate#,#year#,#month#);
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT * FROM allowance WHERE projects_id = #prjt_id# AND months = #month# AND years = #year#;
+    </select>
+    
+    <select id="getShiftAmount" resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT type_of_allowance AS type, shift_timings AS shifts, eligible_amount AS amount
+        FROM allowance_master;
+    </select>
+    
+    <insert id="insertAllowanceDetails" parameterClass="com.defiance.ideal.dto.FullAllowanceDto">
+        INSERT INTO allowance_maintanence (employee_id, project_id, month, year, general, shift1, shift2, shift3, 
+                customer_general_shift, customer_shift1, customer_shift2, customer_shift3, weekend_holiday_count,
+                transport_two_way, transport_one_way, transport_no_cab, hardship_allowance, shift_allowance, holiday_allowance, 
+                transport_allowance, total_amount, remarks, created_by, created_date, modified_date, status)
+        VALUES(#employee_id#, #project_id#, #month#, #year#, #company_general#, #company_shift_I#, #company_shift_II#,
+                #company_shift_III#, #cust_general#, #cust_shift_I#, #cust_shift_II#, #cust_shift_III#, #weekend_holidays_entered#,
+                #two_way#, #one_way#, #no_cab#, #hardship_amount#, #shift_amount#, #holiday_amount#, #transport_amount#,
+                #total_amount#, #remarks#, #created_by#, #created_date#, #modified_date#, #status#)
+    </insert>
+    
+    <update id="updateTimesheetDetails" parameterClass="com.defiance.ideal.dto.FullAllowanceDto">
+        UPDATE timesheet_entry_projects AS tep 
+        LEFT JOIN timesheet_entries AS te ON te.id = tep.timesheet_entry_id
+        SET tep.is_allowanced  = 1 
+        WHERE te.employee_id = #employee_id# AND te.timesheet_date BETWEEN #start_date# AND #end_date# AND tep.project_id = #project_id#;
+    </update>
+    
+    <select id="getProcessedList" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT CONCAT(emp.employee_number, ' - ', emp.first_name, ' ',emp.last_name) AS employee_name,
+        bill.configuration_value AS category,
+        CONCAT(prjt.project_code,' - ',prjt.Project_name) AS project_name,
+        am.general AS company_general,
+        am.shift1 AS company_shift_I,
+        am.shift2 AS company_shift_II,
+        am.shift3 AS company_shift_III,
+        am.customer_general_shift AS cust_general,
+        am.customer_shift1 AS cust_shift_I,
+        am.customer_shift2 AS cust_shift_II,
+        am.customer_shift3 AS cust_shift_III,
+        am.weekend_holiday_count AS weekend_holidays_entered,
+        am.transport_one_way AS one_way,
+        am.transport_two_way AS two_way,
+        am.transport_no_cab AS no_cab,
+        am.hardship_allowance AS hardship_amount,
+        am.shift_allowance AS shift_amount,
+        am.holiday_allowance AS holiday_amount,
+        am.transport_allowance AS transport_amount,
+        am.total_amount AS total_amount,
+        am.remarks AS remarks,
+        CONCAT(mng.employee_number,' - ',mng.first_name,' ', mng.last_name) AS created_by
+        FROM allowance_maintanence AS am
+        LEFT JOIN employees AS emp ON emp.id=am.employee_id
+        LEFT JOIN configuration_values AS bill ON bill.configuration_key = emp.billable AND bill.parent_id = 52
+        LEFT JOIN projects AS prjt ON prjt.id = am.project_id
+        LEFT JOIN employees AS mng ON am.created_by = mng.id
+        WHERE  1=1 AND am.month = #month# AND am.year = #year#
+        <dynamic>
+            <isNotNull property="SBU_Id" prepend="AND">
+                emp.structure_name=#SBU_Id#
+            </isNotNull>
+            <isNotNull property="SBU_SUB_Id" prepend="AND">
+                emp.structure_name_subgroup=#SBU_SUB_Id#
+            </isNotNull>
+            <isNotNull property="project_id" prepend="AND">
+                am.project_id = #project_id#
+            </isNotNull>
+        </dynamic> 
+        ORDER BY am.employee_id
+    </select>
+    
+    <select id="getEmployeeAllowanceList" parameterClass="com.defiance.ideal.dto.SearchDto"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT  CONCAT(emp.employee_number, ' - ', emp.first_name, ' ',emp.last_name) AS employee_name,
+        CONCAT(prjt.project_code,' - ',prjt.Project_name) AS project_name,
+        MONTHNAME(STR_TO_DATE(am.month, '%m')) AS month,
+        am.general AS company_general,
+        am.shift1 AS company_shift_I,
+        am.shift2 AS company_shift_II,
+        am.shift3 AS company_shift_III,
+        am.customer_general_shift AS cust_general,
+        am.customer_shift1 AS cust_shift_I,
+        am.customer_shift2 AS cust_shift_II,
+        am.customer_shift3 AS cust_shift_III,
+        am.weekend_holiday_count AS weekend_holidays_entered,
+        am.transport_one_way AS one_way,
+        am.transport_two_way AS two_way,
+        am.transport_no_cab AS no_cab,
+        am.hardship_allowance AS hardship_amount,
+        am.shift_allowance AS shift_amount,
+        am.holiday_allowance AS holiday_amount,
+        am.transport_allowance AS transport_amount,
+        am.total_amount AS total_amount,
+        am.remarks AS remarks,
+        CONCAT(mng.employee_number,' - ',mng.first_name,' ', mng.last_name) AS created_by
+        FROM allowance_maintanence AS am
+        LEFT JOIN employees AS emp ON emp.id=am.employee_id
+        LEFT JOIN configuration_values AS bill ON bill.configuration_key = emp.billable AND bill.parent_id = 52
+        LEFT JOIN projects AS prjt ON prjt.id = am.project_id
+        LEFT JOIN employees AS mng ON am.created_by = mng.id
+        WHERE  1=1 AND am.year = #year# AND emp.id = #employee_id#
+    </select>
+    
+    <select id="getSbuList" resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT id AS sbu_id, name AS sbu_name FROM company_structures WHERE parent_id=1
+    </select>
+    
+    <select id="getSubSbuList" parameterClass="com.defiance.ideal.dto.SearchDto" resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        select id AS sub_sbu_id, name AS sub_sbu_name from company_structures 
+        where  1=1
+        <dynamic>
+            <isNotNull property="SBU_Id" prepend="AND">
+                parent_id=#SBU_Id#
+            </isNotNull>
+        </dynamic>
+    </select>
+    
+    <select id="getprojectName" parameterClass="java.lang.Integer" resultClass="java.lang.String">
+        SELECT CONCAT(prj.project_code,'-',prj.project_name) FROM projects AS prj WHERE id = #projectId#;
+    </select>
+    
+    <select id="getConfigValueData" parameterClass="String" resultClass="com.defiance.ideal.dto.FullAllowanceDto" >
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id =#parentId#;
+    </select>
+    
+    <select id="getManagerName" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT concat(Employee.first_name,' ',Employee.last_name) As employee_name,Employee.work_email_address AS employee_mail_id 
+        FROM employees AS Employee 
+        WHERE Employee.id = #key#
+    </select>
+
+    <select id="getEmployeeName" parameterClass="java.lang.String"  resultClass="com.defiance.ideal.dto.FullAllowanceDto">
+        SELECT employee_number as employee_id, concat(Employee.first_name,' ',Employee.last_name) As employee_name,Employee.work_email_address AS employee_mail_id 
+        FROM employees AS Employee
+        WHERE Employee.id = #key#
+    </select>
+</sqlMap>

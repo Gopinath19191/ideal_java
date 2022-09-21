@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="personalMap">
+    
+    <select id="getPersonalDetails" parameterClass="com.defiance.ideal.reports.dto.HrPersonalDto" resultClass="com.defiance.ideal.reports.dto.HrPersonalDto">
+        SELECT emp.title AS title,
+        emp.employee_number AS employee_no,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(emp.birth_date, '%d-%b-%Y' )AS dob,
+        emp.pan_number AS pan_card,  
+        DATE_FORMAT(emp.joined_date, '%d-%b-%Y' )AS joined_date,  
+        gender.configuration_value AS gender,
+        marital.configuration_value AS marital_status,
+        dtl.adhar_number AS adhar_card,
+        DATE_FORMAT(emp.resigned_date, '%d-%b-%Y' )AS resigned_date, 
+        DATE_FORMAT(emp.released_date, '%d-%b-%Y' )AS relieving_date,        
+        config.configuration_value AS status_name,
+        emp.mobile_number AS mobile_number,
+        emp.personal_email_address AS email_id,
+        cl.address_line1 AS location,
+        ea.address_line1 AS address1,
+        ea.address_line2 AS address2,
+        ea.zip_code AS pin_code
+        FROM employees AS emp
+        LEFT JOIN employee_addresses AS ea ON emp.id=ea.employee_id
+        LEFT JOIN company_locations AS cl ON cl.id=emp.company_location_id 
+        LEFT JOIN  dtl_online_joining_formalities AS dtl2 ON dtl2.employee_id=emp.id 
+        LEFT JOIN dtl_ojf_employees AS dtl ON  dtl2.id=dtl.ojf_id         
+        LEFT JOIN configuration_values AS config ON (emp.employment_status=config.configuration_key AND config.parent_id=286 )
+        LEFT JOIN configuration_values AS gender ON (emp.gender=gender.configuration_key AND gender.parent_id=39 )
+        LEFT JOIN configuration_values AS marital ON (emp.marital_status=marital.configuration_key AND marital.parent_id=46 )
+        LEFT JOIN company_structures AS cs ON emp.structure_name=cs.id
+        WHERE emp.employment_status NOT IN ('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull property="subsbu">
+                <isNotEmpty prepend="AND" property="subsbu">
+                    cs.id=#subsbu#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        GROUP BY emp.id 
+        <dynamic>
+            <isNotNull property="end_page">
+                <isNotEmpty property="end_page">
+                    LIMIT #start_page#, #end_page#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+        
+    </select> 
+      
+    <select id="getPersonalDataXL" parameterClass="com.defiance.ideal.reports.dto.HrPersonalDto" resultClass="com.defiance.ideal.reports.dto.HrPersonalDto">
+        SELECT emp.title AS title,
+        emp.employee_number AS employee_id,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employee_name,
+        DATE_FORMAT(emp.birth_date, '%d-%b-%Y' )AS dob,
+        gender.configuration_value AS gender,
+        marital.configuration_value AS marital_status,
+        emp.blood_group as blood_Group,
+        emp.pan_number AS pan_card,
+        dtl.adhar_number AS adhar_card,
+        emp.joined_date AS joined_date,
+        emp.resigned_date AS resigned_date,
+        emp.released_date AS relieving_date,
+        config.configuration_value AS STATUS,
+        emp.mobile_number AS mobile_number,
+        emp.personal_email_address AS email_id,
+        cl.address_line1 AS location,
+        ea.address_line1 AS address1,
+        ea.address_line2 AS address2,
+        ea.zip_code AS pin_code,
+        ebd.account_number as account_Number,
+        ebd.bank_name as bank_Name,
+        ebd.branch_name as branch_Name
+        FROM employees AS emp
+        LEFT JOIN employee_addresses AS ea ON emp.id=ea.employee_id
+        LEFT JOIN company_locations AS cl ON cl.id=emp.company_location_id 
+        LEFT JOIN  dtl_online_joining_formalities AS dtl2 ON dtl2.employee_id=emp.id 
+        LEFT JOIN dtl_ojf_employees AS dtl ON  dtl2.id=dtl.ojf_id
+        LEFT JOIN configuration_values AS config ON (emp.employment_status=config.configuration_key and config.parent_id=286)
+        LEFT JOIN configuration_values AS gender ON (emp.gender=gender.configuration_key AND gender.parent_id=39 )
+        LEFT JOIN configuration_values AS marital ON (emp.marital_status=marital.configuration_key AND marital.parent_id=46 )
+        LEFT JOIN company_structures AS cs ON emp.structure_name=cs.id
+        LEFT JOIN employee_bank_details as ebd on emp.id=ebd.employee_id
+        where emp.employment_status NOT IN ('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull property="subsbu">
+                <isNotEmpty prepend="AND" property="subsbu">
+                    cs.id=#subsbu#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic> 
+        GROUP BY emp.id 
+    </select>
+    
+    <select id="getSbu" parameterClass="com.defiance.ideal.reports.dto.HrPersonalDto" resultClass="com.defiance.ideal.reports.dto.HrPersonalDto">
+        SELECT id as id,name AS name FROM company_structures  WHERE parent_id=0
+    </select>
+    
+    <select id="getPersonalCount" parameterClass="com.defiance.ideal.reports.dto.HrPersonalDto" resultClass="java.lang.Integer">
+        SELECT COUNT(*) FROM employees as emp
+        LEFT JOIN company_structures AS cs ON emp.structure_name=cs.id
+        where emp.employment_status NOT IN ('r','t','b','q','o','y')
+        <dynamic>
+            <isNotNull property="subsbu">
+                <isNotEmpty prepend="AND" property="subsbu">
+                    cs.id=#subsbu#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+    </select>
+    
+    <select id="getSubSbu" parameterClass="com.defiance.ideal.reports.dto.HrPersonalDto" resultClass="com.defiance.ideal.reports.dto.HrPersonalDto">
+        SELECT id as id,name AS name FROM company_structures  WHERE parent_id IN ($parentId$)
+    </select>
+    
+</sqlMap>

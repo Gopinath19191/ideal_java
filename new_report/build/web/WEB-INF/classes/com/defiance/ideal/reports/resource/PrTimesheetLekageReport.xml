@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="PrTimesheetLekageReport">
+    <select id="getCustomerList" resultClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO">
+        SELECT id AS cust_id, CONCAT(customer_name,' - ',customer_code) AS cust_name
+        FROM customers
+        WHERE deleted = 0 AND customer_code IS NOT NULL
+        GROUP BY parent_id
+        ORDER BY customer_name ASC;
+    </select>
+    
+    <select id="getProjectList" resultClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO">
+        SELECT prj.id AS project_id, CONCAT(prj.project_code,' - ',prj.project_name) AS project_name
+        FROM projects AS prj
+        LEFT JOIN customers AS cust ON prj.customer_id = cust.id
+        WHERE cust.parent_id = #customer_id# AND prj.project_status IN('e','d')
+        ORDER BY prj.project_code;
+    </select>
+    
+    <select id="getPrTimesheetLekageReport" parameterClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO" resultClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO">
+        CALL PR_TIMESHEET_LEKAGE_REPORT(#from_date#, #to_date#, #cust_id#, #project_id#);
+    </select>
+    
+    <select id="getUtilizationReport" parameterClass="com.defiance.ideal.reports.dto.UtilizationReportDTO" resultClass="com.defiance.ideal.reports.dto.UtilizationReportDTO">
+        CALL PR_BUSOPS_UTILIZATION_REPORT(#from_date#,#to_date#, null);
+    </select>
+    
+    <select id="getOJFSurveyReport" parameterClass="com.defiance.ideal.reports.dto.OJFSurveyReportDTO" resultClass="com.defiance.ideal.reports.dto.OJFSurveyReportDTO">
+        SELECT emp.employee_number AS "Employee_Id",
+        CONCAT(emp.first_name,' ',emp.last_name) AS "Employee_Name",
+        DATE_FORMAT(emp.joined_date, '%d-%m-%Y') AS joined_date,
+        band.name AS band_name,
+        prt.question AS "Question_Category",
+        ques.question AS "Question",
+        ans.answer_value AS "Answer",
+        cty.city AS city
+        FROM dtl_survey_questions AS ques
+        LEFT JOIN dtl_survey_questions AS prt ON ques.parent_id = prt.id
+        LEFT JOIN dtl_survey_mapping AS map ON (ques.id = map.question_id)
+        LEFT JOIN dtl_survey_answers AS ans ON ques.id = ans.question_id AND map.emp_answer = ans.answer_key
+        LEFT JOIN employees AS emp ON map.emp_id = emp.id
+        LEFT JOIN company_locations AS cl ON cl.id=emp.company_location_id
+        LEFT JOIN cities AS cty ON cty.id = cl.city_id
+        LEFT JOIN bands AS band ON band.id = emp.band_id
+        WHERE ques.category = 'O' AND ques.parent_id != '0' AND emp.joined_date BETWEEN #from_date# AND #to_date#
+        ORDER BY emp.id, prt.question;
+    </select>
+    
+    <select id="getCustomerListCount" parameterClass="com.defiance.ideal.reports.dto.OJFSurveyReportDTO" resultClass="java.lang.Integer">
+        SELECT COUNT(*) AS recordCount FROM (SELECT id AS cust_id, CONCAT(customer_name,' - ',customer_code) AS cust_name
+        FROM customers 
+        WHERE deleted = 0 and customer_code is not null
+        GROUP BY parent_id
+        ORDER BY customer_name ASC)AS temp;
+    </select>
+    
+    <select id="getCustomerListLimit" parameterClass="com.defiance.ideal.reports.dto.OJFSurveyReportDTO" resultClass="com.defiance.ideal.reports.dto.OJFSurveyReportDTO">
+        SELECT id AS cust_id, CONCAT(customer_name,' - ',customer_code) AS cust_name
+        FROM customers 
+        WHERE deleted = 0 and customer_code is not null
+        GROUP BY parent_id
+        ORDER BY customer_name ASC LIMIT #start_page#,#end_page#;
+    </select>
+    
+    <select id="getInvoiceAnnexureReport" parameterClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO" resultClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO">
+        SELECT inv.invoice_code AS invoice_code,
+        DATE_FORMAT(inv.invoice_date, '%d-%m-%Y') AS invoice_date,
+        cust.customer_name AS customer_name,
+        CONCAT(prj.project_code,' - ',prj.project_name) AS project_name,
+        CONCAT("http://ideal.hindujatech.com/uploads/invoice_uploads/",ia.attachment_name) AS attachment_name
+        FROM invoices AS inv
+        LEFT JOIN invoice_attachments AS ia ON inv.id = ia.invoice_id
+        LEFT JOIN projects AS prj ON inv.project_id = prj.id
+        LEFT JOIN customers AS cust ON prj.customer_id = cust.id
+        WHERE inv.invoice_date BETWEEN #from_date# AND #to_date#
+        <dynamic>
+            <isNotEmpty property="cust_id" prepend="AND">
+                cust.parent_id=#cust_id#
+            </isNotEmpty>
+            
+            <isNotEmpty property="project_id" prepend="AND">
+                prj.id=#project_id#
+            </isNotEmpty>
+        </dynamic> 
+    </select>
+    
+    <select id="getWorkLocationReport" resultClass="com.defiance.ideal.reports.dto.PrTimesheetLekageReportDTO">
+        SELECT emp.employee_number AS "Employee_Id", 
+        CONCAT(emp.first_name,' ',emp.last_name) AS "Employee_Name",
+        wl.name AS "Work_Location",
+        DATE_FORMAT(ewl.date, '%d-%m-%Y') AS "Last_update_date"
+        FROM (SELECT employee_id,MAX(DATE) AS da FROM employee_monthly_work_locations GROUP BY employee_id)  AS maxda
+        LEFT JOIN `employee_monthly_work_locations` AS ewl ON maxda.employee_id = ewl.employee_id AND maxda.da = ewl.date
+        LEFT JOIN employees AS emp ON ewl.employee_id = emp.id
+        LEFT JOIN `work_locations` AS wl ON ewl.work_location_id = wl.id
+        WHERE emp.employment_status NOT IN('r','t','b','q','o','y');
+    </select>
+    
+    <select id="getPrLastBilledReport" parameterClass="com.defiance.ideal.reports.dto.PrLastBilledReportDTO" resultClass="com.defiance.ideal.reports.dto.PrLastBilledReportDTO" >
+        CALL `pr_last_billed_report`(NULL)
+    </select>
+</sqlMap>

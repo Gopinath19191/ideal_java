@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+           
+   <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:location="/WEB-INF/jdbc.properties"/>
+
+<!--   Creating the Datasource For MIS       -->
+    <bean id="dataSourceConfig"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+          p:driverClassName="${Driver}"
+          p:url="${Url}"
+          p:username="${Username}"
+          p:password="${Password}"/>
+    <!--<bean id="dataSourceConfig"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+          p:driverClassName="com.mysql.jdbc.Driver"
+          p:url="jdbc:mysql://localhost:3306/ideal2_exitmgmt_test"
+          p:username="root"
+          p:password="admin"/>-->
+
+    <bean id="sqlMapClientConfig1" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="configLocation">
+            <value>/WEB-INF/sqlMapConfig.xml</value>
+        </property>
+        <property name="dataSource" ref="dataSourceConfig"/>
+        <property name="useTransactionAwareDataSource" value="true"/>
+    </bean>
+
+    <bean name="LoginDao" class="com.defiance.ideal.exitMgmt.login.dao.LoginDAOImpl">
+        <property name="sqlMapClient" ref="sqlMapClientConfig1"/>
+    </bean>
+    
+    <bean name="LoginService" class="com.defiance.ideal.exitMgmt.login.services.LoginServiceImpl">
+            <property name="loginImplObj" ref="LoginDao"/>
+        </bean>
+
+    <bean name="EmployeeDao" class="com.defiance.ideal.exitMgmt.employee.dao.ExitEmployeeDAOImpl">
+        <property name="sqlMapClient" ref="sqlMapClientConfig1"/>
+    </bean>
+
+    <bean name="EmployeeService" class="com.defiance.ideal.exitMgmt.employee.services.ExitEmployeeServiceImpl">
+            <property name="employeeDaoImplObj" ref="EmployeeDao"/>
+        </bean>
+
+    <bean name="ApprovalDao" class="com.defiance.ideal.exitMgmt.approval.dao.ApprovalDAOImpl">
+        <property name="sqlMapClient" ref="sqlMapClientConfig1"/>
+    </bean>
+
+    <bean name="ApprovalService" class="com.defiance.ideal.exitMgmt.approval.services.ApprovalServiceImpl">
+            <property name="approvalDaoImplObj" ref="ApprovalDao"/>
+        </bean>
+        
+</beans>

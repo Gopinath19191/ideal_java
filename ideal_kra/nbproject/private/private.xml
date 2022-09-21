@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/controller/AuthenticationController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/redirect.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jdbc.properties</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/employeeKraList.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/employeeKra.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/rmKraList.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/service/EmployeeService.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/service/EmployeeServiceImpl.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/dao/EmployeeDao.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/dao/EmployeeDaoImpl.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/resource/querySql.xml</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/js/common.js</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/rmKraView.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/employeeKraView.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/reportKraList.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/copyKra.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/util/CommonFunctions.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/dto/kraDto.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/dto/EmployeeDto.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/css/demos.css</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/dispatcher-servlet.xml</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/src/java/com/defiance/ideal/util/SendMail.java</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/address.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/header.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/education.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/common.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/certification.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/bank_details.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/ajaxsearch.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/adhar_details.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/paging.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/passport.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/prev_pf_details.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/skills.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/uploadKra.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/visa.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/voter_id_details.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_space/ideal_kra/web/WEB-INF/jsp/com/defiance/employees/work_experience.jsp</file>
+    </open-files>
+</project-private>

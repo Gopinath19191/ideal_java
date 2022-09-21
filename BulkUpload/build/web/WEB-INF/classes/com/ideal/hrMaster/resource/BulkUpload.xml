@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="BulkUploadingMap">
+    <select id="getBands"  resultClass="java.lang.String">
+        SELECT name FROM bands WHERE parent_id!=0
+    </select>
+    <select id="getDesignations"  resultClass="java.lang.String">
+        SELECT designation FROM designations
+    </select>
+    <select id="getEmployeNumber" resultClass="java.lang.String">
+        SELECT employee_number FROM employees where employment_status NOT IN('r','q','o','t','b','y')
+    </select>
+    <select id="getDesignationid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from designations where designation=#designation#
+    </select>   
+    <select id="getBandid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from bands where name=#band#
+    </select>  
+    <select id="getEmpid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select id from employees where employee_number=#empNumber#
+    </select>  
+    <select id="getEmployeeName" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select concat(first_name,' ',last_name) as employeeName from employees where employee_number=#empNumber#
+    </select>
+    
+    <select id="getManagerMail" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select work_email_address  from employees where employee_number=#empNumber#
+    </select>
+    
+     <select id="getEmployeeMail" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select work_email_address from employees where employee_number=#empNumber#
+    </select>
+    
+    <select id="getOldManagerName" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select concat(man.first_name,' ',man.last_name) as oldManagerName 
+        from employees emp
+        inner join employees man on (emp.manager=man.id) where emp.employee_number=#empNumber#
+    </select>
+    
+     <select id="getOldManagerMail" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select man.work_email_address
+        from employees emp
+        inner join employees man on (emp.manager=man.id) where emp.employee_number=#empNumber#
+    </select>
+        
+    <update id="updateEmploye" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        update employees set designation_id=#designation_id#,band_id=#band_id#
+        where id=#employee_number#            
+    </update>
+    <insert id="insertHistory" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        insert into employee_info_histories (employee_id,changed_by,reason,changed_to,changed_from,field_changed,modified_time,created_time) values
+        (#employee_number#,#authEmpId#,#reason#,#changed_to#,#changed_from#,#field_changed#,#modified_time#,#modified_time#)
+    </insert>
+    <select id="getEmployeId"  parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        SELECT id FROM employees where employee_number=#authEmpid#
+    </select>
+    <select id="getSingleEmploye" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto">            
+        select employee_number,band_id,designation_id,manager AS manager_id from employees where employee_number=#employee_number#            
+    </select>
+    <insert id="insertAudithistory" parameterClass="com.ideal.hrMaster.dto.AuditListDto">
+        insert into audit_list (employee_number,modified_date,module_name,file_name) values(#employee_number#,#modified_date#,#module_name#,#file_name#)     
+    </insert>
+    <select id="getAuditList" parameterClass="com.ideal.hrMaster.dto.AuditListDto" resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        select e.employee_number,e.first_name,e.last_name,al.modified_date,al.module_name,al.file_name from audit_list AS al
+        LEFT JOIN employees e ON(al.employee_number = e.id)
+        WHERE 1=1
+        <dynamic>
+            <isNotNull prepend="AND" property="filterName">
+                <isNotEmpty property="filterName">
+                    e.employee_number=#filterName#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property="filterModule">
+                <isNotEmpty property="filterModule">
+                    al.module_name = #filterModule#
+                </isNotEmpty>
+            </isNotNull>
+            order by al.id desc
+        </dynamic>
+    </select>
+    <select id="getDistinctEmp" resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        select distinct(e.employee_number) from audit_list as al
+        LEFT JOIN employees e ON(al.employee_number = e.id)
+    </select>
+    <select id="getSerlize" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.EmployeHistoryDto" >
+        SELECT * FROM employees emp 
+        LEFT JOIN designations des ON(emp.designation_id =des.id)
+        LEFT JOIN countries cont ON(emp.country_id = cont.id)
+        LEFT JOIN company_structures cs1 ON(emp.structure_name = cs1.id)
+        LEFT JOIN company_structures cs ON(emp.structure_name_subgroup = cs.id)
+        LEFT JOIN bands band ON (emp.band_id = band.id)
+        LEFT JOIN company_locations cl ON(emp.company_location_id = cl.id)
+        LEFT JOIN users user ON(emp.id=user.employee_id)
+        where emp.id=#employee_number#
+    </select>
+    <update id="updateEmployeeManager" parameterClass="com.ideal.hrMaster.dto.EmployeHistoryDto">
+        update employees set manager=#manager_id#
+        where id=#employee_number#            
+    </update>
+    <select id="getManagerid" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select manager from employees where employee_number=#empNumber#
+    </select>
+    <insert id="insertApplicantDetails" parameterClass="com.ideal.hrMaster.dto.ApplicantDTO" > 
+    INSERT INTO dtl_ojf_tp_candidate_details(first_name,middle_name,last_name,date_of_birth,pan_no,rrf_id,personal_email,alternate_email,
+    current_status,source_of_hire,designation,passport_number,status,employment_type,reporting_manager,company_structure,practice_group,
+    sub_practice_group,band,sub_band) VALUES 
+    (#firstName#,#middleName#,
+    #lastName#,#dateofBirth#,#panNo#,#rrfId#,#personalEmail#,#alternateEmail#,#currentStatus#,#sourceOfHire#,#designation#,#passport#,#status#,#employeType#,
+        #rmEmpNumber#,#structureId#,#practGroupId#,#subPraGroupId#,#band#,#subBand#)        
+    </insert>
+     <select id="getSourceLIst"  resultClass="java.lang.String">
+        SELECT configuration_value FROM configuration_values WHERE parent_id='286'
+    </select>
+          
+     <select id="getStructureId" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT id FROM company_structures WHERE parent_id=0 AND name=#strucName#
+    </select>
+    <select id="getSoucreofhireId" parameterClass="java.lang.String" resultClass="java.lang.String">
+          SELECT configuration_key FROM configuration_values WHERE parent_id=339 AND configuration_value=#sourceOfHire#
+    </select>
+    <select id="getpracticegrpId" parameterClass="com.ideal.hrMaster.dto.ApplicantDTO" resultClass="java.lang.String">
+        SELECT id FROM company_structures WHERE parent_id=#pid# AND name=#pname#
+    </select>
+    <select id="checkRRFmaster" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT id FROM dtl_rrf_master where id=#rrf#
+    </select>
+     <select id="checksplitRrf" parameterClass="com.ideal.hrMaster.dto.ApplicantDTO" resultClass="java.lang.String">
+        SELECT id FROM dtl_rrf_split_request_master WHERE request_id=#positionCode# AND child_request_id=#candidateId#
+
+    </select>
+    <insert id="addMasterRrf" parameterClass="com.ideal.hrMaster.dto.ApplicantDTO" >
+        INSERT INTO dtl_rrf_master(
+        id,requester_id,practice_group,sub_practice_group,billable_type,resource_type,proposed_band_id,status,buh_id)
+            VALUES(#positionCode#,#rmId#,#practGroupId#,#subPraGroupId#,#billable#,#sourceOfHire#,#band#,#rrfMasterStatus#,#buhId#)
+    </insert>
+     <insert id="addSplitmaster" parameterClass="com.ideal.hrMaster.dto.ApplicantDTO">
+      INSERT INTO dtl_rrf_split_request_master
+        (request_id,child_request_id,prev_status,status,recruitment_type,employeeId)
+        VALUES(#positionCode#,#candidateId#,#rrfSplitStatus#,#rrfSplitStatus#,#recruitmentType#,#rrfEMP#)
+    </insert>
+<!--    <select id="getFinancilaYear"  resultClass="java.lang.String">
+        SELECT distinct(financial_year) AS financial_year FROM sales_revenue_mapping;
+    </select>
+    
+    <select id="getSalesDetails" parameterClass="com.ideal.hrMaster.dto.AuditListDto"  resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        SELECT cgm.group_name AS group_name,
+        cust.customer_name AS customer_name,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS bdm_name,
+        unit.name AS unit_name,
+        ROUND(srm.april/10000000,2) AS april,
+        ROUND(srm.may/10000000,2) AS may,
+        ROUND(srm.june/10000000,2) AS june,
+        ROUND(srm.july/10000000,2) AS july,
+        ROUND(srm.august/10000000,2) AS august,
+        ROUND(srm.september/10000000,2) AS september,
+        ROUND(srm.october/10000000,2) AS october,
+        ROUND(srm.november/10000000,2) AS november,
+        ROUND(srm.december/10000000,2) AS december,
+        ROUND(srm.january/10000000,2) AS january,
+        ROUND(srm.february/10000000,2) AS february,
+        ROUND(srm.march/10000000,2) AS march,
+        ROUND(SUM(srm.april + srm.may + srm.june + srm.july + srm.august + srm.september + srm.october + srm.november + srm.december + srm.january + srm.february + srm.march)/10000000,2) AS total
+        FROM `sales_revenue_mapping` AS srm
+        LEFT JOIN customer_group_mapping AS cgm ON srm.customer_id = cgm.customer_id
+        LEFT JOIN customers AS cust ON srm.customer_id = cust.id
+        LEFT JOIN company_structures AS unit ON srm.unit_id = unit.id
+        LEFT JOIN employees AS emp ON(srm.bdm_id = emp.id)
+        WHERE srm.bdm_id IN ($bdm_id$) AND srm.financial_year = #financial_year#
+        GROUP BY srm.customer_id,srm.unit_id,srm.bdm_id
+        ORDER BY bdm_name;
+    </select>
+    
+    <select id="getBdm_list" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT bdm_unit_list FROM rsh_bdm_mapping WHERE type = 'b' AND bdm_id = #bdm_id#
+    </select>
+    
+    <select id="getUnit_list" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT bdm_unit_list FROM rsh_bdm_mapping WHERE type = 'u' AND bdm_id = #bdm_id#
+    </select>
+    
+    <select id="getSalesUnitDetails" parameterClass="com.ideal.hrMaster.dto.AuditListDto"  resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        SELECT cgm.group_name AS group_name,
+        cust.customer_name AS customer_name,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS bdm_name,
+        unit.name AS unit_name,
+        ROUND(srm.april/10000000,2) AS april,
+        ROUND(srm.may/10000000,2) AS may,
+        ROUND(srm.june/10000000,2) AS june,
+        ROUND(srm.july/10000000,2) AS july,
+        ROUND(srm.august/10000000,2) AS august,
+        ROUND(srm.september/10000000,2) AS september,
+        ROUND(srm.october/10000000,2) AS october,
+        ROUND(srm.november/10000000,2) AS november,
+        ROUND(srm.december/10000000,2) AS december,
+        ROUND(srm.january/10000000,2) AS january,
+        ROUND(srm.february/10000000,2) AS february,
+        ROUND(srm.march/10000000,2) AS march,
+        ROUND(SUM(srm.april + srm.may + srm.june + srm.july + srm.august + srm.september + srm.october + srm.november + srm.december + srm.january + srm.february + srm.march)/10000000,2) AS total
+        FROM `sales_revenue_mapping` AS srm
+        LEFT JOIN customer_group_mapping AS cgm ON srm.customer_id = cgm.customer_id
+        LEFT JOIN customers AS cust ON srm.customer_id = cust.id
+        LEFT JOIN company_structures AS unit ON srm.unit_id = unit.id
+        LEFT JOIN employees AS emp ON(srm.bdm_id = emp.id)
+        WHERE srm.unit_id IN ($unit_id$) AND srm.bdm_id IN ($bdm_id$) AND srm.financial_year = #financial_year#
+        GROUP BY srm.customer_id,srm.unit_id,srm.bdm_id
+        ORDER BY bdm_name;
+    </select>
+    <select id="getBdm_list_Rsh" parameterClass="java.lang.String" resultClass="com.ideal.hrMaster.dto.AuditListDto">
+        SELECT emp.id AS bdm_id, 
+        CONCAT(emp.first_name,' ',emp.last_name,' - ',emp.employee_number) AS bdm_name 
+        FROM employees AS emp WHERE id IN ($bdm_id$)
+    </select>
+    <select id="getAll_Bdm" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT GROUP_CONCAT(DISTINCT(bdm_id)) AS bdm_id FROM `sales_revenue_mapping`
+    </select>-->
+</sqlMap>

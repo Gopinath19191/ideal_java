@@ -1,0 +1,252 @@
+/* 
+    Document   : css
+    Created on : Feb 6, 2012, 5:06:54 PM
+    Author     : 14032
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+root { 
+    display: block;
+}
+/*body {
+    color: #000000;
+    font-family: Verdana,Geneva,Arial,Helvetica,sans-serif;
+    font-size: 11px;
+    line-height: 15px;
+    background:#C3D5ED;
+    overflow: auto;
+}*/
+p.paging_details{
+    height:21px;
+    background:url("../images/white-top-bottom.gif") repeat-x 0 -1px;
+    border:1px solid #99BBE8;
+    text-align:right;
+    padding:4px 0;
+    margin: 0;
+}
+p.paging_details span.heading{
+    float:left;
+    margin-left:10px;
+    color:#15428B;
+    font-family:tahoma,arial,verdana,sans-serif;
+    font-weight:bolder;
+}
+.addicon {
+    background:url("../images/add.gif") no-repeat scroll 2px 2px transparent;
+    border-color:#FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style:solid;
+    border-width:1px;
+    margin:0 5px;
+    padding:2px 2px 2px 18px;
+}
+input.deleteicon,button.deleteicon {
+    background:url("../images/cross.gif") no-repeat scroll 2px 2px transparent;
+    border-color:#FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style:solid;
+    border-width:1px;
+    margin:0 5px;
+    padding:2px 2px 2px 18px;
+}
+.savebutton{
+    background:url(../images/save.gif) no-repeat 2px 2px;
+    padding:2px 2px 2px 18px;
+    border: 1px solid #FFF;
+    border-right-color: #99BBE8;
+    border-bottom-color: #99BBE8;
+    margin:0 5px 0 0;
+
+}
+.submitbutton,button.submitbutton{
+    background:url('../images/application_go.png') no-repeat 2px 2px;
+    padding:2px 2px 2px 18px;
+    margin:0 5px 0 0;
+    border: 1px solid #FFF;
+    border-right-color: #99BBE8;
+    border-bottom-color: #99BBE8;
+}
+.resendbutton{
+    background:url('../images/BackIcon.png') no-repeat 2px 2px;
+    padding:2px 2px 2px 18px;
+    margin:0 5px 0 0;
+    border: 1px solid #FFF;
+    border-right-color: #99BBE8;
+    border-bottom-color: #99BBE8;
+}
+
+.numeric,.right_align{
+    text-align: right;
+}
+.warning{
+    background-color: #FF8080;
+}
+.center_align{
+    text-align: center;
+    padding-top: 13px;
+}
+.left_align{
+    text-align: left;
+}
+.accordable{
+    background: #D9E8FB;
+    padding: 2px;
+}
+#tabs select{
+    max-width:200px;
+}
+
+.tbl_list{
+    background: none repeat scroll 0 0 #FFFFFF;
+    border-color: -moz-use-text-color #99BBE8 #99BBE8;
+    border-right: 1px solid #99BBE8;
+    border-style: none solid solid;
+    border-width: 0 1px 1px;
+    color: #000000;
+    width: 100%;
+}
+.tbl_list th{
+    background: url("../images/grid3-hrow.gif") repeat-x scroll center bottom #F2F2F2;
+    border-color: #FFFFFF #BBBBBB -moz-use-text-color #FFFFFF;
+    border-right: 1px solid #BBBBBB;
+    border-style: solid solid none;
+    font-weight: bolder;
+    height: 22px;
+    text-align: left;
+}
+.tbl_list th:hover{
+    background:url(../images/grid3-hrow-over.gif) repeat-x bottom;
+}
+.add {
+    background: url("../images/add.gif") no-repeat scroll left center transparent;
+    padding: 0 0 0 20px;
+}
+a {
+    outline: medium none;
+}
+#errormessage{
+    color: #FF0000;
+    font-weight: bold;
+}
+.invalid{
+    border: #FF8080 1px solid;
+}
+input.rrfsearchbutton{
+    background:url('../images/find.png') no-repeat scroll 2px 2px;
+    background-color: #C3D5ED;
+    border-color: #FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 5px 0 0;
+    width: 10%;
+    /*padding: 2px 2px 2px 0px;*/
+}
+input.rrfexportExcel{
+    background:url('../images/excel3.png') no-repeat scroll 2px 2px;
+    background-color: #C3D5ED;
+    border-color: #FFFFFF #99BBE8 #99BBE8 #FFFFFF;
+    border-style: solid;
+    border-width: 1px;
+    margin: 0 5px 0 0;
+    width: 12%;
+    /*padding: 2px 2px 2px 3px;*/
+}
+/*input{
+    width: 12%;
+}*/
+td{
+    vertical-align: top;
+}
+.dash_element{
+    margin: 1px;
+    padding: 5px;
+    border: 1px solid #99BBE8;
+}
+
+#customer_details_div table td{
+    width: 15%;
+}
+#fileAttachments input{
+    width: 150px;
+}
+#tabs table{
+    width: 99%;
+    border:0;
+}
+#tabs table td{
+    padding: 1px;
+    margin: 0;
+}
+span.rrfSaved{
+    background-color:  #ccc;
+
+}
+span.rrfCancelled{
+    /*    background-color:  yellow;*/
+    background-color:  #f9dd34;
+
+}
+span.fullySubmitted{
+    background-color:  #A0F48B;
+    /*    background-color:  #008A80;*/
+
+}
+span.pmoInternalSuggestionCount{
+    background-color:  #E5B797;
+    /*    background-color:  #F2813B;*/
+}
+span.notSubmitted{
+    background-color:  #F78E7B;  
+    /*    background-color:  #A7283D;*/
+
+}
+span.partiallySubmitted{
+    background-color:  #F9AEF6;
+}
+span.noAction{
+    background-color:  #D9E8FB;
+}
+input[size], .mysize{
+    width: auto;
+    color:#666666;
+}
+.tabletools1{
+    padding: 5px;
+}
+.center_align table{
+    margin-left:auto; 
+    margin-right:auto;
+    text-align: left;
+}
+.firstColumn{
+    font-weight: bold;
+}
+
+.status span{
+    border: 1px solid #BBBBBB;
+    /*      padding: 0 2px;*/
+    margin: 0;
+    /*      padding-left: 3px;*/
+    padding-bottom: 3px;
+}
+
+.copy{
+    background: url('../images/application_go.png') no-repeat 2px 2px;
+    padding: 2px 2px 2px 18px;
+    margin: 0 5px 0 0;
+    border: 1px solid #FFF;
+    border-right-color: #99BBE8;
+    border-bottom-color: #99BBE8;
+}
+button,  .button{
+    background-color: #DFE8F6;
+    padding: 2px 2px 2px 8px;
+    margin: 0 5px 0 0;
+    border: 1px solid #FFF;
+    border-right-color: #99BBE8;
+    border-bottom-color: #99BBE8;
+}

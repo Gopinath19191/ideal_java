@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : Login.xml
+    Created on : 3 October, 2012, 12:37 PM
+    Author     : 14578
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="Authenticate">
+    
+    <select id="getUserDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.AuthenticateDto">
+            SELECT 
+                User.id as userAccountId,
+                User.username,
+                User.password,
+                User.group_id as groupId,
+                User.employee_id as empId,
+                Employee.employment_status,
+                CONCAT(Employee.first_name,' ',Employee.last_name) AS employeeName,
+                Employee.transferred_country_id
+            FROM users AS User
+            INNER JOIN employees AS Employee ON (User.employee_id = Employee.id)
+            WHERE username=#empId#;
+    </select>
+    
+    <select id="getTpRequestorEmpStatus" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.AuthenticateDto">
+            SELECT emp.employment_status,emp.transferred_country_id FROM  employees AS emp
+            WHERE emp.id=#empId#;
+    </select>
+
+    <select id="authenticateUser" parameterClass="com.defiance.ideal.travelplan.dto.AuthenticateDto"  resultClass="com.defiance.ideal.travelplan.dto.AuthenticateDto">
+        SELECT _create as uCreate,_read as uRead,_update as uUpdate,_delete as uDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%USER%' AND aro.foreign_key = #userAccountId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="authenticateGroup" parameterClass="com.defiance.ideal.travelplan.dto.AuthenticateDto"  resultClass="com.defiance.ideal.travelplan.dto.AuthenticateDto">
+        SELECT _create as gCreate,_read as gRead,_update as gUpdate,_delete as gDelete,(SELECT alias from acos WHERE id=arcos.aco_id) AS menuName,
+        arcos.aco_id AS menuId  FROM aros_acos as arcos,aros as aro WHERE arcos.aro_id = aro.id AND aro.model LIKE '%GROUP%' AND aro.foreign_key = #groupId#
+        AND  arcos.aco_id = #moduleId#
+    </select>
+
+    <select id="loginCheck" parameterClass="com.defiance.ideal.travelplan.dto.AuthenticateDto"  resultClass="com.defiance.ideal.travelplan.dto.AuthenticateDto">
+        SELECT 
+            username AS idealUserName,
+            login_time as idealLoginTime 
+        FROM request_management_sessions 
+        WHERE token_id=#userName#;
+    </select>
+    
+    <select id="checkEmpIsGerman" parameterClass="String"  resultClass="String">
+       SELECT COUNT(id) FROM employee_info_histories AS hist WHERE hist.employee_id=#empId# AND hist.field_changed='employment_status' AND ((changed_from='p' AND changed_to='e') OR (changed_from='e' AND changed_to='p'))
+    </select>
+    
+</sqlMap>

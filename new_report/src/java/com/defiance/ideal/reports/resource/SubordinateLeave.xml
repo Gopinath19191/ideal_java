@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="SubordinateLeaveMap">
+    
+    <select id="getSubordinateLeaveRecords" parameterClass="com.defiance.ideal.reports.dto.SubordinateLeaveFilterDTO" resultClass="com.defiance.ideal.reports.dto.SubordinateLeaveDataDTO">
+        SELECT emp.id AS empId, emp.employee_number AS employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) AS empName,
+        LeaveCategory.leave_type AS leaveCategory,DATE_FORMAT(EmployeeLeaveRequest.date_applied,'%d-%m-%Y') AS dateApplied,
+        DATE_FORMAT(EmployeeLeaveRequest.from_date,'%d-%m-%Y') AS fromDate,DATE_FORMAT(EmployeeLeaveRequest.to_date,'%d-%m-%Y') AS toDate,
+        EmployeeLeaveRequest.length_days AS lengthDays,Config.configuration_value AS leaveStatus
+        FROM employee_leave_requests AS EmployeeLeaveRequest
+        LEFT JOIN leave_categories AS LeaveCategory ON (EmployeeLeaveRequest.leave_category_id = LeaveCategory.id)
+        LEFT JOIN employees AS emp ON (EmployeeLeaveRequest.employee_id = emp.id)
+        LEFT JOIN configuration_values AS Config ON (EmployeeLeaveRequest.leave_status = Config.configuration_key AND Config.parent_id = 88)
+        WHERE emp.manager = #rmId#
+        <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   emp.id = #employee_id#
+                </isNotEmpty>
+        </dynamic>
+<!--        <dynamic>
+                <isNotEmpty prepend="AND" property="fromDate">
+                   EmployeeLeaveRequest.from_date = #fromDate#
+                </isNotEmpty>
+        </dynamic>
+        <dynamic>
+                <isNotEmpty prepend="AND" property="toDate">
+                   EmployeeLeaveRequest.to_date = #toDate#
+                </isNotEmpty>
+        </dynamic>-->
+        <dynamic>
+                <isNotEmpty property="fromDate">
+                    <isNotEmpty prepend="AND" property="toDate">
+                   EmployeeLeaveRequest.from_date between #fromDate# AND #toDate#
+                    </isNotEmpty>   
+                </isNotEmpty>
+        </dynamic>
+        <dynamic>
+                <isNotEmpty property="fromDate">
+                    <isNotEmpty prepend="AND" property="toDate">
+                   EmployeeLeaveRequest.to_date between #fromDate# AND #toDate#
+                    </isNotEmpty>    
+                </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+            LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id="getSubordinateLeaveRecordCount" parameterClass="com.defiance.ideal.reports.dto.SubordinateLeaveFilterDTO" resultClass="java.lang.Integer">
+        SELECT count(EmployeeLeaveRequest.id) AS recordCount
+        FROM employee_leave_requests AS EmployeeLeaveRequest
+        LEFT JOIN leave_categories AS LeaveCategory ON (EmployeeLeaveRequest.leave_category_id = LeaveCategory.id)
+        LEFT JOIN employees AS emp ON (EmployeeLeaveRequest.employee_id = emp.id)
+        LEFT JOIN configuration_values AS Config ON (EmployeeLeaveRequest.leave_status = Config.configuration_key AND Config.parent_id = 88)
+        WHERE emp.manager = #rmId#
+        <dynamic>
+                <isNotEmpty prepend="AND" property="employee_id">
+                   emp.id = #employee_id#
+                </isNotEmpty>
+        </dynamic>
+        <dynamic>
+                <isNotEmpty prepend="AND" property="fromDate">
+                   EmployeeLeaveRequest.from_date between #fromDate# AND #toDate#
+                </isNotEmpty>
+        </dynamic>
+        <dynamic>
+                <isNotEmpty prepend="AND" property="toDate">
+                   EmployeeLeaveRequest.to_date between #fromDate# AND #toDate#
+                </isNotEmpty>
+        </dynamic>
+    </select>
+    
+    <select id="getEmployeeList" parameterClass="Map" resultClass="com.defiance.ideal.reports.dto.SubordinateLeaveDataDTO">
+        SELECT 
+            Employee.id AS empId,
+            CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE (Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#)
+        AND Employee.manager = #rmId#
+    </select>
+    
+</sqlMap>

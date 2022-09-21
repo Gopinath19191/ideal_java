@@ -1,0 +1,580 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AssociateTimesheetMap">
+
+    <select id="getSbuList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT id as sbuId, name as sbuName 
+        FROM company_structures
+        WHERE parent_id = #employeeId#
+    </select>
+    
+    <select id="getReportNameList" parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT c.configuration_key AS configkey, 
+        c.configuration_value AS configValue 
+        FROM configuration_values c
+        WHERE c.parent_id=#reportConfigValue#;  
+    </select>
+
+    <update id="getAccuredHrs" parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        <!--    Alter VIEW `Accrued_hours` AS
+        select B.project_id, B.employee_id, B.billing_month, B.billing_Year, B.status,
+          replace(case when efforts_uom ='h' then billable_effort
+            when efforts_uom ='d' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9
+            when efforts_uom ='d' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8
+            when efforts_uom ='m' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9 *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), B.employee_id,#startYear#,#startMonth#)
+            when efforts_uom ='m' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8  *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), B.employee_id,#startYear#,#startMonth#)
+            end ,'.', ':')  as accrued_hours
+        from billing_advices B
+          inner join project_team_allocations PTA
+           ON (B.Employee_id = PTA.employee_id) and PTA.project_id = B.project_id
+          Inner join projects P on B.project_id = P.id
+          where billing_year = #startYear# and billing_month= #startMonth#
+          AND CONCAT( #startYear#, #startMonth#) BETWEEN EXTRACT( YEAR_MONTH FROM PTA.start_date)
+          AND EXTRACT(YEAR_MONTH FROM PTA.end_date)
+        and PTA.deleted=0
+        Group by B.id; -->
+        <!--live query 04102016-->
+        
+        <!--        Alter VIEW `Accrued_hours` AS
+        select B.project_id, B.employee_id, B.billing_month, B.billing_Year, B.status,
+          replace(case when efforts_uom ='h' then billable_effort
+            when efforts_uom ='d' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9
+            when efforts_uom ='d' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8
+            when efforts_uom ='m' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9 *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), B.employee_id,#startYear#,#startMonth#)
+            when efforts_uom ='m' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8  *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), B.employee_id,#startYear#,#startMonth#)
+            end ,'.', ':')  as accrued_hours
+        from billing_advices B
+          inner join project_team_allocations PTA
+           ON (B.Employee_id = PTA.employee_id) and PTA.project_id = B.project_id
+          Inner join projects P on B.project_id = P.id
+          where billing_year = #startYear# and billing_month= #startMonth#
+          AND CONCAT( #startYear#, #startMonth#) BETWEEN EXTRACT( YEAR_MONTH FROM PTA.start_date)
+          AND EXTRACT(YEAR_MONTH FROM PTA.end_date)
+        and PTA.deleted=0
+        Group by B.id; -->
+        <!--accural consolidation table-->
+        
+        select B.project_id, B.emp_id,
+        B.billing_month, B.billing_Year, B.status,B.billable_effort as accrued_hours
+        from accrual_consolidations B
+        inner join project_team_allocations PTA
+        ON (B.emp_id = PTA.employee_id) and PTA.project_id = B.project_id
+        Inner join projects P on B.project_id = P.id
+        where billing_year = #startYear# and billing_month= #startMonth#
+        AND CONCAT( #startYear#, #startMonth#) BETWEEN EXTRACT( YEAR_MONTH FROM PTA.start_date)
+        AND EXTRACT(YEAR_MONTH FROM PTA.end_date)
+        and PTA.deleted=0 
+        Group by B.id;
+    </update>
+    
+    <select id="getAssociateWorkedHrsReport" parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+         SELECT emp.id AS employeeId,
+        emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm,
+        empstatus.configuration_value AS employmentStatus,
+        IF(prjt.id IS NULL, 'Non_Project_Activity', prjt.project_code) AS projectCode,
+        prjt.project_name AS projectName,
+        CONCAT(pm.employee_number,'-',pm.first_name,' ',pm.last_name) AS projectManager,
+        exec.configuration_value AS executionModel,
+        DATE_FORMAT(prjt.planned_start_date, '%d-%m-%Y') AS projectStartDate,  
+        DATE_FORMAT(prjt.planned_end_date, '%d-%m-%Y')  AS projectEndDate,
+        sbu.name AS sbu,  
+        sub_sbu.name AS subSbu,
+        pta.location_table as Location,
+        emp.joined_date as Joined_date,
+        emp.released_date as Released_date,
+        Timesheet_date,
+        tep.Project_id as tep_Project_id ,
+        te.employee_id  as te_Employee_id, 
+        emp.employee_number AS employeeNumber,
+        prjt.id as P_id, 
+
+        te.id as Te_id, emp.id as E_Id, start_date, End_date,
+        DATE_FORMAT(Emp.joined_date, '%d-%m-%y') AS joinedDate,
+        DATE_FORMAT(Emp.released_date, '%d-%m-%y') AS releasedDate,
+        
+        cus.customer_name as customerName,
+        prjt.project_name  as aboutProject,
+       
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=1 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ), ':','.') AS DECIMAL(10,2)) AS day1,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=2 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day2,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=3 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day3,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=4 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day4,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=5 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day5,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=6 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day6,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=7 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day7,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=8 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day8,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=9 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day9,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=10 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day10,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=11 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day11,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=12 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day12,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=13 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day13,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=14 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day14,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=15 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day15,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=16 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day16,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=17 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day17,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=18 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day18,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=19 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day19,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=20 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day20,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=21 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day21,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=22 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day22,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=23 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day23,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=24 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day24,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=25 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day25,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=26 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day26,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=27 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day27,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=28 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day28, 
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=29 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day29,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=30 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day30,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=31 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day31,
+        te.employee_id,   tep.Project_id,
+        if (tep.Project_id='Non_Project_Activity','h',efforts_uom) as UOM,  prjt.project_model,
+       
+     
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (tep.worked_hours=''  ,'00:00',worked_hours)  AS TIME)))) , ':','.') AS DECIMAL(10,2))  AS worked_hours,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (tep.approved_hours='','00:00',Approved_hours)  AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS approved_hours,
+        SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (worked_hours=''  ,'00:00',worked_hours)  as time))))  as workedhours,
+        ROUND(TIME_TO_SEC(CASE WHEN pta.location_table = 'company_locations'
+        THEN cmp.company_working_hrs
+        ELSE
+        cust.customer_working_hrs
+        END)/3600,2) AS availableHrs,
+
+        CASE WHEN pta.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(compcal.location_id, #startDate#,#endDate#,0)
+        ELSE
+        F_Customer_Workingdays(custcal.location_id, #startDate#,#endDate#,1)
+        END AS working_days,
+        LeaveLengthData(#startDate#,#endDate#,#startYear#,#startMonth#,emp.id) AS NoofLeaveTakenDays,
+       (SELECT ROUND(SUM(TIME_TO_SEC(ts_approved_hours))/3600,2) FROM accrual_consolidations
+	   WHERE emp_id = emp.id and prjt.id = project_id and role_id = pta.role_id and billing_year = '2017' and billing_month = '09')  AS 
+	   ApprovedHours,
+        (SELECT ROUND(SUM(TIME_TO_SEC(billable_hours))/3600,2) FROM accrual_consolidations 
+		WHERE emp_id = emp.id and prjt.id = project_id and role_id = pta.role_id and billing_year = '2017' and billing_month = '09')  AS
+		Accrued_hours
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON(emp.manager = rm.id)
+        LEFT JOIN configuration_values AS empstatus ON(emp.employment_status = empstatus.configuration_key AND empstatus.parent_id = 286)
+        LEFT JOIN timesheet_entries AS te ON (te.employee_id = emp.id AND te.deleted = 0 AND te.status IN('m','a') AND te.timesheet_date BETWEEN #startDate# AND #endDate#)
+        LEFT JOIN timesheet_entry_projects AS tep ON (tep.timesheet_entry_id = te.id AND te.deleted = 0 AND tep.status IN('m','a'))
+  	LEFT JOIN project_team_allocations AS pta ON
+		(pta.employee_id = emp.id AND (pta.start_date <![CDATA[ <= ]]> #endDate#) AND 
+		(pta.end_date <![CDATA[ >= ]]> #startDate#) 
+		AND pta.deleted = 0 and pta.project_id = tep.project_id and te.role_id=pta.role_id)
+        LEFT JOIN projects AS prjt ON tep.project_id = prjt.id
+        LEFT JOIN employees AS pm ON pm.id = prjt.project_manager
+        LEFT JOIN configuration_values AS exec ON (exec.configuration_key = prjt.execution_model AND exec.parent_id = 248)
+        LEFT JOIN company_structures AS sbu ON (sbu.id = emp.structure_name)
+        LEFT JOIN company_structures AS sub_sbu  ON (sub_sbu.id = emp.Structure_name_Subgroup)
+        LEFT JOIN company_locations AS cmp ON(cmp.id = pta.work_location_id)
+        LEFT JOIN customer_work_locations AS cust ON(cust.id = pta.work_location_id)
+        LEFT JOIN customers AS cus ON(cus.id = cust.customer_id)
+        LEFT JOIN customer_calendars AS custcal ON (custcal.location_id = pta.work_location_id AND custcal.is_customer=1)
+        LEFT JOIN customer_calendars AS compcal ON (compcal.location_id = pta.work_location_id AND compcal.is_customer=0)
+        
+        WHERE (emp.released_date <![CDATA[ >= ]]> #startDate# OR emp.released_date IS NULL) AND emp.structure_name in (#sbu#) AND prjt.id IS NOT NULL
+        GROUP BY emp.id, prjt.id
+
+        UNION ALL
+
+        SELECT emp.id AS employeeId,
+        emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm,
+        empstatus.configuration_value AS employmentStatus,
+        IF(prjt.id IS NULL, 'Non_Project_Activity', prjt.project_code) AS projectCode,
+        prjt.project_name AS projectName,
+        CONCAT(pm.employee_number,'-',pm.first_name,' ',pm.last_name) AS projectManager,
+        exec.configuration_value AS executionModel,
+        DATE_FORMAT(prjt.planned_start_date, '%d-%m-%Y') AS projectStartDate,  
+        DATE_FORMAT(prjt.planned_end_date, '%d-%m-%Y')  AS projectEndDate,
+        sbu.name AS sbu,  
+        sub_sbu.name AS subSbu,
+        pta.location_table as Location,
+        emp.joined_date as Joined_date,
+        emp.released_date as Released_date,
+        Timesheet_date,
+        tep.Project_id as tep_Project_id ,
+        te.employee_id  as te_Employee_id, 
+        emp.employee_number AS employeeNumber,
+        prjt.id as P_id,
+ 
+        te.id as Te_id, emp.id as E_Id, start_date, End_date,
+        DATE_FORMAT(Emp.joined_date, '%d-%m-%y') AS joinedDate,
+        DATE_FORMAT(Emp.released_date, '%d-%m-%y') AS releasedDate,
+       
+        cus.customer_name as customerName,
+        prjt.project_name  as aboutProject,
+       
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=1 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ), ':','.') AS DECIMAL(10,2)) AS day1,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=2 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day2,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=3 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day3,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=4 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day4,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=5 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day5,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=6 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day6,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=7 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day7,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=8 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day8,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=9 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day9,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=10 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day10,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=11 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day11,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=12 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day12,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=13 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day13,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=14 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day14,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=15 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day15,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=16 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day16,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=17 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day17,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=18 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day18,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=19 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day19,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=20 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day20,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=21 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day21,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=22 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day22,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=23 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day23,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=24 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day24,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=25 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day25,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=26 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day26,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=27 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day27,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=28 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day28, 
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=29 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day29,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=30 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day30,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (DAY(te.timesheet_date)=31 AND worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS day31,
+        te.employee_id,   tep.Project_id,
+        if (tep.Project_id='Non_Project_Activity','h',efforts_uom) as UOM,  Prjt.project_model,
+       
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (tep.worked_hours=''  ,'00:00',worked_hours)  AS TIME)))) , ':','.') AS DECIMAL(10,2))  AS worked_hours,
+        CAST(REPLACE(SEC_TO_TIME(SUM( TIME_TO_SEC(CAST(IF (tep.approved_hours='','00:00',Approved_hours)  AS TIME))) ) , ':','.') AS DECIMAL(10,2)) AS approved_hours,
+        SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (worked_hours=''  ,'00:00',worked_hours)  as time))))  as workedhours,
+        CASE WHEN pta.project_id IS NULL THEN 
+        ROUND(TIME_TO_SEC(CASE WHEN ewl.location_table = 'company_locations'
+        THEN bencmp.company_working_hrs
+        ELSE
+        bencust.customer_working_hrs
+        END)/3600,2)
+        ELSE
+        ROUND(TIME_TO_SEC(CASE WHEN pta.location_table = 'company_locations'
+        THEN cmp.company_working_hrs
+        ELSE
+        cust.customer_working_hrs
+        END)/3600,2) END AS availableHrs,
+
+        CASE WHEN pta.project_id IS NULL THEN 
+        CASE WHEN ewl.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(bencompcal.location_id, #startDate#,#endDate#,0)
+        ELSE
+        F_Customer_Workingdays(bencustcal.location_id, #startDate#,#endDate#,1) END
+        ELSE
+        CASE WHEN pta.location_table = 'company_locations'
+        THEN F_Customer_Workingdays(compcal.location_id, #startDate#,#endDate#,0)
+        ELSE
+        F_Customer_Workingdays(custcal.location_id, #startDate#,#endDate#,1) END
+        END AS working_days,
+
+        LeaveLengthData(#startDate#,#endDate#,#startYear#,#startMonth#,emp.id) AS noofLeaveTakenDays,
+       "0.00" as ApprovedHours,
+"0.00" as accuredHours
+        FROM employees AS emp
+        LEFT JOIN employees AS rm ON(emp.manager = rm.id)
+        LEFT JOIN configuration_values AS empstatus ON(emp.employment_status = empstatus.configuration_key AND empstatus.parent_id = 286)
+        LEFT JOIN timesheet_entries AS te ON (te.employee_id = emp.id AND te.deleted = 0 AND te.status IN('m','a') AND te.timesheet_date BETWEEN #startDate# AND #endDate#)
+        LEFT JOIN timesheet_entry_projects AS tep ON (tep.timesheet_entry_id = te.id AND te.deleted = 0 AND tep.status IN('m','a'))
+   LEFT JOIN project_team_allocations AS pta ON
+   (pta.employee_id = emp.id AND (pta.start_date <![CDATA[ <= ]]> #endDate#) AND (pta.end_date <![CDATA[ >= ]]> #startDate#) AND pta.deleted = 0)
+
+        LEFT JOIN projects AS prjt ON tep.project_id = prjt.id
+        LEFT JOIN employees AS pm ON pm.id = prjt.project_manager
+        LEFT JOIN configuration_values AS exec ON (exec.configuration_key = prjt.execution_model AND exec.parent_id = 248)
+        LEFT JOIN company_structures AS sbu ON (sbu.id = emp.structure_name)
+        LEFT JOIN company_structures AS sub_sbu  ON (sub_sbu.id = emp.Structure_name_Subgroup)
+        LEFT JOIN company_locations AS cmp ON(cmp.id = pta.work_location_id)
+        LEFT JOIN customer_work_locations AS cust ON(cust.id = pta.work_location_id)
+        LEFT JOIN customers AS cus ON(cus.id = cust.customer_id)
+        LEFT JOIN customer_calendars AS custcal ON (custcal.location_id = pta.work_location_id AND custcal.is_customer=1)
+        LEFT JOIN customer_calendars AS compcal ON (compcal.location_id = pta.work_location_id AND compcal.is_customer=0)
+        LEFT JOIN employee_work_location AS ewl ON(ewl.employee_id = emp.id)
+        LEFT JOIN company_locations AS bencmp ON(bencmp.id = ewl.work_location_id)
+        LEFT JOIN customer_work_locations AS bencust ON(bencust.id = ewl.work_location_id)
+        LEFT JOIN customer_calendars AS bencustcal ON (bencustcal.calendar_id = ewl.calendar_id AND bencustcal.is_customer=1)
+        LEFT JOIN customer_calendars AS bencompcal ON (bencompcal.calendar_id = ewl.calendar_id AND bencompcal.is_customer=0)
+       
+        WHERE (emp.released_date <![CDATA[ >= ]]> #startDate# OR emp.released_date IS NULL) AND emp.structure_name IN (#sbu#) AND prjt.id IS NULL
+
+        GROUP BY emp.id, prjt.id
+ 
+ 
+    </select>   
+
+    <parameterMap id="resultSetParams" class="java.util.Map" >   
+        <parameter property="StartDate" jdbcType="DATE" mode="IN"/> 
+        <parameter property="EndDate" jdbcType="DATE" mode="IN"/>
+        <parameter property="EmpId" jdbcType="String" mode="IN"/>
+        <parameter property="StartYear" jdbcType="String" mode="IN"/>
+        <parameter property="StartMonth" jdbcType="String" mode="IN"/>
+    </parameterMap> 
+
+    <!--    <procedure id="getWeekdaydifference"  parameterMap="resultSetParams"  >
+    {? = call weekdaydiff(?,?,?,?,?) }
+    </procedure>-->
+    
+    <procedure id="getWeekdaydifference"  parameterMap="resultSetParams"  >
+        {? = call weekdaydiff(?,?,?,?,?) }
+    </procedure>
+    
+    
+    <update id="getTotWorkedHrsView" > 
+        ALTER VIEW view_total_worked_hours AS 
+        SELECT p.id AS project_id, 
+        p.project_name AS project_name, 
+        p.project_code AS project_code, 
+        po.planned_efforts AS planned_efforts, 
+        (SELECT SUM(TIME_TO_SEC(tep.worked_hours)) FROM timesheet_entry_projects AS tep WHERE tep.project_id = p.id AND tep.status IN ('m', 'a') AND tep.deleted = 0 GROUP BY tep.project_id) AS worked_sec, 
+        SBU.name AS SBU, 
+        sub_sbu.name AS SubSBU  
+        FROM projects AS p 
+        Inner join project_purchase_orders po on po.project_id = p.id
+        LEFT OUTER JOIN company_structures AS sbu ON (sbu.id = p.project_sbu)
+        LEFT OUTER JOIN company_structures AS sub_sbu ON (sub_sbu.id = p.project_sbu_subgroup)
+        WHERE p.project_status ='e' AND p.billable IN ('c', 'n') AND p.status='a';
+    </update>
+    
+    <select id="getTotWorkedHrsReport"  resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT project_id,
+        project_code AS projectCode, 
+        project_name AS projectName, 
+        SubSBU AS subSbu, 
+        planned_efforts AS plannedEffort,
+        concat((FLOOR(worked_sec / (3600))), ":", (FLOOR((MOD(worked_sec, 3600) / 60)))) AS workedhours
+        FROM view_total_worked_hours;
+    </select>
+    
+    <select id="getMonthlyWorkedHrsReport" parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT cast( if (P.id is null, 'Non_Project_Activity', P.id )  as char(100)) as project_id , E.employee_number AS employeeNumber,
+        concat(E.first_name, ' ', E.last_name) AS employeeName,  concat(rm.first_name, ' ', rm.last_name) AS rm,
+        CASE E.employment_status
+        WHEN 'd' THEN 'Direct Contract'
+        WHEN 'v' THEN 'Vendor Contract'
+        WHEN 'p' THEN 'Permanent'
+        WHEN 'g' THEN 'Permanent GmbH'
+        WHEN 'c' THEN 'Contract GmbH'
+        WHEN 'a' THEN 'AL Employees'
+        WHEN 'e' THEN 'Transferred to Onsite'
+        WHEN 'l' THEN 'Long Leave'
+        WHEN 't' THEN 'Terminated'
+        WHEN 'r' THEN 'Resigned'
+        WHEN 'b' THEN 'Absconding'
+        WHEN 'q' THEN 'Asked to Resign'   
+        WHEN 'o' THEN 'Optimization'   
+        END
+        AS employmentStatus,
+        if(P.id is null, 'Non_Project_Activity', P.project_code) AS projectCode,  P.project_name AS projectName, concat(pm.first_name, ' ', pm.last_name) AS pm,
+        CASE P.execution_model
+        WHEN 'off' THEN 'OffShore'
+        WHEN 'on' THEN 'OnSite'
+        WHEN 'any' THEN 'OffShore/OnSite'
+        END
+        AS executionModel,
+        date_format(P.planned_start_date, '%d-%m-%Y') AS projectStartDate,  date_format(P.planned_end_date, '%d-%m-%Y')  AS projectEndDate,
+        sbu.name AS sbu,  sub_sbu.name AS subSbu,
+        CASE P.Billable
+        WHEN 'c' THEN 'Competency'
+        WHEN 'e' THEN 'External Billable'
+        WHEN 'x' THEN 'External NonBillable'
+        END
+        AS billable,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=1 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ), ':','.') as DECIMAL(10,2)) as day1,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=2 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day2,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=3 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day3,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=4 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day4,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=5 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day5,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=6 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day6,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=7 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day7,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=8 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day8,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=9 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day9,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=10 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day10,
+
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=11 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day11,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=12 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day12,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=13 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day13,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=14 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day14,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=15 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day15,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=16 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day16,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=17 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day17,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=18 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day18,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=19 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day19,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=20 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day20,
+
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=21 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day21,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=22 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day22,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=23 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day23,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=24 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day24,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=25 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day25,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=26 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day26,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=27 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day27,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=28 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day28, 
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=29 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day29,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=30 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day30,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=31 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')	as time))) ) , ':','.') as DECIMAL(10,2)) as day31,
+
+        if (tep.Project_id='Non_Project_Activity', 0,     
+        if (max(PTA.working_place)='s', weekdaydiff(if( E.joined_date <![CDATA[ > ]]> #startDate#, E.joined_date, #startDate#), if(E.released_date <![CDATA[ < ]]> #endDate#, E.released_date, #endDate#), E.id,#startYear#,#startMonth#) *9, weekdaydiff(if( E.joined_date <![CDATA[ > ]]> #startDate#, E.joined_date, #startDate#), if(E.released_date <![CDATA[< ]]> #endDate#, E.released_date, #endDate#), E.id,#startYear#,#startMonth#)* 8)) as totalAvailableHours,
+        te.Employee_id,   tep.Project_id, if (tep.Project_id='Non_Project_Activity','h',efforts_uom) as UOM,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (worked_hours=''  ,'00:00',worked_hours)  as time)))) , ':','.') as DECIMAL(10,2))  as worked_hours,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (Approved_hours='','00:00',Approved_hours)  as time))) ) , ':','.') as DECIMAL(10,2)) as approved_hours,
+
+        case when efforts_uom ='h' then replace(billable_effort,':','.')
+        when efforts_uom ='d' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9
+        when efforts_uom ='d' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8
+        when efforts_uom ='m' and max(PTA.working_place)='s' then replace(billable_effort,':','.') * 9 *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), e.id,#startYear#,#startMonth#)
+        when efforts_uom ='m' and max(PTA.working_place)='o' then replace(billable_effort,':','.') * 8  *  weekdaydiff(if(start_date <![CDATA[ < ]]> #startDate#, #startDate#, start_date), if(End_date <![CDATA[ > ]]> #endDate#, #endDate#, End_date), e.id,#startYear#,#startMonth#)
+        end as accrued_hours, PTA.working_place
+
+        FROM Employees E
+        Left outer join timesheet_entries te  on Te.Employee_id = E.id and Timesheet_date between   #startDate# and #endDate#
+        Left outer join timesheet_entry_projects tep on te.id = tep.timesheet_entry_id
+        left outer join Projects p on P.id = Tep.Project_id
+        left outer join project_team_allocations PTA
+        ON (e.id = PTA.employee_id) and PTA.Project_id = Tep.Project_id
+        AND CONCAT(#startYear#, #startMonth#) BETWEEN EXTRACT( YEAR_MONTH FROM PTA.start_date)
+        AND EXTRACT(YEAR_MONTH FROM PTA.end_date)
+        AND PTA.STATUS = 'a'  AND PTA.deleted = 0
+        left outer join employees AS rm  ON (rm.id = E.manager)
+        left outer join employees AS pm  ON (pm.id = P.project_manager)
+        left outer join company_structures AS sbu ON (sbu.id = E.structure_name)
+        left outer join company_structures AS sub_sbu  ON (sub_sbu.id = E.Structure_name_Subgroup)
+        left outer join billing_advices ba on ba.Project_id = tep.Project_id and ba.Employee_id =te.Employee_id
+        and ba.status='m' and ba.billing_year=#startYear# and ba.Billing_month = #startMonth#
+        WHERE  (E.released_date IS NULL OR E.released_date <![CDATA[ > ]]> #startYear#)
+        ANd E.joined_date <![CDATA[ <= ]]> #endDate#
+        AND E.billable IN ('b')
+        AND P.Billable IN ('c', 'n')
+        <dynamic>
+            <isNotEqual property="sbuFilter" compareValue="All">
+                AND E.structure_name IN (#sbu#) 
+            </isNotEqual>
+        </dynamic>
+        group by E.id,tep.project_Id, Billable_Effort
+        order by E.employee_number,tep.project_Id;
+    </select>
+
+    <select id="getNonPrjWorkedHrsReport" parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT E.id, X.project_Id, if (X.Phase_id='Others', 'Others' , phase_name), X.Phase_id,
+        if (X.Phase_id='Others', 'Others' , phase_name) as phase, E.employee_number AS employeeNumber,
+        concat(E.first_name, ' ', E.last_name) AS employeeName,  concat(rm.first_name, ' ', rm.last_name) AS rm,
+        CASE E.employment_status
+        WHEN 'd' THEN 'Direct Contract'
+        WHEN 'v' THEN 'Vendor Contract'
+        WHEN 'p' THEN 'Permanent'
+        WHEN 'g' THEN 'Permanent GmbH'
+        WHEN 'c' THEN 'Contract GmbH'
+        WHEN 'a' THEN 'AL Employees'
+        WHEN 'e' THEN 'Transferred to Onsite'
+        WHEN 'l' THEN 'Long Leave'
+        WHEN 't' THEN 'Terminated'
+        WHEN 'r' THEN 'Resigned'
+        WHEN 'b' THEN 'Absconding'
+        WHEN 'q' THEN 'Asked to Resign'  
+        WHEN 'o' THEN 'Optimization'  
+        
+        END
+        AS employmentStatus,
+        if(P.id is null, 'Non_Project_Activity', P.project_code) AS projectCode,  P.project_name AS ProjectName, concat(pm.first_name, ' ', pm.last_name) AS pm,
+        CASE P.execution_model
+        WHEN 'off' THEN 'OffShore'
+        WHEN 'on' THEN 'OnSite'
+        WHEN 'any' THEN 'OffShore/OnSite'
+        END
+        AS executionModel,
+        date_format(P.planned_start_date, '%d-%m-%Y') AS projectStartDate,  date_format(P.planned_end_date, '%d-%m-%Y')  AS projectEndDate,
+        sbu.name AS sbu,  sub_sbu.name AS subSbu,
+        CASE P.Billable
+        WHEN 'c' THEN 'Competency'
+        WHEN 'e' THEN 'External Billable'
+        WHEN 'x' THEN 'External NonBillable'
+        END
+        AS billable,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=1 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ), ':','.') as DECIMAL(10,2)) as day1,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=2 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day2,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=3 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day3,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=4 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day4,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=5 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day5,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=6 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day6,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=7 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day7,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=8 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day8,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=9 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day9,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=10 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day10,
+
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=11 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day11,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=12 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day12,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=13 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day13,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=14 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day14,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=15 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day15,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=16 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day16,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=17 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day17,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=18 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day18,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=19 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day19,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=20 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day20,
+
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=21 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day21,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=22 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day22,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=23 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day23,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=24 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day24,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=25 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day25,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=26 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day26,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=27 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day27,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=28 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day28,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=29 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day29,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=30 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day30,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (day(Timesheet_date)=31 and worked_hours <![CDATA[ <> ]]> '',worked_hours,'00:00')               as time))) ) , ':','.') as DECIMAL(10,2)) as day31,
+
+
+        X.Employee_id,   X.Project_id, if (X.Project_id='Non_Project_Activity','h',P.efforts_uom) as UOM,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (worked_hours=''  ,'00:00',worked_hours)  as time)))) , ':','.') as DECIMAL(10,2))  as worked_hours,
+        cast(replace(SEC_TO_TIME(sum( TIME_TO_SEC(cast(if (Approved_hours='','00:00',Approved_hours)  as time))) ) , ':','.') as DECIMAL(10,2)) as approved_hours
+
+        FROM Employees E
+        Left outer join
+        ( select Te.Employee_id, tep.Project_id, tep.Phase_id, Timesheet_date, Worked_hours, Approved_hours from timesheet_entries te
+        Inner join timesheet_entry_projects tep on te.id = tep.timesheet_entry_id
+        and tep.Project_id= 'Non_Project_Activity' ) X
+        on X.Employee_id = E.id and X.Timesheet_date between   #startDate# and #endDate#
+        left outer join Projects p on P.id = X.Project_id
+        left outer join non_project_phases PA  on X.Phase_id = PA.Id
+        left outer join project_team_allocations PTA
+        ON (e.id = PTA.employee_id) and PTA.Project_id = X.Project_id
+        AND CONCAT(#startYear#, #startMonth#) BETWEEN EXTRACT( YEAR_MONTH FROM PTA.start_date)
+        AND EXTRACT(YEAR_MONTH FROM PTA.end_date)
+        AND PTA.STATUS = 'a'  AND PTA.deleted = 0
+        left outer join employees AS rm  ON (rm.id = E.manager)
+        left outer join employees AS pm  ON (pm.id = P.project_manager)
+        left outer join company_structures AS sbu ON (sbu.id = E.structure_name)
+        left outer join company_structures AS sub_sbu  ON (sub_sbu.id = E.Structure_name_Subgroup)
+
+
+        WHERE  (E.released_date IS NULL OR E.released_date <![CDATA[ > ]]> #startDate#)
+        ANd E.joined_date <![CDATA[ <= ]]> #endDate#
+        AND E.billable IN ('b')
+        <dynamic>
+            <isNotEqual property="sbuFilter" compareValue="All">
+                AND E.structure_name IN (#sbu#)
+            </isNotEqual>
+        </dynamic>
+       
+        group by E.id,X.project_Id, if (X.Phase_id='Others', 'Others' , phase_name)
+        order by E.employee_number,X.project_Id;
+    </select>
+    <select id="getSummation"  parameterClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO" resultClass="com.defiance.ideal.reports.dto.AssociateTimesheetDataDTO">
+        SELECT sum( tep.worked_hours ) AS total
+        FROM timesheet_entries te
+        LEFT OUTER JOIN timesheet_entry_projects tep ON ( tep.timesheet_entry_id = te.id ) 
+        LEFT OUTER JOIN employees emp ON ( emp.id = te.employee_id ) 
+        LEFT OUTER JOIN company_structures cs ON ( cs.id = emp.structure_name ) 
+        WHERE tep.project_id = 'Non_Project_Activity'
+        AND tep.phase_id = #phaseId#
+        AND cs.id in ( #sbuId# )
+        AND extract(YEAR FROM timesheet_date ) = #yearValue#
+        AND extract(MONTH FROM timesheet_date ) =#monthValue#
+
+    </select>
+
+</sqlMap>

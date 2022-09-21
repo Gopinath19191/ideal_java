@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="Variance">
+<select id="getSearchList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.VarianceFilterDTO">
+        SELECT 
+            Employee.id AS empId,
+            CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+    </select>
+    <select id="getProjectList"  parameterClass="com.defiance.ideal.reports.dto.VarianceFilterDTO"  resultClass="com.defiance.ideal.reports.dto.VarianceDataDTO">
+        SELECT `Project`.`id` As projectId, `Project`.`project_name` As projectName, `Project`.`project_code` As projectCode FROM `timesheet_entry_projects` AS `TimesheetEntryProject`
+        INNER JOIN projects AS `Project` ON (`Project`.`id` = `TimesheetEntryProject`.`project_id`)
+        INNER JOIN timesheet_entries AS `TimesheetEntry` ON (`TimesheetEntry`.`id` = `TimesheetEntryProject`.`timesheet_entry_id`)
+        WHERE `Project`.`project_manager` = #pmId# AND `Project`.`project_status` IN ("e", "d") AND `TimesheetEntryProject`.`status` IN ("m")
+        AND Project.status IN ("a") AND `Project`.`project_model` NOT IN ("wopo") AND `TimesheetEntryProject`.`deleted` = 0
+        GROUP BY `Project`.`project_code`
+        ORDER BY `Project`.`project_status` desc , `Project`.`project_code` ASC ;
+    </select>
+    <select id="getEmployeeList" parameterClass="com.defiance.ideal.reports.dto.VarianceFilterDTO" resultClass="com.defiance.ideal.reports.dto.VarianceDataDTO">
+        SELECT DISTINCT(emp.id) As empId,tep.status,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name , '  ' , emp.last_name) As empName
+        FROM employees AS emp
+        INNER JOIN timesheet_entries AS te ON(te.employee_id=emp.id)
+        INNER JOIN timesheet_entry_projects AS tep on(tep.timesheet_entry_id=te.id)
+        WHERE 1=1  AND emp.employment_status NOT IN ('t', 'r', 'b', 'q', 'o', 'y' )
+        <dynamic>
+            <isEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND emp.manager=#employeeId#
+            </isEqual>
+            <isNotEqual property="projectId" compareValue="Non_Project_Activity" >
+               AND tep.project_id=#projectId# 
+            </isNotEqual>
+            
+        </dynamic>
+        AND tep.status='a'
+        order by emp.first_name 
+    </select>
+    <select id="getVarianceRecords" parameterClass="com.defiance.ideal.reports.dto.VarianceFilterDTO" resultClass="com.defiance.ideal.reports.dto.VarianceDataDTO">
+         select timesheethours.employeeNumber,timesheethours.employeeName,projj.project_name as project_id,regularizationHours,
+		timesheethours.sbu,timesheethours.subSbu,
+		
+        totalWorkedHours,totalApprovedHours,
+        totalAccruedHours,monthName
+        
+        from billing_advices as ba right join
+        
+        (select emp.id as employeeId, emp.employee_number as employeeNumber,proj.id as project_id,proj.project_name,
+        CONCAT(emp.first_name,' ',emp.last_name) as employeeName,
+        Sbu.name as sbu,subsbu.name as subSbu,
+		CASE 
+		WHEN regularization_reason IS NOT NULL
+		THEN SUM(tms_proj.worked_hours)
+		ELSE '0'
+		END AS regularizationHours,
+        concat(floor(sum(time_format(tms_proj.worked_hours,'%h'))+ sum(time_format(tms_proj.worked_hours,'%i'))/60 ),':', sum(time_format(tms_proj.worked_hours,'%i'))%60 ) as totalWorkedHours,
+        concat(floor(sum(time_format(tms_proj.approved_hours,'%h'))+ sum(time_format(tms_proj.approved_hours,'%i'))/60 ),':', sum(time_format(tms_proj.approved_hours,'%i'))%60 )as totalApprovedHours,
+        bill.billable_effort as totalAccruedHours,
+		monthname(tms.timesheet_date) as monthName
+        from employees as emp
+        inner join timesheet_entries as tms on (tms.employee_id = emp.id)
+        inner join timesheet_entry_projects as tms_proj on (tms.id = tms_proj.timesheet_entry_id)
+        inner join projects as proj on (proj.id = tms_proj.project_id)
+		left join billing_advices as bill on(bill.employee_id=tms.employee_id AND bill.billing_month='07' AND bill.project_id=proj.id)
+        left join company_structures as Sbu on (emp.structure_name = Sbu.id)
+        left join company_structures as subsbu on (emp.structure_name_subgroup = subsbu.id) 
+        where 1=1
+		 AND proj.project_manager=#pmId#
+         <dynamic prepend="AND">
+                <isNotEmpty property="empId">
+                  emp.id = #empId#
+                </isNotEmpty>
+            </dynamic>
+             <dynamic prepend="AND">
+                <isNotEmpty property="projectId">
+                  proj.id = #projectId#
+                </isNotEmpty>
+            </dynamic>
+          and tms.deleted = 0
+        AND
+        tms.timesheet_date between #filter_date_applied_pre# AND #filter_date_applied#
+        
+        group by tms.employee_id,tms_proj.project_id) as timesheethours
+       
+       on timesheethours.employeeId = ba.employee_Id and ba.project_id = timesheethours.project_id
+        inner join projects as projj on (projj.id = timesheethours.project_id)
+        group by timesheethours.employeeNumber,timesheethours.project_id
+    </select>
+<!--    <select id = "getTimesheetHoursData" parameterClass = "com.defiance.ideal.reports.dto.VarianceFilterDTO" resultClass = "com.defiance.ideal.reports.dto.VarianceDataDTO">
+       select timesheethours.employeeNumber,timesheethours.employeeName,projj.project_name as project_id,regularizationHours,
+		timesheethours.sbu,timesheethours.subSbu,
+		
+        timesheethours.totalWorkedHours,timesheethours.totalApprovedHours,
+        SUM(ba.billable_effort) as totalAccruedHours,monthName
+        
+        from billing_advices as ba right join
+        
+        (select emp.id as employeeId, emp.employee_number as employeeNumber,project_id,proj.project_name,
+        CONCAT(emp.first_name,' ',emp.last_name) as employeeName,
+        Sbu.name as sbu,subsbu.name as subSbu,
+		CASE 
+		WHEN regularization_reason IS NOT NULL
+		THEN SUM(tms_proj.worked_hours)
+		ELSE '0'
+		END AS regularizationHours,
+        SUM(tms_proj.worked_hours) as totalWorkedHours,SUM(tms_proj.approved_hours) as totalApprovedHours,
+		monthname(tms.timesheet_date) as monthName
+        from employees as emp
+        left join timesheet_entries as tms on (tms.employee_id = emp.id)
+        left join timesheet_entry_projects as tms_proj on (tms.id = tms_proj.timesheet_entry_id)
+        inner join projects as proj on (proj.id = tms_proj.project_id)
+        left join company_structures as Sbu on (emp.structure_name = Sbu.id)
+        left join company_structures as subsbu on (emp.structure_name_subgroup = subsbu.id) 
+        where 
+         tms.employee_id = '3389' and tms.deleted = 0
+        AND
+        tms.timesheet_date between '2016-08-01' and '2016-09-31'
+        
+        group by tms.employee_id,tms_proj.project_id) as timesheethours
+       
+       on timesheethours.employeeId = ba.employee_Id and ba.project_id = timesheethours.project_id
+        inner join projects as projj on (projj.id = timesheethours.project_id)
+        group by timesheethours.employeeNumber,timesheethours.project_id
+    </select>-->
+
+</sqlMap>

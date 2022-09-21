@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="unBillableMap">
+    
+    <select id="projectsUnbilledReport" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+<!--        CALL PR_UNBILLED_REPORT(#from_date#,#to_date#,#manager_id#,#report_type#, #empl_id#, #prjt_id#)-->
+            CALL PR_INVOICE_DIFFERENCE(#manager_id#)
+    </select>
+<!--    <select id="" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        CALL PR_UNBILLED_REPORT('2018-04-01','2018-04-30',383,3, NULL, NULL);
+    </select>
+    <select id="" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        CALL PR_UNBILLED_REPORT('2018-04-01','2018-04-30',383,3, NULL, NULL);
+    </select>-->
+    
+    <select id="getProjectBillDates" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        SELECT project_id, MIN(ts_entry_date) AS minDate, MAX(ts_entry_date) AS maxDate
+        FROM accrual_tms 
+        WHERE project_id IN(#projectId#)
+        AND is_invoiced IN('n','s')
+        GROUP BY project_id
+    </select>
+    <select id="monthlyReport" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        CALL PR_UNBILLED_REPORT(#minDate#,#maxDate#,#manager_id#,#report_type#, #empl_id#, #prjt_id#)
+    </select>
+    <select id="singleMonthReport" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        CALL PR_UNBILLED_REPORT(#minDate#,#maxDate#,#manager_id#,#report_type#, #empl_id#, #prjt_id#)
+    </select>
+    <select id="employeeMonthReport" parameterClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO" resultClass="com.defiance.ideal.reports.dto.UnBillabelHoursDTO">
+        CALL PR_UNBILLED_REPORT(#minDate#,#maxDate#,#manager_id#,#report_type#, #empl_id#, #prjt_id#)
+    </select>
+    
+</sqlMap>

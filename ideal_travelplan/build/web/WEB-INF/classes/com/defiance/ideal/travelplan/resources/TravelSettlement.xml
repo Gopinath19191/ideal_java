@@ -1,0 +1,1413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<!--
+    Document   : TravelSettlement.xml    
+    Author     : 16113
+    Description:
+        Purpose of the document follows.
+-->
+
+<sqlMap namespace="TravelSettlement">
+    
+    <select id="travelDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.id AS masterId,tm.tp_reference_id AS ticketRefId,
+        tm.employee_id AS empId, CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        emp.employee_number AS employeeNumber,emp.structure_name AS practiceGroupId,
+        emp.structure_name_subgroup AS subPracticeGroupId,
+        cs.name AS practiceGroupName,scs.name AS subPracticeGroupName, 
+        ba.name AS bandName,ba.id AS bandId, tm.buh_id AS buh_id,
+        tm.mobileNo AS contactNo,manager.id AS managerId,CONCAT(manager.first_name,' ',manager.last_name) AS managerName,
+        prj.id AS projectId,
+        city.city AS city,city.country_id AS countryId,
+        tm.travel_term AS travelTerm,
+        tsm.admin_id AS admin_id,
+        setl.configuration_value AS settlemet_policy,
+        CASE WHEN tm.customer_id = '-1' THEN tm.customer_others ELSE CONCAT(cust.customer_code,'-',cust.customer_name) END AS customerName,
+        CASE WHEN tm.project_id = '-1' THEN tm.project_others ELSE CONCAT(prj.project_code,'-',prj.project_name) END AS projectName,
+        DATE_FORMAT(tsm.admin_action_date,"%d-%b-%Y") AS admin_action_date,
+        DATE_FORMAT(tm.travel_start_date,"%d-%b-%Y") AS travelStartDate,
+        DATE_FORMAT(tm.travel_requested_date,"%d-%b-%Y") AS requestedDate,
+        DATE_FORMAT(tm.travel_end_date,"%d-%b-%Y") AS travelEndDate,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        cur.id AS currencyId,
+        cur.currency_code AS currencyName, 
+        tm.travel_type AS travelType,
+        tm.band_id AS bandId,
+        tm.admin_action_required AS adminAction,
+        CASE tm.client_reimbursable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS clientReimbursable,
+        CASE tm.travel_billable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS projectTravel,
+        tm.settlement_type AS settlementType,
+        tsm.deviation AS deviation,
+        tsm.cfo_action_required AS cfo_action,
+        tm.designation_id AS designationId,
+        des.designation AS designationName,
+        tm.status AS status
+        FROM tp_master AS tm
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.master_id = tm.id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN employees AS manager ON(manager.id=tm.rm_id)
+        LEFT JOIN designations AS des ON(des.id=tm.designation_id)
+        LEFT JOIN company_structures AS cs ON(cs.id=emp.structure_name)
+        LEFT JOIN company_structures AS scs ON(scs.id=emp.structure_name_subgroup)
+        LEFT JOIN bands AS ba ON(ba.id=tm.band_id)
+        LEFT JOIN company_locations AS loc ON (tm.location_id = loc.id)
+        LEFT JOIN currencies AS cur ON (tm.currency_type = cur.id)        
+        LEFT JOIN configuration_values AS setl ON (tm.settlement_type = setl.configuration_key AND setl.parent_id = 880)
+        LEFT JOIN cities AS city ON (city.id = loc.city_id)
+        LEFT JOIN projects AS prj ON(prj.id=tm.project_id)
+        LEFT JOIN customers AS cust ON(cust.id=tm.customer_id)         
+        WHERE tm.id=#ticketId#
+    </select>
+    <select id="getCategories" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT configuration_key AS configKey,configuration_value AS configValue FROM configuration_values WHERE parent_id =462 
+    </select>    
+    <select id="getDocumentType" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT con.configuration_key AS configuration_key,
+		con.configuration_value AS configuration_value
+         FROM configuration_values AS con WHERE con.parent_id=977 
+    </select>
+    <select id="ticketDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tt.id AS ticketId,
+        tt.from_city AS fcityId,
+        fcity.city AS fromCity,
+        tt.from_city_others AS ofcityName,
+        tt.to_city_others AS otcityName,
+        "250" AS category,
+        tt.to_city AS tcityId,
+        tcity.city AS toCity,
+        DATE_FORMAT(tt.travel_date ,"%d-%b-%Y") AS travelDate,
+        tt.booking_type AS bookingType,
+        tt.booking_status AS bookingStatus ,
+        tt.file_id AS fileId ,
+        tt.is_settlement_added AS isSettlementAdded
+        FROM tp_travel_ticket AS tt
+        LEFT JOIN cities AS fcity ON(fcity.id=tt.from_city)
+        LEFT JOIN cities AS tcity ON(tcity.id=tt.to_city)
+        WHERE tt.master_id=#masterId#
+        AND tt.booking_type='co'
+        AND tt.booking_status='Y'
+        
+    </select>
+    <select id="hotelDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tt.id AS ticketId,
+        tt.city AS cityId,
+        fcity.city AS cityName,
+        tt.city_others AS ofcityName,
+        tt.booking_type AS bookingType,
+        "251" AS category,
+        date_format(tt.from_date ,"%d-%b-%Y") AS fromDate,
+        date_format(tt.to_date ,"%d-%b-%Y") AS toDate,
+        tt.booking_status AS bookingStatus ,
+        tt.file_id AS fileId 
+        FROM tp_hotel_bookings AS tt 
+        LEFT JOIN cities AS fcity ON(fcity.id=tt.city)
+        WHERE tt.master_id=#masterId#
+        AND tt.booking_type='co'
+        AND tt.booking_status='Y'      
+    </select>
+    <select id="convenienceDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tc.id AS ticketId ,
+        fcity.id AS cityId ,
+        fcity.city AS cityName,
+        "253" AS category,
+        date_format(tc.start_date ,"%d-%b-%Y") AS fromDate,
+        date_format(tc.end_date ,"%d-%b-%Y") AS toDate
+        FROM tp_conveyance AS tc
+        LEFT JOIN cities AS fcity ON(fcity.id=tc.city)
+        WHERE tc.master_id=#masterId#
+        AND tc.booking_type='co'
+        AND tc.booking_status='Y'
+    </select>
+    <select id="checkSettlementMaster" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+         SELECT id AS id,
+            master_id AS masterId,
+            eligibility_ticket_amount AS ticEliTot ,
+            overall_total_amount AS overall_total_amount,
+            total_lodging_amount AS total_lodging_amount,
+            deviation_total_amount AS deviation_total_amount,
+            overall_deviation_percentage AS overall_deviation_percentage,
+            eligibility_lodging_amount AS lodEliTot,
+            eligibility_total_amount AS totEliTot,
+            total_ticket_amount AS total_ticket_amount,
+            admin_action AS admin_action,
+            employee_action AS employee_action,
+            deviation AS deviation,
+            cfo_action_required AS cfo_action 
+            FROM tp_settlement_master 
+        WHERE master_id=#masterId#
+
+    </select>
+    <!--    <insert id="addExpenseDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        INSERT INTO tp_expense_details (tp_settlement_id , category_type , bill_number, bill_date , amount, 
+        attachment_id,created_by, created_date,settlement_by) VALUES
+        (#tp_settlement_id#,#category#, #billNo#, #billDate#, #amount# ,
+        #attachmentId# , #adminId# ,
+        CURDATE(), #settlementBy# )
+    </insert>-->
+    <insert id="addConvExpenseDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        INSERT INTO tp_expense_details (tp_settlement_id , category_type , city_id , bill_number, bill_date , amount, from_date, to_date,
+        attachment_id, created_by, settlement_by, with_bill, remarks, created_date) VALUES
+        (#tp_settlement_id#,#category#,#cityId# , #billNo#, #billDate#, #amount# , #fromDate#, #toDate#,
+        #attachmentId#, #empId#, #settlementBy#, #bill#, #remarks#,CURDATE())
+    </insert>
+    <insert id="addAdminSettlement" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        INSERT INTO tp_settlement_master (master_id, company_ticket_amount,company_total_amount, company_lodging_amount,status,admin_id,
+        company_lodging_tax,company_lodging_tax_total ,company_ticket_tax , company_ticket_tax_total,company_total_tax ,company_total_tax_total, 
+        admin_action_date,company_conveyance_tax_total, company_conveyance_amount, employee_action, admin_action)
+        VALUES (#masterId#,#ticketTotal#, #totalExpance# , #boardingTotal#,#status#,#admin_id#,
+        #lodTaxtotal#, #lod_tot_tax_total#, #ticTaxtotal#, #tic_tot_tax_total#,#company_total_tax#, 
+        #company_total_tax_total#,CURDATE(),#company_conveyance_tax_total# ,#company_conveyance_tax_total#,
+        #employee_action#, #admin_action#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    <update id="updateAdminSettlement" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET 
+        company_ticket_amount=#ticketTotal#,
+        company_total_amount = #totalExpance#,
+        status = #status#,
+        admin_id = #admin_id# ,
+        admin_action_date = CURDATE(),
+        company_lodging_amount = #boardingTotal#,
+        total_lodging_amount=#total_lodging_amount#,
+        overall_total_amount = #overall_total_amount#,
+        eligibility_total_amount =#totEliTot#,
+        eligibility_ticket_amount =#ticEliTot#,
+        deviation_total_amount=#deviation_total_amount#,
+        cfo_action_required = #cfo_action#,
+        deviation = #deviation#,
+        total_ticket_amount=#total_ticket_amount#,
+        total_lodging_amount=#total_lodging_amount#,
+        company_total_tax = #company_total_tax#,
+        company_total_tax_total = #company_total_tax_total#,
+        overall_deviation_percentage=#deviationPercent#,
+        company_conveyance_amount =#conveyanceTotal#,
+        company_lodging_tax = #lodTaxtotal#,
+	company_lodging_tax_total = #lod_tot_tax_total#,
+        company_ticket_tax = #ticTaxtotal#,
+        company_ticket_tax_total = #tic_tot_tax_total#,
+        company_total_tax = #company_total_tax# ,
+        company_total_tax_total = #company_total_tax_total#,
+        admin_action = #admin_action#,
+        employee_action = #employee_action#
+        WHERE id = #id#
+    </update>
+    <insert id="addAdminExpency" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" >
+        INSERT INTO tp_expense_details (tp_settlement_id , category_type , bill_number, bill_date , amount, 
+        attachment_id,created_by, settlement_by, with_bill, city_id , from_date , to_date,remarks,eligible_amount,invoice ,travel_id ,tax , total_amount,vendor , created_date) VALUES
+        (#tp_settlement_id#,#category#, #billNo#, #billDate#, #amount# ,#attachmentId# , #empId# ,
+        #settlementBy#,#bill#, #fcityId# , #fromDate#, #toDate#,#remarks#,#eligibiityAmount#, #invoiceStat#, #ticketId#,#tax# , #ticTotal#,#vendor_name# ,CURDATE())
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    <update id="updateAdminExpency" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" >
+       UPDATE tp_expense_details SET 
+        category_type = #category#,
+        bill_number = #billNo#,
+        bill_date = #billDate#,
+        amount = #amount# ,
+        vendor = #vendor_name#,
+        attachment_id = #attachmentId# ,
+        with_bill = #bill#,
+        settlement_by = #settlementBy#,
+        city_id = #cityId# ,
+        from_date = #fromDate#,
+        to_date = #toDate#,
+        remarks = #remarks#,
+        deleted = #delstatus#,
+        eligible_amount = #eligibiityAmount#,
+        invoice = #invoiceStat#,
+        tax = #tax#,
+        total_amount = #ticTotal#,
+        created_date = CURDATE()
+        WHERE id=#id#
+    </update>
+    <insert id="saveAttachment" parameterClass="Map">
+        INSERT INTO tp_attachments 
+        (master_id,file_name,created_date)
+        values(#master_id#,#file_name#,#created_date#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert> 
+    <select id="advanceDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        <!--        SELECT tad.tp_advance_id AS advanceId,c.currency_code AS currencyCode, tad.requested_amount AS requestedAmount, tad.deposited_amount AS depositedAmount
+        FROM tp_advance_details AS tad WHERE master_id=#masterId#-->
+        SELECT c.currency_code AS currencyCode,
+        tad.deposited_amount AS depositedAmount,
+        date_format(tad.deposited_date ,"%d-%b-%Y") AS depositedDate
+        FROM tp_advance_details AS tad
+        LEFT JOIN currencies AS c ON(c.id=tad.deposited_currency_id) 
+        WHERE tad.master_id=#masterId#
+    </select>
+    <select id="totalAdvance" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT SUM(deposited_amount) as totalAdvance FROM  tp_advance_details WHERE master_id=#masterId#
+    </select>
+    <select id="comSettlementTotal" parameterClass="java.util.Map" resultClass="java.lang.String">
+        SELECT CAST(SUM(ted.amount) AS DECIMAL (8,0)) as amount
+        FROM tp_expense_details AS ted
+        LEFT JOIN tp_settlement_master AS sm ON(sm.id=ted.tp_settlement_id)
+        WHERE sm.master_id=#masterId# 
+        <dynamic>
+            <isNotNull property="categoryType">
+                <isNotEmpty prepend="AND" property="categoryType">
+                    ted.category_type=#categoryType#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+    </select>
+    <update id="updateEmployeeSettlement" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET from_date_time=#fromDate#,
+        to_date_time=#toDate# ,
+        total_days =#travelPeriod#,
+        submitted_date=#submittedDate#,
+        total_advance =#totalAdvance#,
+        eligibility_lodging_amount = #lodEliTot#,
+        eligibility_ticket_amount =#ticEliTot#,
+        eligibility_boarding_amount =#boarEliTot# ,
+        eligibility_conveyance_amount=#conEliTot#,
+        eligibility_miscellaneous_amount=#misEliTot#,
+        eligibility_total_amount=#totEliTot#,
+        actual_lodging_amount=#lodtotal#,
+        actual_ticket_amount = #ticTotal#,
+        actual_boarding_amount=#boartotal#,
+        actual_conveyance_amount=#convtotal#,
+        actual_miscellaneous_amount =#mistotal#,
+        actual_total_amount=#totalAmount#,
+        total_boarding_amount=#total_boarding_amount#,
+        total_ticket_amount=#total_ticket_amount#,
+        total_lodging_amount=#total_lodging_amount#,
+        total_conveyance_amount=#total_conveyance_amount#,
+        total_miscellaneous_amount=#total_miscellaneous_amount#,
+        overall_total_amount=#overall_total_amount#,
+        deviation_lodging_amount=#lodDeviation#,
+        deviation_ticket_amount=#deviation_ticket_amount#,
+        deviation_boarding_amount=#borDeviation#,
+        deviation_conveyance_amount=#deviation_conveyance_amount#,
+        deviation_miscellaneous_amount=#misDeviation#,
+        deviation_total_amount=#totDeviation#,
+        overall_deviation_percentage=#deviationPercent#,
+        STATUS = #status#,
+        from_city = #fromCity#,
+        to_city = #toCity#,
+        actual_ticket_tax =  #ticTaxTotal#,
+        actual_ticket_tax_total = #ticTaxTotalAmount#,
+        actual_lodging_tax = #lodTaxTotal#,
+        actual_lodging_tax_total = #lodTaxTotalAmount#,
+        actual_boarding_tax =  #boarTaxTotal#,
+        actual_boarding_tax_total =  #boarTaxTotalAmount#,
+        actual_conveyance_tax = #conTaxTotal#,
+        actual_conveyance_tax_total = #conTaxTotalAmount#,
+        actual_miscellaneous_tax =  #misTaxTotal#,
+        actual_miscellaneous_tax_total = #misTaxTotalAmount#,
+        actual_total_tax = #totalTax#,
+        actual_total_tax_total = #totalTotalAmount#,
+        cfo_action_required = #cfo_action#,
+        lodging_percentage = #lodDevPercentage#,
+        miscellaneous_percentage = #misDevPercentage# ,
+        boarding_percentage = #boarDevPercentage#,
+        deviation = #deviation#,
+        admin_action = #admin_action#,
+        employee_action = #employee_action#
+        WHERE id = #id#
+    </update>
+    <insert id="addEmployeeSettlement" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        INSERT INTO tp_settlement_master (master_id , from_date_time, to_date_time , total_days , submitted_date , total_advance ,
+        eligibility_lodging_amount, eligibility_ticket_amount, eligibility_boarding_amount, eligibility_conveyance_amount ,eligibility_miscellaneous_amount ,		
+        eligibility_total_amount ,actual_lodging_amount , actual_ticket_amount, actual_boarding_amount , actual_conveyance_amount , 
+        actual_miscellaneous_amount, actual_total_amount,total_boarding_amount , total_ticket_amount , total_lodging_amount,total_conveyance_amount ,
+        total_miscellaneous_amount , overall_total_amount , deviation_lodging_amount , deviation_ticket_amount, deviation_boarding_amount ,
+        deviation_conveyance_amount , deviation_miscellaneous_amount ,deviation_total_amount , overall_deviation_percentage,STATUS,from_city,to_city ,
+        actual_ticket_tax, actual_ticket_tax_total , actual_lodging_tax , actual_lodging_tax_total ,actual_boarding_tax ,
+        actual_boarding_tax_total, actual_conveyance_tax,
+        actual_conveyance_tax_total , actual_miscellaneous_tax , actual_miscellaneous_tax_total ,
+        actual_total_tax, actual_total_tax_total,lodging_percentage , boarding_percentage,miscellaneous_percentage ,cfo_action_required,
+        deviation, employee_action, admin_action )
+        VALUES(#masterId#, #fromDate#, #toDate#, #travelPeriod#, #submittedDate# ,#totalAdvance# , #lodEliTot# ,
+        #ticEliTot# , #boarEliTot#, #conEliTot# , #misEliTot#, #totEliTot# , #lodtotal# , #ticTotal# ,
+        #boartotal# , #convtotal#, #mistotal# , #totalAmount# , #total_boarding_amount# , #total_ticket_amount# , #total_lodging_amount# 
+        ,#total_conveyance_amount# , #total_miscellaneous_amount# , #overall_total_amount# , #lodDeviation# ,  #deviation_ticket_amount# ,
+        #borDeviation# , #deviation_conveyance_amount# , #misDeviation# ,
+        #totDeviation# , #deviationPercent# , #status#, #fromCity#, #toCity# ,
+        #ticTaxTotal# , #ticTaxTotalAmount# , #lodTaxTotal# ,#lodTaxTotalAmount# , #boarTaxTotal# , #boarTaxTotalAmount# , #conTaxTotal# , #conTaxTotalAmount# ,
+        #misTaxTotal# , #misTaxTotalAmount# , #totalTax# , #totalTotalAmount#,#lodDevPercentage# ,#boarDevPercentage# ,#misDevPercentage# , #cfo_action# ,
+        #deviation#, #employee_action#, #admin_action#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    <select id="getAutoCity" parameterClass="java.util.HashMap" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT id AS keyRes,city AS valueRes
+        FROM cities
+        WHERE city LIKE #m# and country_id = #c#
+    </select>
+    <select id="adminPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.id AS id, tm.tp_reference_id AS ticketRefId ,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        DATE_FORMAT(tm.travel_start_date,"%d-%b-%Y") AS travelStartDate,
+        DATE_FORMAT(tm.travel_end_date,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc,
+        DATE_FORMAT(tm.travel_requested_date,"%d-%b-%Y") AS requestedDate
+        FROM tp_master AS tm
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tm.status=st.status_name)
+        LEFT JOIN tp_travel_ticket AS tic ON(tm.id = tic.master_id AND tic.booking_type ='co')
+        LEFT JOIN tp_hotel_bookings AS thb ON(tm.id = thb.master_id AND thb.booking_type ='co')
+        WHERE tm.admin_action_required = 'Y' AND ((tic.booking_status = 'Y' AND tic.is_settlement_added IS NULL) OR (thb.booking_status = 'Y' AND thb.is_settlement_added IS NULL))
+        GROUP BY tm.id
+        ORDER BY tm.travel_requested_date DESC
+    </select>
+    <select id="adminProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.id AS id, tm.tp_reference_id AS ticketRefId ,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tm.travel_start_date,"%d-%b-%Y") AS travelStartDate,
+        date_format(tm.travel_end_date,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc,
+        date_format(tm.travel_requested_date,"%d-%b-%Y") AS requestedDate
+        FROM tp_master AS tm
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_settlement_master as tsm on(tsm.master_id = tm.id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_travel_ticket AS tic ON(tm.id = tic.master_id AND tic.booking_type ='co' AND tic.is_settlement_added = 'y')
+        LEFT JOIN tp_hotel_bookings AS thb ON(tm.id = thb.master_id AND thb.booking_type ='co' AND thb.is_settlement_added = 'y')
+        WHERE tm.admin_action_required = 'Y'
+        AND tm.status <![CDATA[ > ]]> 10
+        GROUP BY tm.id
+        ORDER BY tm.travel_requested_date DESC
+    </select>
+    
+    <update id="updateAdminTM" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_master SET admin_action_date = CURDATE() WHERE id=#masterId#
+    </update>
+    <update id="updateTicDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_travel_ticket SET is_settlement_added=#settlementAdded#
+        WHERE  id=#id#
+    </update>
+    <update id="updateHotDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_hotel_bookings SET is_settlement_added=#settlementAdded# 
+        WHERE  id=#id#
+    </update>
+    <update id="updateConDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_conveyance SET file_id =#attachmentId#  , is_settlement_added=#settlementAdded# 
+        WHERE  id=#id#
+    </update>
+    <select id="getEligibileAmount" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="java.lang.String">
+        SELECT te.amount AS amount 
+        FROM tp_eligibility AS te
+        LEFT JOIN bands as band on(band.parent_id=te.band_id)
+        WHERE band.id=#bandId#
+        AND te.travel_type =#travelType#
+        AND te.city_id =#cityId#
+        AND te.with_bill =#bill#
+        AND te.category = #category#
+        AND te.travel_term=#travelTerm#
+        AND te.currency_id =#currencyId#
+    </select>
+    <select id="getMisEligibileAmount" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="java.lang.String">
+        SELECT te.amount AS amount FROM tp_eligibility AS te
+        LEFT JOIN bands AS band ON(band.parent_id=te.band_id)
+        WHERE band.id=#bandId#
+        AND te.category = #category#
+    </select>
+    
+    <select id="citylist" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="java.lang.String">
+        <!--        SELECT city_id FROM tp_eligibility WHERE travel_type ='d' AND  with_bill ='y' AND travel_term = 's' 
+        AND category = 'l' AND band_id=4-->
+        SELECT city_id FROM tp_eligibility AS te
+        left join bands as band on(band.parent_id=te.band_id)
+        WHERE 
+        te.travel_type =#travelType#
+        AND te.with_bill =#bill#
+        AND te.category = #category#
+        AND band.id=#bandId#
+        AND te.travel_term=#travelTerm#
+    </select>
+    <select id="viewDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.id AS masterId,tm.tp_reference_id AS ticketRefId,
+        tm.buh_id as buh_id,
+        tm.employee_id AS empId, CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        emp.employee_number AS employeeNumber,emp.structure_name AS practiceGroupId,
+        emp.id as emp_id,
+        emp.structure_name_subgroup AS subPracticeGroupId,
+        cs.name AS practiceGroupName,scs.name AS subPracticeGroupName,
+        ba.name AS bandName,
+        tm.mobileNo AS contactNo,manager.id AS managerId,CONCAT(manager.first_name,' ',manager.last_name) AS managerName,
+        prj.id AS projectId,prj.project_code AS projectCode,
+        city.city AS city,city.country_id AS countryId,
+        st.status_desc AS statusDesc,
+        fromcity.city AS fromCity,
+        tocity.city AS toCity,
+        fromcity.id AS fcityId , 
+        tocity.id AS tcityId,
+        tsm.total_days as travelPeriod,
+        tm.travel_type AS travelType,
+        tm.travel_term AS travelTerm,
+        tsm.status AS STATUS,
+        tsm.deviation AS deviation,
+        tsm.admin_id AS admin_id,
+        cur.id AS currencyId,
+        cur.currency_code AS currencyName,
+        setl.configuration_value AS settlemet_policy,
+        date_format(tsm.from_date_time,"%d-%b-%Y %H:%i") AS travelCommenced,
+        date_format(tsm.to_date_time,"%d-%b-%Y %H:%i") AS travelCompleted,
+        date_format(tsm.submitted_date,"%d-%b-%Y") AS submittedDate,
+<!--        CONCAT(cust.customer_code,'-',cust.customer_name) AS customerName,
+        CONCAT(prj.project_code,'-',prj.project_name) AS projectName,-->
+        CASE WHEN tm.customer_id = '-1' THEN tm.customer_others ELSE CONCAT(cust.customer_code,'-',cust.customer_name) END AS customerName,
+        CASE WHEN tm.project_id = '-1' THEN tm.project_others ELSE CONCAT(prj.project_code,'-',prj.project_name) END AS projectName,
+        date_format(tsm.admin_action_date,"%d-%b-%Y") AS admin_action_date,
+        date_format(tm.travel_start_date,"%d-%b-%Y") AS travelStartDate,
+        date_format(tm.travel_end_date,"%d-%b-%Y") AS travelEndDate,
+        date_format(tm.travel_requested_date,"%d-%b-%Y") AS requestedDate,
+        tm.travel_type as travelType,
+        date_format(tsm.admin_action_date,"%d-%b-%Y") AS admin_action_date,
+        tsm.treasury_action_date as treasury_approved_date,
+        tsm.payroll_action_date as payroll_approved_date,
+        tsm.amount_tobe_recovered as amount_tobe_recovered,
+        tsm.amount_tobe_deposited as amount_tobe_deposited,
+        tsm.cfo_action_required as cfo_action,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        tm.band_id AS bandId,
+        tm.admin_action_required AS adminAction,
+        CASE tm.client_reimbursable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS clientReimbursable,
+        CASE tm.travel_billable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS projectTravel,
+        tm.settlement_type AS settlementType,
+        tm.designation_id AS designationId,
+        des.designation AS designationName,
+        tsm.bill_received AS billReceived,
+        tsm.bill_received_date AS billReceivedDate
+        FROM tp_master AS tm
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.master_id = tm.id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN employees AS manager ON(manager.id=emp.manager)
+        LEFT JOIN designations AS des ON(des.id=tm.designation_id)
+        LEFT JOIN company_structures AS cs ON(cs.id=emp.structure_name)
+        LEFT JOIN company_structures AS scs ON(scs.id=emp.structure_name_subgroup)
+        LEFT JOIN bands AS ba ON(ba.id=tm.band_id)
+        LEFT JOIN company_locations AS loc ON (loc.id = tm.location_id)
+        LEFT JOIN currencies AS cur ON (tm.currency_type = cur.id)        
+        LEFT JOIN configuration_values AS setl ON (tm.settlement_type = setl.configuration_key AND setl.parent_id = 880)
+        LEFT JOIN cities AS city ON (city.id = loc.city_id)
+        LEFT JOIN cities AS fromcity ON (fromcity.id = tsm.from_city)
+        LEFT JOIN cities AS tocity ON (tocity.id = tsm.to_city)
+        LEFT JOIN projects AS prj ON(prj.id=tm.project_id)
+        LEFT JOIN customers AS cust ON(cust.id=tm.customer_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        WHERE tm.id=#ticketId#
+    </select>
+    <select id="adminExpenseTotals" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tsm.total_advance AS totalAdvance, 
+            tsm.company_lodging_amount AS lodgingTotal,
+            tsm.company_lodging_tax AS company_lodging_tax,
+            tsm.company_lodging_tax_total AS company_lodging_tax_total,
+            tsm.company_ticket_amount AS ticketTotal,
+            tsm.company_ticket_tax AS company_ticket_tax,
+            tsm.company_ticket_tax_total AS company_ticket_tax_total,
+            tsm.company_boarding_amount AS boardingTotal,
+            tsm.company_conveyance_amount AS conveyanceTotal,
+            tsm.company_total_amount AS company_total_amount,
+            tsm.company_total_tax AS company_total_tax,
+            tsm.company_total_tax_total AS company_total_tax_total
+            FROM tp_settlement_master AS tsm
+        WHERE tsm.master_id = #masterId#
+    </select>
+    <select id="getDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.id AS masterId,tm.tp_reference_id AS ticketRefId,
+        tm.buh_id as buh_id,
+        tm.employee_id AS empId, CONCAT(emp.first_name,' ',emp.last_name) AS employeeName,
+        emp.employee_number AS employeeNumber,emp.structure_name AS practiceGroupId,
+        emp.structure_name_subgroup AS subPracticeGroupId,
+        emp.id as emp_id,
+        cs.name AS practiceGroupName,scs.name AS subPracticeGroupName,
+        ba.name AS bandName,
+        tm.mobileNo AS contactNo,manager.id AS managerId,CONCAT(manager.first_name,' ',manager.last_name) AS managerName,
+        prj.id AS projectId,prj.project_code AS projectCode,
+        city.city AS city,city.country_id AS countryId,
+        st.status_desc AS statusDesc,
+        fromcity.city AS fromCity,
+        cur.id AS currencyId,
+        cur.currency_code AS currencyName,
+        tocity.city AS toCity,
+        fromcity.id AS fcityId , 
+        tocity.id AS tcityId,
+        tsm.total_days as travelPeriod,
+        tm.travel_type AS travelType,
+        tm.travel_term AS travelTerm,
+        tsm.status AS STATUS,
+        tsm.deviation AS deviation,
+        tsm.admin_id AS admin_id,
+        setl.configuration_value AS settlemet_policy,
+        date_format(tm.travel_start_date,"%d-%b-%Y") AS travelCommenced,
+        date_format(tm.travel_end_date,"%d-%b-%Y") AS travelCompleted,
+        DATE_FORMAT(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        DATE_FORMAT(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        DATE_FORMAT(tsm.from_date_time,"%H:%i") AS startTime,
+        DATE_FORMAT(tsm.to_date_time,"%H:%i") AS endTime,
+<!--        CONCAT(cust.customer_code,'-',cust.customer_name) AS customerName,
+        CONCAT(prj.project_code,'-',prj.project_name) AS projectName,-->
+        CASE WHEN tm.customer_id = '-1' THEN tm.customer_others ELSE CONCAT(cust.customer_code,'-',cust.customer_name) END AS customerName,
+        CASE WHEN tm.project_id = '-1' THEN tm.project_others ELSE CONCAT(prj.project_code,'-',prj.project_name) END AS projectName,
+        date_format(tsm.admin_action_date,"%d-%b-%Y") AS admin_action_date,
+        tm.travel_requested_date AS requestedDate,       
+        tm.travel_type as travelType,
+        date_format(tsm.admin_action_date,"%d-%b-%Y") AS admin_action_date,
+        tsm.treasury_action_date as treasury_approved_date,
+        tsm.payroll_action_date as payroll_approved_date,
+        tsm.amount_tobe_recovered as amount_tobe_recovered,
+        tsm.amount_tobe_deposited as amount_tobe_deposited,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        tm.band_id AS bandId,
+        tm.admin_action_required AS adminAction,
+        CASE tm.client_reimbursable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS clientReimbursable,
+        CASE tm.travel_billable
+        WHEN "N" THEN "No"
+        WHEN "Y" THEN "Yes"
+        END AS projectTravel,
+        tm.settlement_type AS settlementType,
+        tm.designation_id AS designationId,des.designation AS designationName
+        FROM tp_master AS tm
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.master_id = tm.id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN employees AS manager ON(manager.id=emp.manager)
+        LEFT JOIN designations AS des ON(des.id=tm.designation_id)
+        LEFT JOIN company_structures AS cs ON(cs.id=emp.structure_name)
+        LEFT JOIN company_structures AS scs ON(scs.id=emp.structure_name_subgroup)
+        LEFT JOIN bands AS ba ON(ba.id=tm.band_id)
+        LEFT JOIN company_locations AS loc ON (loc.id = tm.location_id)
+        LEFT JOIN currencies AS cur ON (tm.currency_type = cur.id)
+        LEFT JOIN configuration_values AS setl ON (tm.settlement_type = setl.configuration_key AND setl.parent_id = 880)
+        LEFT JOIN cities AS city ON (city.id = loc.city_id)
+        LEFT JOIN cities AS fromcity ON (fromcity.id = tsm.from_city)
+        LEFT JOIN cities AS tocity ON (tocity.id = tsm.to_city)
+        LEFT JOIN projects AS prj ON(prj.id=tm.project_id)
+        LEFT JOIN customers AS cust ON(cust.id=tm.customer_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        WHERE tm.id=#ticketId#
+    </select>
+    <select id="allExpenses" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT ted.category_type AS categoryType,
+        CONCAT(ven.name,'-',ven.code) AS vendor_name,
+        cfg.configuration_value AS category,
+        ted.city_id AS cityId,
+        date_format(ted.from_date,"%d-%b-%Y") AS fromDate,
+        date_format(ted.to_date,"%d-%b-%Y") AS toDate,
+        date_format(ted.bill_date,"%d-%b-%Y") AS billDate,
+        ted.with_bill AS bill,
+        city.city AS cityName,
+        ted.settlement_by AS settlementBy,
+        ted.bill_number AS billNo,
+        RupeeFormat(ted.amount) AS amount,
+        ted.remarks AS remarks,
+        CASE WHEN ted.invoice = 'C' THEN "Credit Note"
+	WHEN ted.invoice = 'I' THEN "Invoice" 
+	ELSE " "
+	END AS invoiceStat ,
+        ted.attachment_id AS fileId,
+        RupeeFormat(ted.eligible_amount) as eligibiityAmount,
+        RupeeFormat(ted.tax) AS ticTax,
+        RupeeFormat(ted.total_amount) AS ticTotal,
+        atc.file_name AS file_name
+        FROM tp_expense_details AS ted
+        LEFT JOIN configuration_values AS cfg ON(cfg.configuration_key = ted.category_type AND cfg.parent_id=462)
+        LEFT JOIN cities AS city ON(city.id = ted.city_id)
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.id=ted.tp_settlement_id)
+        LEFT JOIN tp_attachments AS atc ON(atc.id = ted.attachment_id)
+        LEFT JOIN vendors AS ven ON(ted.vendor = ven.id)
+        WHERE tsm.master_id = #masterId#  AND ted.deleted ='0'
+        ORDER BY ted.category_type
+    </select>
+    <select id="AllexpenceTotals" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,
+        tsm.master_id AS master_id,
+        tsm.from_date_time AS travelStartDate,
+        tsm.to_date_time AS travelEndDate,
+        tsm.total_days AS travelPeriod,
+        fc.city AS fromCity,
+        tc.city AS toCity,
+        tsm.total_advance AS totalAdvance,
+        tsm.eligibility_lodging_amount AS lodEliTot,
+        tsm.eligibility_ticket_amount AS ticEliTot,
+        tsm.eligibility_boarding_amount AS boarEliTot,
+        tsm.eligibility_conveyance_amount AS conEliTot,
+        tsm.eligibility_miscellaneous_amount AS misEliTot,
+        tsm.eligibility_total_amount AS totEliTot,
+        tsm.actual_lodging_amount AS actual_lodging_amount,
+        tsm.actual_ticket_amount AS actual_ticket_amount,
+        tsm.actual_boarding_amount AS actual_boarding_amount,
+        tsm.actual_conveyance_amount AS actual_conveyance_amount,
+        tsm.actual_miscellaneous_amount AS actual_miscellaneous_amount,
+        tsm.actual_total_amount AS actual_total_amount,
+        tsm.company_lodging_amount AS lodgingTotal,
+        tsm.company_ticket_amount AS ticketTotal,
+        tsm.company_boarding_amount AS boardingTotal,
+        tsm.company_conveyance_amount AS conveyanceTotal,
+        tsm.actual_lodging_tax AS actual_lodging_tax ,
+        tsm.actual_lodging_tax_total AS actual_lodging_tax_total,
+        tsm.actual_ticket_tax AS actual_ticket_tax,
+        tsm.actual_ticket_tax_total AS actual_ticket_tax_total ,
+        tsm.actual_boarding_tax AS actual_boarding_tax,
+        tsm.actual_boarding_tax_total AS actual_boarding_tax_total,
+        tsm.actual_conveyance_tax AS actual_conveyance_tax,
+        tsm.actual_conveyance_tax_total AS actual_conveyance_tax_total,
+        tsm.actual_miscellaneous_tax AS actual_miscellaneous_tax,
+        tsm.actual_miscellaneous_tax_total AS actual_miscellaneous_tax_total,
+        tsm.company_lodging_tax AS company_lodging_tax,
+        tsm.company_lodging_tax_total AS company_lodging_tax_total,
+        tsm.company_ticket_tax AS company_ticket_tax,
+        tsm.company_ticket_tax_total AS company_ticket_tax_total,
+        tsm.company_boarding_tax AS company_boarding_tax,
+        tsm.company_boarding_tax_total AS company_boarding_tax_total,
+        tsm.company_conveyance_tax AS company_conveyance_tax,
+        tsm.company_conveyance_tax_total AS company_conveyance_tax_total,
+        tsm.company_miscellaneous_tax AS company_miscellaneous_tax,
+        tsm.company_miscellaneous_tax_total AS company_miscellaneous_tax_total,
+        tsm.company_miscellaneous_amount AS miscTotal,
+        tsm.company_total_amount AS totalExpance,
+        tsm.total_lodging_amount AS total_lodging_amount,
+        tsm.company_total_tax AS company_total_tax ,
+        tsm.company_total_tax_total AS company_total_tax_total,
+        tsm.actual_total_tax AS actual_total_tax,
+        tsm.actual_total_tax_total AS actual_total_tax_total,
+        tsm.total_ticket_amount AS total_ticket_amount,
+        tsm.total_boarding_amount AS total_boarding_amount,
+        tsm.total_conveyance_amount AS total_conveyance_amount,
+        tsm.total_miscellaneous_amount AS total_miscellaneous_amount,
+        tsm.overall_total_amount AS overall_total_amount,
+        tsm.deviation_lodging_amount AS deviation_lodging_amount,
+        tsm.deviation_ticket_amount AS deviation_ticket_amount,
+        tsm.deviation_boarding_amount AS deviation_boarding_amount,
+        tsm.deviation_conveyance_amount AS deviation_conveyance_amount,
+        tsm.deviation_miscellaneous_amount AS deviation_miscellaneous_amount,
+        tsm.deviation_total_amount AS deviation_total_amount,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        tsm.amount_tobe_recovered AS amount_tobe_recovered,
+        tsm.amount_tobe_deposited AS amount_tobe_deposited,
+        tsm.lodging_percentage AS lodDevPercentage,
+        tsm.miscellaneous_percentage AS misDevPercentage ,
+        tsm.boarding_percentage AS boarDevPercentage,
+        tsm.finance_approved_ticket_amount AS tic_approved_amount,
+        tsm.finance_approved_lodging_amount AS lod_approved_amount,
+        tsm.finance_approved_boarding_amount AS boar_approved_amount,
+        tsm.finance_approved_conveyance_amount AS con_approved_amount,
+        tsm.finance_approved_miscellaneous_amount AS mis_approved_amount,
+        tsm.fincance_approved_total_amount AS tot_approved_amount,
+        tsm.status AS STATUS
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN cities AS fc ON(fc.id = tsm.from_city)
+        LEFT JOIN cities AS tc ON(tc.id = tsm.to_city)
+        WHERE tsm.master_id =#masterId#
+    </select>
+    <select id="totalForApprovals" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT 	tsm.actual_lodging_tax_total AS total_lodging_amount,
+            tsm.actual_ticket_tax_total AS total_ticket_amount,
+            tsm.actual_boarding_tax_total AS total_boarding_amount,
+            tsm.actual_conveyance_tax_total AS total_conveyance_amount,
+            tsm.actual_miscellaneous_tax_total AS total_miscellaneous_amount,
+            tsm.actual_total_tax_total AS overall_total_amount
+        FROM tp_settlement_master AS tsm WHERE tsm.master_id =#masterId#
+    </select>
+    <select id="ViewAllexpenceTotals" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,
+        tsm.master_id AS master_id,
+        tsm.from_date_time AS travelStartDate,
+        tsm.to_date_time AS travelEndDate,
+        tsm.total_days AS travelPeriod,
+        fc.city AS fromCity,
+        tc.city AS toCity,
+        RupeeFormat(tsm.total_advance) AS totalAdvance,
+        RupeeFormat(tsm.eligibility_lodging_amount) AS lodEliTot,
+        RupeeFormat(tsm.eligibility_lodging_amount) AS lodEliTot,
+        RupeeFormat(tsm.eligibility_ticket_amount)AS ticEliTot,
+        RupeeFormat(tsm.eligibility_boarding_amount)AS boarEliTot,
+        RupeeFormat(tsm.eligibility_conveyance_amount)AS conEliTot,
+        RupeeFormat(tsm.eligibility_miscellaneous_amount) AS misEliTot,
+        RupeeFormat(tsm.eligibility_total_amount) AS totEliTot,
+        RupeeFormat(tsm.actual_lodging_amount) AS actual_lodging_amount,
+        RupeeFormat(tsm.actual_ticket_amount) AS actual_ticket_amount,
+        RupeeFormat(tsm.actual_boarding_amount) AS actual_boarding_amount,
+        RupeeFormat(tsm.actual_conveyance_amount) AS actual_conveyance_amount,
+        RupeeFormat(tsm.actual_miscellaneous_amount) AS actual_miscellaneous_amount,
+        RupeeFormat(tsm.actual_total_amount) AS actual_total_amount,
+        RupeeFormat(tsm.company_lodging_amount) AS lodgingTotal,
+        RupeeFormat(tsm.company_ticket_amount) AS ticketTotal,
+        RupeeFormat(tsm.company_boarding_amount) AS boardingTotal,
+        RupeeFormat(tsm.company_conveyance_amount) AS conveyanceTotal,
+        RupeeFormat(tsm.company_miscellaneous_amount)AS miscTotal,
+        RupeeFormat(tsm.company_total_amount) AS totalExpance,
+        RupeeFormat(tsm.total_lodging_amount) AS total_lodging_amount,
+        RupeeFormat(tsm.total_ticket_amount) AS total_ticket_amount,
+        RupeeFormat(tsm.total_boarding_amount) AS total_boarding_amount,
+        RupeeFormat(tsm.total_conveyance_amount) AS total_conveyance_amount,
+        RupeeFormat(tsm.total_miscellaneous_amount) AS total_miscellaneous_amount,
+        RupeeFormat(tsm.overall_total_amount) AS overall_total_amount,
+        RupeeFormat(tsm.deviation_lodging_amount) AS deviation_lodging_amount,
+        RupeeFormat(tsm.deviation_ticket_amount) AS deviation_ticket_amount,
+        RupeeFormat(tsm.deviation_boarding_amount) AS deviation_boarding_amount,
+        RupeeFormat(tsm.deviation_conveyance_amount) AS deviation_conveyance_amount,
+        RupeeFormat(tsm.deviation_miscellaneous_amount) AS deviation_miscellaneous_amount,
+        RupeeFormat(tsm.finance_approved_ticket_amount) AS tic_approved_amount,
+        RupeeFormat(tsm.finance_approved_lodging_amount) AS  lod_approved_amount,
+        RupeeFormat(tsm.finance_approved_boarding_amount)  AS boar_approved_amount,
+        RupeeFormat(tsm.finance_approved_conveyance_amount) AS  con_approved_amount,
+        RupeeFormat(tsm.finance_approved_miscellaneous_amount)  AS mis_approved_amount,
+        RupeeFormat(tsm.fincance_approved_total_amount)  AS tot_approved_amount,
+        RupeeFormat(tsm.deviation_total_amount) AS deviation_total_amount,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        tsm.amount_tobe_recovered AS amount_tobe_recovered,
+        tsm.amount_tobe_deposited AS amount_tobe_deposited,
+        RupeeFormat(tsm.actual_lodging_tax) AS actual_lodging_tax ,        
+        RupeeFormat(tsm.actual_lodging_tax_total) AS actual_lodging_tax_total,
+        RupeeFormat(tsm.actual_ticket_tax) AS actual_ticket_tax,
+        RupeeFormat(tsm.actual_ticket_tax_total) AS actual_ticket_tax_total ,
+        RupeeFormat(tsm.actual_boarding_tax) AS actual_boarding_tax,
+        RupeeFormat(tsm.actual_boarding_tax_total) AS actual_boarding_tax_total,
+        RupeeFormat(tsm.actual_conveyance_tax) AS actual_conveyance_tax,
+        RupeeFormat(tsm.actual_conveyance_tax_total) AS actual_conveyance_tax_total,
+        RupeeFormat(tsm.actual_miscellaneous_tax) AS actual_miscellaneous_tax,
+        RupeeFormat(tsm.actual_miscellaneous_tax_total) AS actual_miscellaneous_tax_total,
+        RupeeFormat(tsm.company_lodging_tax) AS company_lodging_tax,
+        RupeeFormat(tsm.company_lodging_tax_total) AS company_lodging_tax_total,
+        RupeeFormat(tsm.company_ticket_tax) AS company_ticket_tax,
+        RupeeFormat(tsm.company_ticket_tax_total) AS company_ticket_tax_total,
+        RupeeFormat(tsm.company_boarding_tax) AS company_boarding_tax,
+        RupeeFormat(tsm.company_boarding_tax_total) AS company_boarding_tax_total,
+        RupeeFormat(tsm.company_conveyance_tax) AS company_conveyance_tax,
+        RupeeFormat(tsm.company_conveyance_tax_total) AS company_conveyance_tax_total,
+        RupeeFormat(tsm.company_miscellaneous_tax) AS company_miscellaneous_tax,
+        RupeeFormat(tsm.company_miscellaneous_tax_total) AS company_miscellaneous_tax_total,
+        RupeeFormat(tsm.company_total_tax) AS company_total_tax,
+        RupeeFormat(tsm.company_total_tax_total) AS company_total_tax_total,
+        RupeeFormat(tsm.actual_total_tax) AS actual_total_tax,
+        RupeeFormat(tsm.actual_total_tax_total) AS actual_total_tax_total,
+        tsm.status AS STATUS
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN cities AS fc ON(fc.id = tsm.from_city)
+        LEFT JOIN cities AS tc ON(tc.id = tsm.to_city)
+        WHERE tsm.master_id =#masterId# 
+    </select>
+    <select id="getRMPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name) 
+        WHERE tm.rm_id = #employeeId# AND tm.travel_type='D' and tsm.status = '12' AND tsm.deviation='Y'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <select id="getRMProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name) 
+        WHERE tm.rm_approved_by = #employeeId# AND tm.travel_type='D' and tsm.status <![CDATA[ > ]]> 12 AND tsm.deviation='Y'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    <select id="getBUHPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">  
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        DATE_FORMAT(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        DATE_FORMAT(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tm.unit_id = app.company_structure_id AND app.category = 'b')
+        WHERE app.employee_id = #employeeId# AND tm.travel_type='D' AND tsm.status = '13' AND tsm.deviation='Y' AND tm.settlement_type='h'
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <select id="getBUHProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tm.unit_id = app.company_structure_id AND app.category = 'b' AND app.employee_id = tm.buh_id)
+        WHERE tsm.buh_approver_id = #employeeId# AND tm.travel_type='D' and tsm.status <![CDATA[ > ]]> 13 AND tsm.deviation='Y'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    <select id="getCFOPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">  
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 'c')
+        WHERE app.employee_id =  #employeeId# AND tm.travel_type='D' AND tsm.status = '15' AND tsm.deviation='Y' AND tsm.cfo_action_required = 'Y'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <select id="getCFOProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 'c')
+        WHERE tsm.cfo_approver_id = #employeeId# AND tm.travel_type='D' and tsm.status <![CDATA[ > ]]> 15 AND tsm.deviation='Y' AND tsm.cfo_action_required = 'Y'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    <select id="getFinancePendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">  
+<!--        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tm.unit_id = app.company_structure_id AND app.category = 'f')
+        WHERE tm.travel_type='D' AND ((tsm.status = 12 AND tsm.deviation='N') OR (tsm.status = 13 AND tsm.deviation='Y' AND tm.settlement_type = 'c') OR (tsm.status = 17 AND tsm.deviation='Y' AND tsm.cfo_action_required = 'Y') OR (tsm.status = 15 AND tsm.deviation='Y' AND tsm.cfo_action_required = 'N'))  AND app.employee_id = #employeeId#
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;-->
+        SELECT a.id,a.ticketRefId, a.masterId, a.employeeName, travelStartDate, 
+        CASE WHEN a.withBill > 0 THEN "With Bill" ELSE "Without Bill" END AS travelEndDate, 
+        a.statusDesc, a.billReceivedDate FROM(
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.submitted_date,"%d-%b-%Y") AS travelStartDate,
+        (SELECT COUNT(id) FROM tp_expense_details AS tedb WHERE tedb.tp_settlement_id = tsm.id AND tedb.settlement_by ='e' AND tedb.deleted = 0 AND tedb.with_bill = 'y') AS withBill,
+        (SELECT COUNT(id) FROM tp_expense_details AS tedw WHERE tedw.tp_settlement_id = tsm.id AND tedw.settlement_by ='e' AND tedw.deleted = 0 AND tedw.with_bill = 'n') AS withoutBill,
+        st.status_desc AS statusDesc,
+        date_format(tsm.bill_received_date,"%d-%b-%Y") AS billReceivedDate
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tm.unit_id = app.company_structure_id AND app.category = 'f')
+        WHERE tm.travel_type='D' AND ((tsm.status = 12 AND tsm.deviation='N') OR (tsm.status = 13 AND tsm.deviation='Y' AND tm.settlement_type = 'c') OR (tsm.status = 17 AND tsm.deviation='Y' AND tsm.cfo_action_required = 'Y') OR (tsm.status = 15 AND tsm.deviation='Y' AND tsm.cfo_action_required = 'N'))  AND app.employee_id = #employeeId#
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC) AS a
+    </select>
+    
+    <select id="getFinanceProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(tm.unit_id = app.company_structure_id AND app.category = 'f' AND tsm.finance_approver_id = app.employee_id)
+        WHERE tsm.finance_approver_id is not null AND tm.travel_type='D'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <select id="getTreasuryPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">  
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't')
+        WHERE tm.travel_type='D' AND tsm.status = 19 AND tsm.amount_tobe_recovered = 0 AND app.employee_id = #employeeId#
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    <select id="getTreasuryProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't' AND tsm.treasury_approver_id = app.employee_id)
+        WHERE tsm.treasury_approver_id = #employeeId# AND tm.travel_type='D' 
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <select id="getPayrollPendingList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">  
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't')
+        WHERE tm.travel_type='D' AND tsm.status = 19 AND tsm.amount_tobe_deposited = 0 AND app.employee_id = #employeeId#
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    <select id="getPayrollProcessedList" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id,tm.tp_reference_id AS ticketRefId ,
+        tsm.master_id AS masterId,
+        CONCAT(emp.employee_number,'-',emp.first_name,' ',emp.last_name) AS employeeName,
+        date_format(tsm.from_date_time,"%d-%b-%Y") AS travelStartDate,
+        date_format(tsm.to_date_time,"%d-%b-%Y") AS travelEndDate,
+        st.status_desc AS statusDesc
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON(tm.id = tsm.master_id)
+        LEFT JOIN employees AS emp ON(emp.id=tm.employee_id)
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN tp_approvers AS app ON(app.category = 't' AND tsm.payroll_approver_id = app.employee_id)
+        WHERE tsm.payroll_approver_id = #employeeId# AND tm.travel_type='D'
+        GROUP BY tsm.id
+        ORDER BY tsm.id DESC;
+    </select>
+    
+    <update id="updateRmApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET status = #status#, rm_approver_id = #rm_id#, rm_remarks = #rm_remarks#, rm_approved_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    
+    <update id="updateBuhApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET status = #status#, buh_approver_id = #buh_id#, buh_remarks = #buh_remarks#, buh_approved_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    <update id="updateFinanceApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET amount_tobe_deposited = #tobeDeposited#,
+        amount_tobe_recovered = #tobeRecovered#,
+        status = #status#, finance_approver_id = #finance_id#,
+        finance_approved_ticket_amount = #tic_approved_amount#,
+        finance_approved_lodging_amount = #lod_approved_amount#,
+        finance_approved_boarding_amount = #boar_approved_amount#,
+        finance_approved_conveyance_amount = #con_approved_amount#,
+        finance_approved_miscellaneous_amount = #mis_approved_amount#,
+        fincance_approved_total_amount = #tot_approved_amount#,
+        finance_remarks = #finance_remarks#,
+        finance_approved_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    <update id="updateTreasuryApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET amount_deposited = #depositedAmount# , amount_deposited_date = #depositedDate#, status = #status#, treasury_approver_id = #treasury_id#, treasury_remarks = #treasury_comments#, treasury_action_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    <update id="updateCfoApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET status = #status#, cfo_approver_id = #cfo_id#, cfo_remarks = #cfo_remarks#, cfo_approved_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    <update id="updatePayrollApproval" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET amount_recovered =#recoveredAmount#,amount_recovered_date = #recoveredDate# ,status = #status#, payroll_approver_id = #payroll_id#, payroll_remarks = #payroll_comments#, payroll_action_date = now()
+        WHERE master_id = #masterId#
+    </update>
+    <update id="updateDeviationEmp" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" >
+        UPDATE tp_master SET STATUS = #status# where id = #masterId# 
+    </update>
+    <update id="updateDeviation" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto" >
+        UPDATE tp_master SET STATUS = #status# where id = #masterId#
+    </update>
+    <insert id="uploadAttachment" parameterClass="Map">
+        INSERT INTO tp_attachments 
+        (master_id,file_name,created_date,type)
+        values(#master_id#,#file_name#,#created_date#,#category#)
+        <selectKey resultClass="String" keyProperty="lastInsertId">
+            select last_insert_id() as lastInsertId
+        </selectKey>
+    </insert>
+    <update id="updateAttachment" parameterClass="Map">
+        UPDATE tp_attachments SET
+        file_name = #file_name#,
+        created_date = #created_date#,
+        deleted = #status#,
+        TYPE = #category#
+        WHERE id = #id#
+    </update>
+    <select id="approverDetails" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.master_id AS masterId,
+        tsm.from_date_time AS travelStartDate,
+        tsm.to_date_time AS travelEndDate,
+        tsm.total_days AS travelPeriod,		
+        fromcity.city AS fromCity,
+        tocity.city AS toCity,
+        fromcity.id AS fcityId,
+        tocity.id AS tcityId,
+        tsm.rm_approver_id AS rm_id,
+        CONCAT(rm.employee_number,'-',rm.first_name,' ',rm.last_name) AS rm_name,
+        date_format(tsm.rm_approved_date,"%d-%b-%Y") AS rm_approved_date,
+        tsm.rm_remarks AS rm_remarks,
+        tsm.buh_approver_id AS buh_id,
+        date_format(tsm.buh_approved_date,"%d-%b-%Y") AS buh_approved_date,
+        tsm.buh_remarks AS buh_remarks,
+        CONCAT(buh.employee_number,'-',buh.first_name,' ',buh.last_name) AS buh_name,
+        tsm.cfo_approver_id AS cfo_id,
+        date_format(tsm.cfo_approved_date,"%d-%b-%Y") AS cfo_approved_date,			
+        tsm.cfo_remarks AS cfo_remarks,
+        CONCAT(cfo.employee_number,'-',cfo.first_name,' ',cfo.last_name) AS cfo_name,
+        tsm.treasury_approver_id AS treasury_id,
+        date_format(tsm.treasury_action_date,"%d-%b-%Y") AS treasury_approved_date,
+        tsm.amount_tobe_recovered as amount_tobe_recovered,
+        tsm.amount_tobe_deposited as amount_tobe_deposited,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        CONCAT(treasury.employee_number,'-',treasury.first_name,' ',treasury.last_name) AS treasury_name,
+        tsm.finance_approver_id AS finance_id,
+        date_format(tsm.finance_approved_date,"%d-%b-%Y") AS finance_approved_date,
+        CONCAT(finance.employee_number,'-',finance.first_name,' ',finance.last_name) AS finance_name,
+        tsm.payroll_approver_id AS payroll_id,
+        date_format(tsm.payroll_action_date,"%d-%b-%Y") AS payroll_approved_date
+        FROM tp_settlement_master AS tsm		
+        LEFT JOIN cities AS fromcity ON (fromcity.id = tsm.from_city)
+        LEFT JOIN cities AS tocity ON (tocity.id = tsm.to_city)
+        LEFT JOIN employees AS rm ON(rm.id = tsm.rm_approver_id)
+        LEFT JOIN employees AS buh ON(buh.id = tsm.buh_approver_id)
+        LEFT JOIN employees AS cfo ON(cfo.id = tsm.cfo_approver_id)
+        LEFT JOIN employees AS finance ON(finance.id = tsm.finance_approver_id)
+        LEFT JOIN employees AS treasury ON(treasury.id = tsm.treasury_approver_id)
+        LEFT JOIN employees AS payroll ON(payroll.id = tsm.payroll_approver_id)
+        WHERE tsm.id=#ticketId# 
+    </select>
+    <select id="balCaliculation" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT SUBSTRING_INDEX(tsm.overall_total_amount,'.',1) AS overall_total_amount,
+        SUBSTRING_INDEX(SUM(tad.deposited_amount),'.',1) AS depositedAmount,
+        SUBSTRING_INDEX(tsm.total_lodging_amount,'.',1) AS total_lodging_amount,
+        SUBSTRING_INDEX(tsm.actual_total_tax_total,'.',1) AS totalAmount,
+        SUBSTRING_INDEX(tsm.eligibility_lodging_amount,'.',1) AS lodEliTot,
+        SUBSTRING_INDEX(tsm.company_total_amount,'.',1) AS totalExpance,
+        SUBSTRING_INDEX(tsm.deviation_total_amount,'.',1) AS deviation_total_amount,
+        SUBSTRING_INDEX(tsm.eligibility_total_amount,'.',1) AS totEliTot
+        FROM tp_master AS tm
+        LEFT JOIN tp_advance_details AS tad ON(tad.master_id=tm.id)
+        LEFT JOIN currencies AS c ON(c.id=tad.deposited_currency_id) 
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.master_id = tm.id)
+        WHERE tm.id=#masterId#
+        GROUP BY tm.id
+    </select>
+    <select id="empExpenseList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT ted.id AS id,
+        ted.category_type AS categoryType,
+        cfg.configuration_value AS category,
+        ted.city_id AS cityId,
+        date_format(ted.from_date,"%d-%b-%Y") AS fromDate,
+        date_format(ted.to_date,"%d-%b-%Y") AS toDate,
+        date_format(ted.bill_date,"%d-%b-%Y") AS billDate,
+        ted.with_bill AS bill,
+        city.city AS cityName,
+        ted.settlement_by AS settlementBy,
+        ted.eligible_amount as eligibiityAmount,
+        ted.bill_number AS billNo,
+        ted.amount AS amount,
+        ted.remarks AS remarks,
+        ted.attachment_id AS fileId,
+        ted.tax AS ticTax,
+        ted.total_amount AS ticTotal,
+        atc.file_name AS file_name
+        FROM tp_expense_details AS ted
+        LEFT JOIN configuration_values AS cfg ON(cfg.configuration_key = ted.category_type AND cfg.parent_id=462)
+        LEFT JOIN cities AS city ON(city.id = ted.city_id)
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.id=ted.tp_settlement_id)
+        LEFT JOIN tp_attachments AS atc ON(atc.id = ted.attachment_id)
+        WHERE tsm.master_id = #masterId# AND settlement_by = 'e'  AND ted.deleted ='0'
+        ORDER BY ted.category_type
+    </select>
+    <select id="editAdminTicExpense"  parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tt.id AS ticketId,
+        tt.from_city AS fcityId,
+        fcity.city AS fromCity,
+        "250" AS category,
+        tt.to_city AS tcityId,
+        tcity.city AS toCity,
+        DATE_FORMAT(tt.travel_date ,"%d-%b-%Y") AS travelDate,
+        tt.booking_type AS bookingType,
+        tt.booking_status AS bookingStatus ,
+        ted.bill_number AS billNo,
+        ted.invoice AS invoiceStat,
+        ted.tax AS ticTax,
+        ted.total_amount AS ticTotal,
+        ted.amount AS amount,
+        atc.file_name AS file_name,
+        ted.remarks AS remarks,
+        ted.attachment_id AS fileId,
+        ted.with_bill AS bill,
+	DATE_FORMAT(ted.from_date,"%d-%b-%Y") AS fromDate,
+        DATE_FORMAT(ted.to_date,"%d-%b-%Y") AS toDate,
+        DATE_FORMAT(ted.bill_date,"%d-%b-%Y") AS billDate,        
+        tt.is_settlement_added AS isSettlementAdded
+        FROM tp_travel_ticket AS tt 
+        LEFT JOIN cities AS fcity ON(fcity.id=tt.from_city)
+        LEFT JOIN cities AS tcity ON(tcity.id=tt.to_city)
+        LEFT JOIN tp_expense_details AS ted ON(ted.travel_id = tt.id)
+        LEFT JOIN tp_attachments AS atc ON(atc.id = ted.attachment_id)
+        WHERE tt.master_id=#masterId#
+        AND tt.booking_type='co'
+        AND tt.booking_status='Y'
+    </select>
+    <select id="editAdminHotExpense" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tt.id AS ticketId,
+        tt.from_city AS fcityId,
+        fcity.city AS fromCity,
+        "250" AS category,
+        tt.to_city AS tcityId,
+        tcity.city AS toCity,
+        ted.invoice AS invoiceStat,
+        ted.amount AS amount,
+        ted.remarks AS remarks,        
+        DATE_FORMAT(tt.travel_date ,"%d-%b-%Y") AS travelDate,
+        tt.booking_type AS bookingType,
+        tt.booking_status AS bookingStatus ,
+        ted.bill_number AS billNo,
+        atc.file_name AS file_name,
+        ted.attachment_id AS fileId,
+        ted.tax AS tax,
+        ted.total_amount AS ticTotal,
+        ted.with_bill AS bill,
+	DATE_FORMAT(ted.from_date,"%d-%b-%Y") AS fromDate,
+        DATE_FORMAT(ted.to_date,"%d-%b-%Y") AS toDate,
+        DATE_FORMAT(ted.bill_date,"%d-%b-%Y") AS billDate,        
+        tt.is_settlement_added AS isSettlementAdded
+        FROM tp_travel_ticket AS tt 
+        LEFT JOIN cities AS fcity ON(fcity.id=tt.from_city)
+        LEFT JOIN cities AS tcity ON(tcity.id=tt.to_city)
+        LEFT JOIN tp_expense_details AS ted ON(ted.travel_id = tt.id)
+        LEFT JOIN tp_attachments AS atc ON(atc.id = ted.attachment_id)
+        WHERE tt.master_id=#masterId#
+        AND tt.booking_type='co'
+        AND tt.booking_status='Y'
+    </select>
+    <select id="adminExpenseList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT ted.category_type AS categoryType,
+        cfg.configuration_value AS category,
+        ted.city_id AS cityId,
+        date_format(ted.from_date,"%d-%b-%Y") AS fromDate,
+        date_format(ted.to_date,"%d-%b-%Y") AS toDate,
+        date_format(ted.bill_date,"%d-%b-%Y") AS billDate,
+        ted.with_bill AS bill,
+        city.city AS cityName,
+        CASE WHEN ted.invoice = 'C' THEN "Credit Note"
+	WHEN ted.invoice = 'I' THEN "Invoice" 
+	ELSE " "
+	END AS invoiceStat,
+        ted.settlement_by AS settlementBy,
+        ted.bill_number AS billNo,
+        ted.amount AS amount,
+        ted.tax AS ticTax,
+        ted.total_amount AS ticTotal,
+        ted.remarks AS remarks,
+        ted.attachment_id AS fileId,
+        atc.file_name AS file_name
+        FROM tp_expense_details AS ted
+        LEFT JOIN configuration_values AS cfg ON(cfg.configuration_key = ted.category_type AND cfg.parent_id=462)
+        LEFT JOIN cities AS city ON(city.id = ted.city_id)
+        LEFT JOIN tp_settlement_master AS tsm ON(tsm.id=ted.tp_settlement_id)
+        LEFT JOIN tp_attachments AS atc ON(atc.id = ted.attachment_id)
+        WHERE tsm.master_id = #masterId# AND settlement_by = 'a'  AND ted.deleted ='0'
+    </select>
+    <select id="approvelStatus" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tsm.id AS id, tsm.master_id AS masterId,
+        rm_approver_id AS rm_id,
+        CONCAT(rm.employee_number,' - ',rm.first_name,' ',rm.last_name) AS rm_name, 
+        DATE_FORMAT(tsm.rm_approved_date,"%d-%b-%Y") AS rm_approved_date,
+        tsm.rm_remarks AS rm_remarks,
+        tsm.buh_approver_id AS buh_id,
+        CONCAT(buh.employee_number,' - ',buh.first_name,' ',buh.last_name) AS buh_name,
+        DATE_FORMAT(tsm.buh_approved_date,"%d-%b-%Y") AS buh_approved_date,
+        tsm.buh_remarks AS buh_remarks,
+        tsm.cfo_approver_id AS cfo_id,
+        CONCAT(cfo.employee_number,' - ',cfo.first_name,' ',cfo.last_name) AS cfo_name,
+        DATE_FORMAT(tsm.cfo_approved_date,"%d-%b-%Y") AS cfo_approved_date,
+        tsm.cfo_remarks AS cfo_remarks,
+        tsm.finance_approver_id AS finance_id,
+        CONCAT(finance.employee_number,' - ',finance.first_name,' ',finance.last_name) AS finance_name,
+        DATE_FORMAT(tsm.finance_approved_date,"%d-%b-%Y") AS finance_approved_date,
+        tsm.finance_remarks AS finance_remarks,
+        tsm.payroll_approver_id AS payroll_id,
+        CONCAT(payroll.employee_number,' - ',payroll.first_name,' ',payroll.last_name) AS payroll_name,
+        tsm.amount_tobe_recovered AS tobeRecovered,
+        DATE_FORMAT(tsm.payroll_action_date,"%d-%b-%Y") AS payroll_approved_date,
+        DATE_FORMAT(tsm.amount_recovered_date,"%d-%b-%Y") AS recoveredDate,
+        tsm.amount_tobe_recovered AS amount_tobe_recovered,
+        tsm.amount_recovered AS recoveredAmount,
+        tsm.payroll_remarks AS payroll_remarks,
+        tsm.treasury_approver_id AS treasury_id,
+        CONCAT(treasury.employee_number,' - ',treasury.first_name,' ',treasury.last_name) AS treasury_name,
+        DATE_FORMAT(tsm.treasury_action_date,"%d-%b-%Y") AS treasury_approved_date,
+        DATE_FORMAT(tsm.amount_deposited_date,"%d-%b-%Y") AS depositedDate,
+        tsm.amount_tobe_deposited AS tobeDeposited,
+        tsm.amount_deposited AS depositedAmount,
+        tsm.treasury_remarks AS treasury_remarks,
+        st.status_desc AS statusDesc,         
+        tsm.deviation AS deviation,
+        tsm.cfo_action_required AS cfo_action,
+        tsm.overall_deviation_percentage AS overall_deviation_percentage,
+        tsm.status AS stastus
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_status_config AS st ON(tsm.status=st.status_name)
+        LEFT JOIN employees AS rm ON (tsm.rm_approver_id = rm.id)
+        LEFT JOIN employees AS buh ON (tsm.buh_approver_id = buh.id)
+        LEFT JOIN employees AS cfo ON (tsm.cfo_approver_id = cfo.id)
+        LEFT JOIN employees AS finance ON (tsm.finance_approver_id = finance.id)
+        LEFT JOIN employees AS payroll ON (tsm.payroll_approver_id = payroll.id)
+        LEFT JOIN employees AS treasury ON (tsm.treasury_approver_id = treasury.id)
+        WHERE tsm.master_id=#masterId#
+    </select>
+    <select id="getBuh" parameterClass="java.lang.String" resultClass="java.lang.String">
+        SELECT employee_id FROM tp_approvers WHERE category = 'b' AND company_structure_id = #structure_id#
+    </select>
+    <select id="getCfo" resultClass="java.lang.String">
+        SELECT employee_id FROM tp_approvers WHERE category = 'c'
+    </select>
+    <update id="updateExpenses" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_expense_details SET 
+        category_type = #category#,
+        bill_number = #billNo#, 
+        bill_date = #billDate#,
+        amount = #amount# ,
+        attachment_id = #attachmentId# ,
+        with_bill = #bill#,
+        settlement_by = #settlementBy#,
+        city_id = #cityId# ,
+        from_date = #fromDate#,
+        to_date = #toDate#,
+        remarks = #remarks#,
+        deleted = #delstatus#,
+        eligible_amount = #eligibiityAmount#,
+        invoice = #invoiceStat#,
+        tax = #tax#,
+        total_amount = #ticTotal#,
+        vendor = #vendor_name#,
+        created_date = CURDATE()
+        WHERE id=#id#
+    </update>
+    <select id="getAttachments" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT id AS fileId, file_name AS file_name,type AS categoryType FROM tp_attachments WHERE master_id =#masterId#
+        AND TYPE IN (250,251,252,253,254) and deleted=0
+    </select>
+    <update id="updateFile" parameterClass="Map">
+        UPDATE tp_attachments SET file_name = #file_name#,
+        created_date = #created_date#,
+        TYPE = #category#
+        WHERE id= #id#
+    </update>    
+    <select id="isEmpSettlementAdded" parameterClass="java.lang.String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+         SELECT ted.id AS id,
+            ted.category_type AS categoryType,       
+            ted.city_id AS cityId,
+            DATE_FORMAT(ted.from_date,"%d-%b-%Y") AS fromDate,
+            DATE_FORMAT(ted.to_date,"%d-%b-%Y") AS toDate
+            FROM tp_expense_details AS ted
+            LEFT JOIN tp_settlement_master AS tsm ON(tsm.id=ted.tp_settlement_id)
+	WHERE tsm.master_id = #masterId# AND ted.settlement_by='e'
+    </select>  
+    <select id="getConfigValueData" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT configuration_key AS configKey, configuration_value AS configValue FROM configuration_values  WHERE parent_id = 10;
+    </select>
+    <select id="getEmployeeMailId" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT CONCAT(first_name,' ', last_name) AS employee_name, work_email_address AS mail_id FROM employees WHERE id = #emp_id#;    
+    </select>
+    <select id="getTravelFinanceDetails" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT tm.employee_id AS emp_id,
+        tm.tp_reference_id as ticketRefId,
+        tm.unit_id AS practiceGroupId,
+        tsm.amount_tobe_recovered AS tobeRecovered,
+        tsm.amount_tobe_deposited AS tobeDeposited
+        FROM tp_settlement_master AS tsm
+        LEFT JOIN tp_master AS tm ON tsm.master_id = tm.id
+        WHERE tsm.master_id = #masterId#
+    </select>
+    <select id="getFinanceMailId" parameterClass="String" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 'f' AND tp.company_structure_id = #practiceGroupId#
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    <select id="getTreasuryMailId" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 't'
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    <select id="getPayrollMailId" resultClass="String">
+        SELECT GROUP_CONCAT(work_email_address) AS mail_id 
+        FROM employees AS emp
+        LEFT JOIN tp_approvers AS tp ON tp.employee_id = emp.id
+        WHERE tp.category = 'p'
+        AND emp.employment_status NOT IN('r','t','b','q','o','y'); 
+    </select>
+    <select id="travelCities" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT ttt.id AS ticketId,
+        ttt.from_city AS fcityId,        
+        ttt.to_city AS tcityId,
+        fc.city AS fromCity,       
+        tc.city AS toCity      
+        FROM tp_travel_ticket AS ttt
+        LEFT JOIN cities AS fc ON ttt.from_city = fc.id
+        LEFT JOIN cities AS tc ON ttt.to_city = tc.id 
+        WHERE ttt.master_id = #masterId# AND ttt.booking_status = 'Y'
+        AND ttt.deleted = 0           
+	ORDER BY ttt.id ASC
+	LIMIT 1
+    </select>
+    <select id="vendorList" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT id AS vendor_id, CONCAT(name," - ",code) AS vendor_name  FROM vendors WHERE category_id = 3
+    </select>
+    <select id="getCityList" parameterClass="String" resultClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        SELECT id AS cityId, city AS cityName FROM cities WHERE country_id = #countryId# GROUP BY city order by city
+    </select>
+    <update id="updateBillDetails" parameterClass="com.defiance.ideal.travelplan.dto.TravelSettlementDto">
+        UPDATE tp_settlement_master SET bill_received = #billReceived#, bill_received_date = #billReceivedDate# WHERE master_id=#masterId#;
+    </update>
+</sqlMap>
+

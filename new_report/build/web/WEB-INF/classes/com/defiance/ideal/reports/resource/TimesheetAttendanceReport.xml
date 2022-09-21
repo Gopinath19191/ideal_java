@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="AttendanceReportMap">
+    
+    <select id="getEmpName" parameterClass="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO" resultClass="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO">
+        SELECT
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employee_name,
+        CONCAT( EmployeeManager.employee_number, ' - ', EmployeeManager.first_name, ' ', EmployeeManager.last_name ) AS manager_name
+        FROM employees AS Employee
+        LEFT JOIN employees as EmployeeManager on Employee.manager=EmployeeManager.id
+        WHERE Employee.id=#loggedInempId# and EmployeeManager.employment_status IN ('p','v','g','d','e') AND Employee.employment_status IN ('p','v','g','d','e')
+    </select>
+    
+    <parameterMap class="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO" id="reportFilterMap">
+        <parameter property="fromDate" jdbcType="DATE" mode="IN" />
+        <parameter property="toDate" jdbcType="DATE" mode="IN" />
+        <parameter property="loggedInempId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="unit" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <select id="getTimesheetAttendanceReport" parameterClass="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO" resultClass="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO">
+        call PR_EMPLOYEE_ATTENDANCE_TIMESHEET (#fromDate#,#toDate#,#loggedInempId#,null)
+    </select>
+    
+    <select id="getEmployeesList" parameterClass="java.lang.String" resultClass="com.defiance.ideal.reports.dto.TimesheetAttendanceReportDTO">
+        SELECT Employee.id AS employee_no,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS employee_name
+        FROM employees AS Employee
+        WHERE Employee.manager=#id#
+        AND Employee.employment_status IN ('p','v','g','d','e')
+    </select>
+    
+</sqlMap>

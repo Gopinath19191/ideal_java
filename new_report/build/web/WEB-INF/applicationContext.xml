@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+    
+   <!-- <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:location="/WEB-INF/jdbc.properties" /> -->
+
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+          <!--<property name="location" value="/WEB-INF/app.properties" />-->
+        <property name="locations" >
+            <list>
+                <value>/WEB-INF/jdbc.properties</value>
+                <value>/WEB-INF/config.properties</value>
+            </list>
+        </property>
+    </bean>
+    
+<!--    class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+    class="org.apache.commons.dbcp.BasicDataSource"-->
+
+    <bean id="dataSource"
+          class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+          p:driverClassName="${jdbc.driverClassName}"
+          p:url="${jdbc.url}"
+          p:username="${jdbc.username}"
+          p:password="${jdbc.password}" />
+        
+<!--    <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="${jndi.name}"/>
+    </bean>-->
+    <!-- ADD PERSISTENCE SUPPORT HERE (jpa, hibernate, etc) -->
+
+    <bean id="sqlMap" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="configLocation">
+            <value>/WEB-INF/sqlMapConfig.xml</value>
+        </property>
+        
+        <property name="dataSource" ref="dataSource" />
+        <property name="useTransactionAwareDataSource" value="true"/>
+<!--        <property value="15" name="Pool.MaximumActiveConnections"/>
+        <property value="15" name="Pool.MaximumIdleConnections"/>
+        <property value="1000" name="Pool.MaximumWait"/>-->
+    </bean>
+
+    <bean id="ReportsDao" class="com.defiance.ideal.reports.dao.ReportsDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+
+    <bean id="ReportsService" class="com.defiance.ideal.reports.service.ReportsServiceImpl">
+        <property name="loginDao">
+            <ref local="ReportsDao"/>
+        </property>
+        <property name="fullReportDAOImpl" ref="ReportsDao"></property>
+    </bean>
+   
+    <bean id="AccrualDao" class="com.defiance.ideal.reports.dao.AccrualDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+
+    <bean id="AccrualService" class="com.defiance.ideal.reports.service.AccrualServiceImpl">
+        <property name="accrualDao">
+            <ref local="AccrualDao"/>
+        </property>
+    </bean>
+
+    <bean id="AssociateTimesheetDao" class="com.defiance.ideal.reports.dao.AssociateTimesheetDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+
+    <bean id="AssociateTimesheetService" class="com.defiance.ideal.reports.service.AssociateTimesheetServiceImpl">
+        <property name="associateTimesheetDao">
+            <ref local="AssociateTimesheetDao"/>
+        </property>
+    </bean>
+
+
+    <bean id="AuthenticatorDao" class="com.defiance.ideal.reports.dao.AuthenticatorDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="AssociateDao" class="com.defiance.ideal.reports.dao.AssociateDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="AssociateService" class="com.defiance.ideal.reports.service.AssociateServiceImpl">
+        <property name="daoImpl">
+            <ref local="AssociateDao"/>
+        </property>
+    </bean>
+    
+    <bean id="EmployeeBasicReportService" class="com.defiance.ideal.reports.service.EmployeeBasicReportServiceImpl">
+        <property name="daoImpl">
+            <ref local="EmployeeBasicReportDAO"/>
+        </property>
+    </bean>
+    
+    
+    <bean id="EmployeeBasicReportDAO" class="com.defiance.ideal.reports.dao.EmployeeBasicReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    
+    
+   
+    <bean id="BillableDao" class="com.defiance.ideal.reports.dao.BillableStatusDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+
+    <bean id="BillableService" class="com.defiance.ideal.reports.service.BillableStatusServiceImpl">
+        <property name="billableDao">
+            <ref local="BillableDao"/>
+        </property>
+    </bean>
+    <bean id="BillableHoursDao" class="com.defiance.ideal.reports.dao.BillableHoursDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+
+    <bean id="BillableHoursService" class="com.defiance.ideal.reports.service.BillableHoursServiceImpl">
+        <property name="billableHoursDao">
+            <ref local="BillableHoursDao"/>
+        </property>
+    </bean>
+    <bean id="ProjectCompletionDao" class="com.defiance.ideal.reports.dao.ProjectCompletionDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+    <bean id="ProjectCompletionService" class="com.defiance.ideal.reports.service.ProjectCompletionServiceImpl">
+        <property name="projectCompletionDao">
+            <ref local="ProjectCompletionDao"/>
+        </property>
+    </bean>
+
+
+    <bean id="BenchReportDao" class="com.defiance.ideal.reports.dao.BenchReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+      <!--<property name="bandId" value="${Band.ID}" />-->
+    </bean>
+    <bean id="BenchReportService" class="com.defiance.ideal.reports.service.BenchReportServiceImpl">
+        <property name="benchReportDao">
+            <ref local="BenchReportDao"/>
+        </property>
+    </bean>
+
+    
+    <bean id="MonthlyLeaveDao" class="com.defiance.ideal.reports.dao.MonthlyLeaveDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+<!--        <property name="sbuId" value="${SBU.ID}" />-->
+    </bean>
+    <bean id="MonthlyLeaveService" class="com.defiance.ideal.reports.service.MonthlyLeaveServiceImpl">
+        <property name="monthlyLeaveDao">
+            <ref local="MonthlyLeaveDao"/>
+        </property>
+    </bean>
+    <bean id="EarnedLeaveDao" class="com.defiance.ideal.reports.dao.EarnedLeaveDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+    <bean id="EarnedLeaveService" class="com.defiance.ideal.reports.service.EarnedLeaveServiceImpl">
+        <property name="earnedLeaveDao">
+            <ref local="EarnedLeaveDao"/>
+        </property>
+    </bean>
+    
+    <bean id="VarianceDao" class="com.defiance.ideal.reports.dao.VarianceDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+    <bean id="VarianceService" class="com.defiance.ideal.reports.service.VarianceServiceImpl">
+        <property name="varianceDao">
+            <ref local="VarianceDao"/>
+        </property>
+    </bean>
+    
+    <bean id="CustagingReportService" class="com.defiance.ideal.reports.service.CustagingReportServiceImpl">
+        <property name="custagingReportDaoImpl">
+            <ref local="CustagingReportDao"/>
+        </property>
+    </bean>
+    <bean id="CustagingReportDao" class="com.defiance.ideal.reports.dao.CustagingReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    <bean id="CollectionReportService" class="com.defiance.ideal.reports.service.CollectionReportServiceImpl">
+        <property name="collectionReportDaoImpl">
+            <ref local="CollectionReportDao"/>
+        </property>
+    </bean>
+    <bean id="CollectionReportDao" class="com.defiance.ideal.reports.dao.CollectionReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    <bean id="ProjectReportDao" class="com.defiance.ideal.reports.dao.ProjectReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="ProjectReportService" class="com.defiance.ideal.reports.service.ProjectReportServiceImpl">
+        <property name="projectReportDaoImpl">
+            <ref local="ProjectReportDao"/>
+        </property>
+    </bean>
+    
+    <bean id="PurchaseOrderReportDao" class="com.defiance.ideal.reports.dao.PurchaseOrderReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="PurchaseOrderReportService" class="com.defiance.ideal.reports.service.PurchaseOrderReportServiceImpl">
+        <property name="purchaseOrderReportDaoImpl">
+            <ref local="PurchaseOrderReportDao"/>
+        </property>
+    </bean>
+
+
+    <bean id="TravelReportDao" class="com.defiance.ideal.reports.dao.TravelReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="TravelReportService" class="com.defiance.ideal.reports.service.TravelReportServiceImpl">
+        <property name="travelReportDaoImpl">
+            <ref local="TravelReportDao"/>
+        </property>
+    </bean>
+    
+    <bean id="ProjectFinanceReportDao" class="com.defiance.ideal.reports.dao.ProjectFinanceReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="ProjectFinanceReportService" class="com.defiance.ideal.reports.service.ProjectFinanceReportServiceImpl">
+        <property name="projectFinanceReportDaoImpl">
+            <ref local="ProjectFinanceReportDao"/>
+        </property>
+    </bean>
+
+    <bean id="RollOutDao" class="com.defiance.ideal.reports.dao.RollOutDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="RollOutService" class="com.defiance.ideal.reports.service.RollOutServiceImpl">
+        <property name="rollOutDaoImpl">
+            <ref local="RollOutDao"/>
+        </property>
+    </bean>
+    
+    <bean id="TeamAllocationReportDao" class="com.defiance.ideal.reports.dao.TeamAllocationReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="TeamAllocationReportService" class="com.defiance.ideal.reports.service.TeamAllocationReportServiceImpl">
+        <property name="teamAllocationReportDaoImpl">
+            <ref local="TeamAllocationReportDao"/>
+        </property>
+    </bean>
+    
+     <bean id="ExitReportDao" class="com.defiance.ideal.reports.dao.ExitReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="ExitReportService" class="com.defiance.ideal.reports.service.ExitReportServiceImpl">
+        <property name="exitreportDaoImpl">
+            <ref local="ExitReportDao"/>
+        </property>
+    </bean>
+     <bean id="Birthday_AnniversaryDao" class="com.defiance.ideal.reports.dao.Birthday_AnniversaryDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="Birthday_AnniversaryService" class="com.defiance.ideal.reports.service.Birthday_AnniversaryServiceImpl">
+        <property name="birthday_AnniversaryDao">
+            <ref local="Birthday_AnniversaryDao"/>
+        </property>
+    </bean>
+   <bean id="AnnualAppraisalDaoImpl" class="com.defiance.ideal.reports.dao.AnnualAppraisalDaoImpl">
+         <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+   </bean>
+   
+   <bean id="Subordinate_LeaveDao" class="com.defiance.ideal.reports.dao.SubordinateLeaveDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="Subordinate_LeaveService" class="com.defiance.ideal.reports.service.SubordinateLeaveServiceImpl">
+        <property name="subordinate_leaveDao">
+            <ref local="Subordinate_LeaveDao"/>
+        </property>
+    </bean>
+    
+    <bean id="Billing_Invoice_Report_Dao" class="com.defiance.ideal.reports.dao.BillingInvoiceReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+        <property name="sbuId" value="${SBU.ID}" />
+    </bean>
+    
+    <bean id="Billing_Invoice_Report_Service" class="com.defiance.ideal.reports.service.BillingInvoiceReportServiceImpl">
+        <property name="billing_Invoice_Report_Dao">
+            <ref local="Billing_Invoice_Report_Dao"/>
+        </property>
+    </bean>
+    
+    <bean id="AddressDao" class="com.defiance.ideal.reports.dao.AddressDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="AddressService" class="com.defiance.ideal.reports.service.AddressServiceImpl">
+        <property name="addressImpl">
+            <ref local="AddressDao"/>
+        </property>
+    </bean>
+    
+    <bean id="ApprovalDAO" class="com.defiance.ideal.reports.dao.ApprovalDAOImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="ApprovalService" class="com.defiance.ideal.reports.service.ApprovalServiceImpl">
+        <property name="approvalDaoImplObj">
+            <ref local="ApprovalDAO"/>
+        </property>
+    </bean>
+    
+        <bean id="RMNonComplianceDao" class="com.defiance.ideal.reports.dao.RMNoncomplianceDAOImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+
+    <bean id="RMNonComplianceService" class="com.defiance.ideal.reports.service.RMNoncomplianceServiceImpl">
+        <property name="RMNonComplianceDao">
+            <ref local="RMNonComplianceDao"/>
+        </property>
+    </bean>
+    
+    <bean id="EffortsLeakageDao" class="com.defiance.ideal.reports.dao.EffortsLeakageDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="EffortsLeakageService" class="com.defiance.ideal.reports.service.EffortsLeakageServiceImpl">
+        <property name="dao">
+            <ref local="EffortsLeakageDao"/>
+        </property>
+    </bean>
+    
+    <bean id="VendorContractExportDao" class="com.defiance.ideal.reports.dao.VendorContractExportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="VendorContractExportService" class="com.defiance.ideal.reports.service.VendorContractExportServiceImpl">
+        <property name="dao">
+            <ref local="VendorContractExportDao"/>
+        </property>
+    </bean>
+    
+    <bean id="unBillableHoursService" class="com.defiance.ideal.reports.service.UnBillabelHoursServiceImpl">
+        <property name="dao">
+            <ref local="unBillableHoursDao"></ref>
+        </property>
+    </bean>
+    <bean id="unBillableHoursDao" class="com.defiance.ideal.reports.dao.UnBillabelHoursDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"></ref>
+        </property>
+    </bean>
+    
+    <bean id="leaveReportService" class="com.defiance.ideal.reports.service.LeaveReportServiceImpl">
+        <property name="dao">
+            <ref local="leaveReportDao"></ref>
+        </property>
+    </bean>
+    <bean id="leaveReportDao" class="com.defiance.ideal.reports.dao.LeaveReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"></ref>
+        </property>
+    </bean>
+    <bean id="HrPersonalDao" class="com.defiance.ideal.reports.dao.HrPersonalDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"></ref>
+        </property>
+    </bean>
+  <bean id="HrPersonalService" class="com.defiance.ideal.reports.service.HrPersonalServiceImpl">
+        <property name="dao">
+            <ref local="HrPersonalDao"/>
+        </property>
+    </bean>
+    <bean id="SkillsDomainsDao" class="com.defiance.ideal.reports.dao.SkillsDomainsDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"></ref>
+        </property>
+    </bean>
+  <bean id="SkillsDomainsService" class="com.defiance.ideal.reports.service.SkillsDomainsServiceImpl">
+        <property name="dao">
+            <ref local="SkillsDomainsDao"/>
+        </property>
+    </bean>
+    
+    <bean id="FranceLeaveReportService" class="com.defiance.ideal.reports.service.FranceLeaveReportServiceImpl">
+        <property name="franceLeaveReportDao" ref="FranceLeaveReportDao"></property>        
+    </bean>
+    
+    <bean id="FranceLeaveReportDao" class="com.defiance.ideal.reports.dao.FranceLeaveReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="TimesheetAttendanceReportService" class="com.defiance.ideal.reports.service.TimesheetAttendanceReportServiceImpl">
+        <property name="timesheetAttendanceReportDao" ref="TimesheetAttendanceReportDao"></property>        
+    </bean>
+    
+    <bean id="TimesheetAttendanceReportDao" class="com.defiance.ideal.reports.dao.TimesheetAttendanceReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="PrTimesheetLekageReportDao" class="com.defiance.ideal.reports.dao.PrTimesheetLekageReportDaoImpl">
+        <property name="sqlMapClient">
+            <ref local="sqlMap"/>
+        </property>
+    </bean>
+    
+    <bean id="PrTimesheetLekageReportService" class="com.defiance.ideal.reports.service.PrTimesheetLekageReportServiceImpl">
+        <property name="dao" ref="PrTimesheetLekageReportDao"></property>        
+    </bean>
+    
+    
+</beans>

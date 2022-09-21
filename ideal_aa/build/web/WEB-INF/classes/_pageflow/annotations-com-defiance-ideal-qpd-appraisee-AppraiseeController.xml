@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<processed-annotations>
+  <!-- Generated from com.defiance.ideal.qpd.appraisee.AppraiseeController on Fri Jul 06 10:18:40 IST 2012 -->
+  <type-name>com.defiance.ideal.qpd.appraisee.AppraiseeController</type-name>
+  <annotated-element>
+    <element-name>controlObj</element-name>
+    <annotation>
+      <annotation-name>org.apache.beehive.controls.api.bean.Control</annotation-name>
+    </annotation>
+  </annotated-element>
+  <annotated-element>
+    <element-name>sharedControlObj</element-name>
+    <annotation>
+      <annotation-name>org.apache.beehive.controls.api.bean.Control</annotation-name>
+    </annotation>
+  </annotated-element>
+</processed-annotations>

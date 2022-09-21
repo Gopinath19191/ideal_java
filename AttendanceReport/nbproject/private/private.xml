@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/D:/Ideal/svn_new/work_spance/AttendanceReport/web/WEB-INF/jsp/adminView.jsp</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/AttendanceReport/src/java/com/attendance/employee/attendance/controllers/AttendanceController.java</file>
+        <file>file:/D:/Ideal/svn_new/work_spance/AttendanceReport/web/WEB-INF/jsp/ajaxsearch.jsp</file>
+    </open-files>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/AttendanceReport/src/java/com/attendance/employee/login/controllers/AuthenticationController.java</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/AttendanceReport/web/WEB-INF/jdbc.properties</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/AttendanceReport/web/redirect.jsp</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/AttendanceReport/src/java/com/attendance/employee/attendance/resource/Attendance.xml</file>
+            <file>file:/D:/Ponraj/Projects/iDeal/Java_Modules/AttendanceReport/web/WEB-INF/jsp/pm_attendance.jsp</file>
+        </group>
+    </open-files>
+</project-private>

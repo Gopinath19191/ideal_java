@@ -1,0 +1,721 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="AttendanceMap">
+    <select id="getSearchList" parameterClass="java.lang.String" resultClass="com.attendance.employee.attendance.dto.AttendanceDto">
+        SELECT 
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employees AS Employee
+        WHERE (Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key# ) AND Employee.employment_status IN ('p','v','g','d','e')    
+    </select>
+    <select id="getSubordinateSearList" parameterClass="java.lang.String" resultClass="com.attendance.employee.attendance.dto.AttendanceDto">
+        SELECT 
+        Employee.id AS empId,
+        CONCAT( Employee.employee_number, ' - ', Employee.first_name, ' ', Employee.last_name ) AS empName
+        FROM employee_temp AS empT
+	LEFT JOIN employees AS Employee ON(empT.emp_id = Employee.id)
+        WHERE Employee.employee_number like #key# OR Employee.first_name like #key# OR Employee.last_name like #key#
+        
+    </select>
+    
+<!--    <parameterMap id="getTempInfoCall" class="map">
+        <parameter property="fromDate" jdbcType="DATE" javaType="java.lang.String" mode="IN"/>
+        <parameter property="toDate" jdbcType="DATE" javaType="java.lang.String" mode="IN"/>
+        <parameter property="id" jdbcType="DATE" javaType="java.lang.String" mode="OUT"/>
+    </parameterMap>
+    <procedure id="getWorkDates" parameterMap="getTempInfoCall">
+        { call getWorkingDays( ?,?,? ) } 
+    </procedure>-->
+    
+<!--<resultMap id = "result" type = "com.attendance.employee.attendance.dto.AttendanceDto">
+      <result property = "id" column = "Id"/>
+      
+   </resultMap>   
+   
+   <select id = "getWorkDates" resultMap = "result" parameterType = "com.attendance.employee.attendance.dto.AttendanceDto" statementType = "CALLABLE">
+      {call getWorkingDays(#{fromDate, jdbcType = DATE, mode = IN},#{toDate, jdbcType = DATE, mode = IN})}
+   </select> -->
+	
+  
+
+    
+<!--    <select id="getAttendanceDetails" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        DATE_FORMAT(temp.work_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+        
+        TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) as timeDuration,
+        
+        'Present' as attendance_status,
+        config.configuration_value as location, cs.name as unit 
+        from temp_table as temp
+        left join employee_attendance as att on (temp.work_date = att.attendance_date)
+        
+       
+        left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+        right join employees as emp on (att.emp_id = emp.id)
+                left join company_structures as cs on (emp.structure_name = cs.id)
+        where 1=1
+        <dynamic>
+            <isNotEmpty prepend="AND" property = "employee_id">
+                att.emp_id = #employee_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property = "rm_id">
+                emp.manager = #rm_id#
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "unit" compareValue="All">
+                emp.structure_name = #unit#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "location" compareValue="All">
+                config.configuration_key = #location#
+            </isNotEqual>
+        </dynamic>
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        order by emp.employee_number,att.attendance_date 
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>-->
+    
+    <select id="getAttendanceDetails" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        
+        select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,        
+        CONCAT(manager.first_name,' ',manager.last_name) as rmName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+        
+        CASE        
+        WHEN att.time_revised IS NOT NULL and att.revised_status = 'a' THEN
+        SEC_TO_TIME(TIME_TO_SEC(TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')))+TIME_TO_SEC(att.time_revised))
+        ELSE TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) 
+        END
+        as timeDuration,
+        
+        att.time_revised as changeTime,
+        config1.configuration_value as reason,
+        att.reason as reasonValue,
+        att.emp_remarks as empRemarks,
+        att.revised_status as revisedStatus,
+        att.rm_remarks as rmRemarks,
+        
+        CASE
+        when (select ewl.location_table as tableLocation from employee_work_location as ewl where ewl.employee_id=att.emp_id) LIKE 'customer_work_locations' then 'Data Not Available'
+        when att.first_in IS not NULL OR att.last_out IS not NULL then 'Data Available'
+
+        when F_EmpLeave_Details(emp.id, att.attendance_date) = 1
+        THEN 'Leave Applied'
+        WHEN att.first_in IS NULL AND att.last_out IS NULL
+        AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Data Not Available'
+        WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'WeekEnd'
+        WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'WeekEnd'
+        END as attendance_status,
+        config.configuration_value as location, cs.name as unit,
+        CASE WHEN F_EmpLocation_Details(emp.id, att.attendance_date) IS NULL
+        THEN 'Not Mapped'
+        ELSE
+        F_EmpLocation_Details(emp.id, att.attendance_date) 
+        END AS workLocation
+        from employee_attendance as att
+        left join employees as emp on (att.emp_id = emp.id)
+        left join employees as manager on (emp.manager = manager.id)
+        left join company_structures as cs on (emp.structure_name = cs.id)
+        left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+        left join configuration_values as config1 on (config1.configuration_key = att.reason and config1.parent_id IN (select id from configuration_values where configuration_key = 'emp_reason_list'))
+        
+        where 1=1 
+        <dynamic>
+            <isNotNull property = "employee_id">
+                <isNotEmpty prepend="AND" property = "employee_id">
+                    emp.id = #employee_id#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property = "rm_id">
+                (emp.manager = #rm_id# OR att.emp_id = #rm_id#)
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "unit" compareValue="All">
+                emp.structure_name = #unit#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "location" compareValue="All">
+                config.configuration_key = #location#
+            </isNotEqual>
+        </dynamic>
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        order by att.attendance_date desc,emp.employee_number
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id = "getAttendanceCount" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "java.lang.Integer">
+        select count(*) from (select att.id as id, emp.id as empId
+        <!--, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+         from_unixtime(((UNIX_TIMESTAMP(STR_TO_DATE(att.last_out, '%H:%i:%s')))-(UNIX_TIMESTAMP(STR_TO_DATE(att.first_in, '%H:%i:%s')))),'%H:%i:%s') AS timeDuration,
+        CASE
+        WHEN att.time_revised IS NULL THEN
+        TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) 
+        WHEN att.time_revised IS NOT NULL THEN
+        SEC_TO_TIME(TIME_TO_SEC(TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')))+TIME_TO_SEC(att.time_revised))
+        END
+        as timeDuration,
+              att.site_code as siteCode, config.configuration_value as department,
+        CASE
+        WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'Saturday' 
+        WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'Sunday'
+              WHEN att.attendance_date between (SELECT MIN(from_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) and (SELECT MAX(to_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) THEN 'Leave Applied'
+        WHEN att.first_in IS NULL AND att.last_out IS NULL AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Swipe Data Not Available'
+        ELSE 'Present'
+        END as attendance_status,
+        config.configuration_value as location, cs.name as unit -->
+        from employee_attendance as att
+        left join employees as emp  on (att.emp_id = emp.id)
+        left join company_structures as cs on (emp.structure_name = cs.id)
+        <!--        left join configuration_values as config on (config.configuration_key = att.department and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_dept'))-->
+        left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+        where 1=1
+        <dynamic>
+            <isNotNull property = "employee_id">
+                <isNotEmpty prepend="AND" property = "employee_id">
+                    emp.id = #employee_id#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <dynamic>
+            <isNotNull prepend="AND" property = "rm_id">
+                (emp.manager = #rm_id# OR att.emp_id = #rm_id#)
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "unit" compareValue="All">
+                emp.structure_name = #unit#
+            </isNotEqual>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotEqual property = "location" compareValue="All">
+                config.configuration_key = #location#
+            </isNotEqual>
+        </dynamic>
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        order by att.attendance_date desc,emp.employee_number) as temp1
+    </select>
+    
+    <select id="getSubordinateDetails" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select id from employees where manager IN ($rm_id$) and employment_status IN('p','d','v','g','c','e')
+    </select>
+    
+    <insert id="insertEmpTemp" parameterClass = "java.lang.String">
+        insert into employee_temp (emp_id) select id from employees where manager IN ($rm_id$) and employment_status IN('p','d','v','g','c','e')
+    </insert>
+    
+    <insert id="insertRmId" parameterClass = "java.lang.String">
+        insert into employee_temp (emp_id) values(#key#)
+    </insert>
+    
+    <procedure id="dropEmpTemp">
+        { call create_employee_temp() } 
+    </procedure>
+    
+    <select id="getSubordinateAttendanceDetails" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        CONCAT(manager.first_name,' ',manager.last_name) as rmName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+        
+        CASE        
+        WHEN att.time_revised IS NOT NULL and att.revised_status = 'a' THEN
+        SEC_TO_TIME(TIME_TO_SEC(TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')))+TIME_TO_SEC(att.time_revised))
+        ELSE TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) 
+        END
+        as timeDuration,
+        
+        att.time_revised as changeTime,
+        config1.configuration_value as reason,
+        att.reason as reasonValue,
+        att.emp_remarks as empRemarks,
+        att.revised_status as revisedStatus,
+        att.rm_remarks as rmRemarks,
+        
+<!--        CASE
+        WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'Week End' 
+        WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'Week End'-->
+        <!--        WHEN att.attendance_date between (SELECT MIN(from_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) and (SELECT MAX(to_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) THEN 'Leave Applied'-->
+<!--        WHEN att.first_in IS NULL AND att.last_out IS NULL AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Data Not Available'
+        ELSE 'Data Available'
+        END as attendance_status,-->
+        
+        CASE
+        when (select Location_table from employee_work_location where employee_id=att.emp_id)='customer_wrk_location' then 'Data Not Available'
+        when att.first_in IS not NULL OR att.last_out IS not NULL then 'Data Available'
+        when F_EmpLeave_Details(emp.id, att.attendance_date) = 1
+        THEN 'Leave Applied'
+        WHEN att.first_in IS NULL AND att.last_out IS NULL
+        AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Data Not Available'
+        WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'WeekEnd'
+        WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'WeekEnd'
+        END as attendance_status,
+        config.configuration_value as location, cs.name as unit,
+        CASE WHEN F_EmpLocation_Details(emp.id, att.attendance_date) IS NULL
+        THEN 'Not Mapped'
+        ELSE
+        F_EmpLocation_Details(emp.id, att.attendance_date) 
+        END AS workLocation
+        from employee_attendance as att
+        
+        left join  employees as emp on (att.emp_id = emp.id)
+        left join employees as manager on (emp.manager = manager.id)
+        <!--        left join employee_temp etemp on (etemp.emp_id = emp.id)-->
+        left join company_structures as cs on (emp.structure_name = cs.id)
+        
+        left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+        left join configuration_values as config1 on (config1.configuration_key = att.reason and config1.parent_id IN (select id from configuration_values where configuration_key = 'emp_reason_list'))
+        
+        where 1=1
+        <dynamic>
+            <isNotNull property = "employee_id">
+                <isNotEmpty prepend="AND" property = "employee_id">
+                    emp.id = #employee_id#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        and att.emp_id IN (select emp_id from employee_temp group by emp_id)
+        <!--        <dynamic>
+            <isNotNull prepend="AND" property = "rm_id">
+                (emp.manager = #rm_id# OR att.emp_id = #rm_id#)
+            </isNotNull>
+        </dynamic>-->
+        <dynamic prepend="AND">
+            <isNotNull property = "unit">
+                <isNotEqual property = "unit" compareValue="All">
+                    emp.structure_name = #unit#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotNull property = "unit">
+                <isNotEqual property = "location" compareValue="All">
+                    config.configuration_key = #location#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+        <!--        <dynamic>
+            <isNotNull property = "directReportee">
+                <isNotEmpty prepend="AND" property = "directReportee">
+                    emp.manager = #directReportee#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>-->
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        order by att.attendance_date desc,emp.employee_number
+        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>
+    </select>
+    
+    <select id="getSubordinateAttendanceCount" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "java.lang.Integer">
+        select count(*) from (select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+        
+        TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) as timeDuration,
+        
+        CASE
+        WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'Saturday' 
+        WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'Sunday'
+        <!--        WHEN att.attendance_date between (SELECT MIN(from_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) and (SELECT MAX(to_date)
+    FROM employee_leave_requests
+    WHERE
+        employee_id = emp.id
+        AND leave_status IN ('t','o','a')
+        AND (from_date BETWEEN #fromDate# AND #toDate# OR to_date BETWEEN #fromDate# AND #toDate#)) THEN 'Leave Applied'-->
+        WHEN att.first_in IS NULL AND att.last_out IS NULL AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Data Not Available'
+        ELSE 'Data Available'
+        END as attendance_status,
+        config.configuration_value as location, cs.name as unit 
+        from employee_attendance as att
+        
+        left join  employees as emp on (att.emp_id = emp.id)
+        <!--        inner join employee_temp etemp on (etemp.emp_id = emp.id)-->
+        left join company_structures as cs on (emp.structure_name = cs.id)
+        
+        left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+        
+        where 1=1
+        <dynamic>
+            <isNotNull property = "employee_id">
+                <isNotEmpty prepend="AND" property = "employee_id">
+                    emp.id = #employee_id#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        and att.emp_id IN (select emp_id from employee_temp group by emp_id)
+        <!--        <dynamic>
+            <isNotNull prepend="AND" property = "rm_id">
+                (emp.manager = #rm_id# OR att.emp_id = #rm_id#)
+            </isNotNull>
+        </dynamic>-->
+        <dynamic prepend="AND">
+            <isNotNull property = "unit">
+                <isNotEqual property = "unit" compareValue="All">
+                    emp.structure_name = #unit#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+        <dynamic prepend="AND">
+            <isNotNull property = "unit">
+                <isNotEqual property = "location" compareValue="All">
+                    config.configuration_key = #location#
+                </isNotEqual>
+            </isNotNull>
+        </dynamic>
+        <!--        <dynamic>
+            <isNotNull property = "directReportee">
+                <isNotEmpty prepend="AND" property = "directReportee">
+                    emp.manager = #directReportee#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>-->
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        order by att.attendance_date desc,emp.employee_number) as temp
+        <!--        <dynamic>
+            <isNotEqual property="end_page" compareValue="0">
+                LIMIT #start_page#,#end_page#;
+            </isNotEqual>
+        </dynamic>-->
+    </select>
+    
+    <select id="getEmployeeDetails" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        <!--        select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+                from_unixtime(((UNIX_TIMESTAMP(STR_TO_DATE(att.last_out, '%H:%i:%s')))-(UNIX_TIMESTAMP(STR_TO_DATE(att.first_in, '%H:%i:%s')))),'%H:%i:%s') AS timeDuration, 
+        TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) as timeDuration,
+        att.site_code as siteCode, config.configuration_value as department,
+        att.location as location from employee_attendance as att
+        left join employees as emp on (att.emp_id = emp.id)
+        left join configuration_values as config on (config.configuration_key = att.department and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_dept'))
+        where 1=1
+        <dynamic>
+            <isNotEmpty prepend="AND" property = "employee_id">
+                att.emp_id = #employee_id#
+            </isNotEmpty>
+        </dynamic>
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        group by emp.employee_number order by emp.employee_number-->
+        
+        select emp.id as empId,emp.employee_number as employeeNumber,CONCAT(emp.first_name,' ',emp.last_name) as empName
+        from employees as emp where emp.employment_status IN('p','d','v','g','c','e')
+        <dynamic>
+            <isNotEmpty prepend="AND" property = "employee_id">
+                emp.id = #employee_id#
+            </isNotEmpty>
+        </dynamic>
+        
+    </select>
+    
+    <select id="getMinMaxDates" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select MIN(att.attendance_date) as minDate,MAX(att.attendance_date) as maxDate from employee_attendance as att
+        where 1=1
+        <dynamic>
+            <isNotNull property = "fromDate">
+                <isNotEmpty prepend="AND" property = "fromDate">
+                    att.attendance_date between #fromDate# and #toDate#
+                </isNotEmpty>
+            </isNotNull>
+        </dynamic>
+        <!--        group by att.attendance_date-->
+    </select>
+    
+    <select id="getSwipeDetails" parameterClass = "Map" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select att.id as id, emp.id as empId, emp.employee_number as employeeNumber, CONCAT(emp.first_name,' ',emp.last_name) as empName,
+        DATE_FORMAT(att.attendance_date,'%d-%m-%Y') as attendanceDate, STR_TO_DATE(att.first_in, '%H:%i:%s') as firstIn,
+        STR_TO_DATE(att.last_out, '%H:%i:%s') as lastOut, 
+        <!--        from_unixtime(((UNIX_TIMESTAMP(STR_TO_DATE(att.last_out, '%H:%i:%s')))-(UNIX_TIMESTAMP(STR_TO_DATE(att.first_in, '%H:%i:%s')))),'%H:%i:%s') AS timeDuration, -->
+        TIMEDIFF(STR_TO_DATE(att.last_out, '%H:%i:%s'),STR_TO_DATE(att.first_in, '%H:%i:%s')) as timeDuration,
+        att.site_code as siteCode, config.configuration_value as department,
+        att.location as location from employee_attendance as att
+        left join employees as emp on (att.emp_id = emp.id)
+        left join configuration_values as config on (config.configuration_key = att.department and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_dept'))
+        where att.emp_id = #empId# and att.attendance_date = #from_date#
+    </select>
+    
+    <select id="getEmployeeName" parameterClass = "java.lang.String" resultClass = "java.lang.String">
+        select CONCAT(employee_number,' - ',first_name,' ',last_name) as employeeName from employees where id=#key#
+    </select>
+    
+    <select id="getHolidayDetails" parameterClass = "Map" resultClass = "java.lang.String">
+        select holiday_date from holidays where holiday_date between #from_date# and #to_date# and city_id = #cityId#
+    </select>
+    
+    <select id="getEmpLocation" parameterClass="java.lang.String" resultClass="java.lang.String">
+        select cl.city_id from company_locations as cl
+        inner join employees as emp on (cl.id = emp.company_location_id)
+        where emp.id = #empId#
+    </select>
+    
+    <select id="getEmpDates" parameterClass="Map" resultClass="java.lang.String">
+        select attendance_date as attendanceDate from employee_attendance where emp_id = #empId#
+        and attendance_date between #fromDate# and #toDate#
+    </select>
+    
+    <select id="getUnitList" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select id as unitId, name as unitName from company_structures where parent_id IN ('1','12')
+    </select>
+    
+    <select id="getLocationList" resultClass="com.attendance.employee.attendance.dto.AttendanceDto">
+        select config.configuration_key as locationId, config.configuration_value as locationName from
+        configuration_values as config where parent_id IN (select id from configuration_values where configuration_key LIKE 'attendance_locations')
+    </select>
+    
+    <select id="getReasonList" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select config.configuration_key as reasonValue, config.configuration_value as reasonName
+        from configuration_values as config where parent_id IN (select id from configuration_values where configuration_key = 'emp_reason_list')
+    </select>
+    
+    <update id="updateChangeTimeDetails" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        update employee_attendance set time_revised = #changeTime#,revised_status = #revisedStatus#,
+        reason = #reason#,emp_remarks = #empRemarks# where id = #id#
+    </update>
+    
+    <update id="updateRmRemarks" parameterClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        update employee_attendance set rm_remarks = #rmRemarks# where id = #id#
+    </update>
+    
+    <select id="getDirectReportees" parameterClass = "java.lang.String" resultClass = "com.attendance.employee.attendance.dto.AttendanceDto">
+        select emp.id as directReporteeId, CONCAT(emp.employee_number,' - ',emp.first_name,' ',emp.last_name) as directReporteeName,
+        (select count(*) from employees where manager = emp.id and employment_status IN('p','d','v','g','c','e')) as subCount
+        from employees as emp where emp.manager = #key# having subCount > 0
+    </select>
+    
+    <parameterMap class="com.attendance.employee.attendance.dto.AttendanceReportFilterDto" id="reportCntFilterMap">
+        <parameter property="fromDate" jdbcType="DATE" mode="IN" />
+        <parameter property="toDate" jdbcType="DATE" mode="IN" />
+        <parameter property="loggedInempId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="role" jdbcType="INTEGER" mode="IN" />
+        <parameter property="empId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="rmId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="unit" jdbcType="INTEGER" mode="IN" />
+        <parameter property="location" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getAttendanceReportCount" parameterMap="reportCntFilterMap" resultClass="java.lang.Integer">
+        {call sp_getattendance_count (?,?,?,?,?,?,?,?)}
+    </procedure> 
+    
+    
+    <parameterMap class="com.attendance.employee.attendance.dto.AttendanceReportFilterDto" id="reportFilterMap">
+        <parameter property="fromDate" jdbcType="DATE" mode="IN" />
+        <parameter property="toDate" jdbcType="DATE" mode="IN" />
+        <parameter property="loggedInempId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="role" jdbcType="INTEGER" mode="IN" />
+        <parameter property="empId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="rmId" jdbcType="INTEGER" mode="IN" />
+        <parameter property="unit" jdbcType="INTEGER" mode="IN" />
+        <parameter property="location" jdbcType="INTEGER" mode="IN" />
+        <parameter property="startIndex" jdbcType="INTEGER" mode="IN" />
+        <parameter property="endIndex" jdbcType="INTEGER" mode="IN" />
+    </parameterMap>
+
+    <procedure id="getAttendanceReport" parameterMap="reportFilterMap" resultClass="com.attendance.employee.attendance.dto.AttendanceReportDto">
+        {call sp_getattendance (?,?,?,?,?,?,?,?,?,?)}
+    </procedure> 
+    
+<!--    Added for PM Attendance Report-->
+    <select id="getPmAttReport" parameterClass="com.attendance.employee.attendance.dto.AttendancePmReportFilterDto" resultClass="com.attendance.employee.attendance.dto.AttendancePmProjectReport">
+        select emp.employee_number as emp_id, 
+            CONCAT(emp.first_name, ' ',emp.last_name) as emp_name,
+            cs.name as unit, 
+            proj.project_name as projectName,
+            DATE_FORMAT(att.attendance_date, '%d-%m-%Y') as attendance_date, 
+            CONCAT(mang.first_name, ' ', mang.last_name) as reporting_manager, 
+            TIME_FORMAT(att.first_in, '%k:%i:%s') as in_time, 
+            TIME_FORMAT(att.last_out, '%k:%i:%s') as out_time,
+            TIMEDIFF(TIME_FORMAT(att.last_out, '%k:%i:%s'),TIME_FORMAT(att.first_in, '%k:%i:%s')) as time_duration,
+          CASE
+                    when (select Location_table from employee_work_location where employee_id=att.emp_id)='customer_wrk_location' then 'Data Not Available'
+                    when att.first_in IS not NULL OR att.last_out IS not NULL then 'Data Available'
+                    when F_EmpLeave_Details(emp.id, att.attendance_date) = 1
+                    THEN 'Leave Applied'
+                    WHEN att.first_in IS NULL AND att.last_out IS NULL
+                    AND DAYOFWEEK(att.attendance_date) NOT IN ('1','7') THEN 'Data Not Available'
+                    WHEN DAYOFWEEK(att.attendance_date) = 7 THEN 'WeekEnd'
+                    WHEN DAYOFWEEK(att.attendance_date) = 1 THEN 'WeekEnd'
+            END as attendance_status,
+            config.configuration_value as swipe_location,
+            CASE WHEN F_EmpLocation_Datewise(emp.id, att.attendance_date) IS NULL
+                    THEN 'Not Mapped'
+                    ELSE
+                    F_EmpLocation_Datewise(emp.id, att.attendance_date) 
+            END AS workLocation	
+            from employee_attendance as att 
+            left join employees as emp on att.emp_id = emp.id 
+            left join employees as mang on emp.manager = mang.id
+            left join company_structures as cs on emp.structure_name = cs.id
+            left join project_team_allocations as pta on pta.employee_id = att.emp_id
+            left join configuration_values as config on (config.configuration_key = att.location and config.parent_id IN (select id from configuration_values where configuration_key = 'attendance_locations'))
+            left join projects as proj on pta.project_id = proj.id 
+            
+           where proj.project_manager = #employeeId# 
+           AND proj.execution_model NOT IN ('on')
+            AND CURDATE() between pta.start_date and pta.end_date and pta.deleted=0
+<!--            AND CURDATE() between proj.planned_start_date and proj.planned_end_date and pta.deleted=0-->
+            <dynamic>
+                <isNotEmpty prepend="AND" property = "empId">
+                    emp.id = #empId#
+                </isNotEmpty>
+                <isNotEmpty prepend="AND" property = "project_id">
+                    pta.project_id = #project_id# 
+                </isNotEmpty>
+                <isNotNull property = "fromDate">
+                    <isNotEmpty prepend="AND" property = "fromDate">
+                      att.attendance_date between #fromDate# and #toDate#  
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic> 
+            ORDER BY attendance_date desc, emp_name 
+             LIMIT #start_page#,#end_page#   
+                      
+    </select>
+    <select id="getTimesheetEntryCount" parameterClass="com.attendance.employee.attendance.dto.AttendancePmReportFilterDto" resultClass="String">
+        SELECT COUNT(*) AS recordCount 
+            from employee_attendance as att 
+            left join employees as emp on att.emp_id = emp.id 
+            left join employees as mang on emp.manager = mang.id
+            left join company_structures as cs on emp.structure_name_subgroup = cs.id
+            left join project_team_allocations as pta on pta.employee_id = att.emp_id
+            left join projects as proj on pta.project_id = proj.id 
+            where proj.project_manager = #employeeId#
+            AND proj.execution_model NOT IN ('on') 
+            AND CURDATE() between pta.start_date and pta.end_date and pta.deleted =0
+<!--         AND CURDATE() between proj.planned_start_date and proj.planned_end_date and pta.deleted=0-->
+            <dynamic>
+                <isNotEmpty prepend="AND" property = "empId">
+                    emp.id = #empId#
+                </isNotEmpty>
+                <isNotEmpty prepend="AND" property = "project_id">
+                    pta.project_id = #project_id# 
+                </isNotEmpty>
+                <isNotNull property = "fromDate">
+                    <isNotEmpty prepend="AND" property = "fromDate">
+                      att.attendance_date between #fromDate# and #toDate#  
+                    </isNotEmpty>
+                </isNotNull>
+            </dynamic> 
+    </select>
+    
+    <select id="getProjectList" parameterClass="com.attendance.employee.attendance.dto.AttendancePmReportFilterDto" resultClass="com.attendance.employee.attendance.dto.AttendancePmProjectReport">
+        SELECT Project.id As projectId, Project.project_name As projectName, Project.project_code as project_id FROM projects AS Project 
+        WHERE `Project`.`project_manager` = #employeeId# AND `Project`.`project_status` IN ("e")
+        AND `Project`.`execution_model` NOT IN ('on')
+        AND CURDATE() between Project.planned_start_date and Project.planned_end_date;
+    </select>
+    
+    <select id="getEmpList" parameterClass="com.attendance.employee.attendance.dto.EmpListDTO" resultClass="com.attendance.employee.attendance.dto.EmpListDTO">
+         SELECT DISTINCT(emp.id) As empId,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name , '  ' , emp.last_name) As empName
+        FROM employees AS emp
+        INNER JOIN project_team_allocations AS te ON(te.employee_id=emp.id)
+        left join projects proj on proj.id = te.project_id
+        WHERE  emp.employment_status NOT IN ('t', 'r', 'b', 'q', 'o', 'y' )
+        AND te.project_id=#projectId#
+        AND CURDATE() between te.start_date and te.end_date and te.deleted =0;
+<!--        AND CURDATE() between proj.planned_start_date and proj.planned_end_date and te.deleted=0;-->
+<!--        AND te.deleted = 0;-->
+        
+<!--         SELECT DISTINCT(emp.id) As empId,tep.status,emp.employee_number AS employeeNumber,
+        CONCAT(emp.first_name , '  ' , emp.last_name) As empName
+        FROM employees AS emp
+        INNER JOIN timesheet_entries AS te ON(te.employee_id=emp.id)
+        INNER JOIN timesheet_entry_projects AS tep on(tep.timesheet_entry_id=te.id)
+        WHERE 1=1  AND emp.employment_status NOT IN ('t', 'r', 'b', 'q', 'o', 'y' )
+        AND tep.project_id=#projectId#;-->
+        
+<!--        select CONCAT(emp.first_name,' ',emp.last_name) as employee_name 
+        from project_team_allocations as pjt
+        left join  employees as emp on pjt.employee_id = emp.id 
+        left join projects proj on proj.id = pjt.project_id 
+        where proj.id = #projectId#; -->
+    </select>
+    
+</sqlMap>
